@@ -1,0 +1,81 @@
+{
+  "stu_w4mg9281": {
+    "uid": "stu_w4mg9281",
+    "name": "MUSSA SAID",
+    "creatorTag": "VENUE Student",
+    "email": "binsaid679@gmail.com",
+    "avatar": "",
+    "profilePhoto": "",
+    "country": "Tanzania",
+    "university": "University of Dar es Salaam",
+    "universityShort": "UDSM",
+    "universityId": "udsm",
+    "college": "College of Natural and Applied Sciences (CoNAS)",
+    "collegeId": "",
+    "programme": "BSc Mathematics & Statistics",
+    "programmeShort": "BSc Math & Stats",
+    "programmeId": "math-stats",
+    "academicYear": "2025/2026",
+    "yearOfStudy": "Year 2",
+    "semester": "Semester 1",
+    "registrationNumber": "2025-04-04444",
+    "gpa": 4.25,
+    "gpaMax": 5,
+    "creditsCompleted": 96,
+    "totalCredits": 144,
+    "studyStreakDays": 14,
+    "studyHoursThisWeek": 18.5,
+    "isProfileComplete": true,
+    "skills": [
+      "Real Analysis",
+      "Probability Distributions",
+      "Statistical Inference",
+      "Linear Algebra",
+      "R & RStudio",
+      "Python (NumPy, SciPy, Pandas)",
+      "Hypothesis Testing",
+      "Multivariable Calculus"
+    ],
+    "achievements": [
+      {
+        "id": "ach-1",
+        "title": "Top Quant Mind",
+        "description": "Maintained GPA above 4.0 in Pure & Applied Math modules",
+        "iconName": "Award",
+        "earnedDate": "May 2025",
+        "unlocked": true
+      },
+      {
+        "id": "ach-2",
+        "title": "14-Day Study Streak",
+        "description": "Logged daily revisions without missing a single day",
+        "iconName": "Flame",
+        "earnedDate": "Active",
+        "unlocked": true
+      },
+      {
+        "id": "ach-3",
+        "title": "Quiz Grandmaster",
+        "description": "Solved 100+ Probability & Real Analysis practice items",
+        "iconName": "Sparkles",
+        "earnedDate": "June 2025",
+        "unlocked": true
+      },
+      {
+        "id": "ach-4",
+        "title": "Peer Contributor",
+        "description": "Helped 25+ classmates in the moderated student community",
+        "iconName": "Users",
+        "earnedDate": "July 2025",
+        "unlocked": true
+      }
+    ],
+    "updatedAt": "2026-09-11T09:23:54.088Z"
+  },
+  "test1234": {
+    "name": "Test Student",
+    "email": "test@example.com",
+    "uid": "test1234",
+    "updatedAt": "2026-09-11T09:24:01.282Z"
+  }
+}

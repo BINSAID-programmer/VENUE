@@ -1,0 +1,6 @@
+{
+  "name": "VENUE",
+  "description": "Your Academic Space - Modern student education platform and academic workspace for university students.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

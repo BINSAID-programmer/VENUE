@@ -1,0 +1,92 @@
+import React, { useState } from 'react';
+import { Smartphone, Monitor, Wifi, BatteryCharging, Signal } from 'lucide-react';
+
+interface DeviceWrapperProps {
+  children: React.ReactNode;
+}
+
+export const DeviceWrapper: React.FC<DeviceWrapperProps> = ({ children }) => {
+  // Allow toggling between Smartphone Frame and Expanded responsive view
+  const [deviceMode, setDeviceMode] = useState<'mobile-frame' | 'fluid'>('mobile-frame');
+  const [currentTime, setCurrentTime] = useState('09:41');
+
+  // Update time realistically
+  React.useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const hours = now.getHours().toString().padStart(2, '0');
+      const mins = now.getMinutes().toString().padStart(2, '0');
+      setCurrentTime(`${hours}:${mins}`);
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-[#04070e] flex flex-col items-center justify-start p-0 sm:py-6 sm:px-4 selection:bg-blue-600 selection:text-white relative">
+      {/* Top Floating Viewport Switcher for Developers & Evaluators */}
+      <aside aria-label="Device Viewport Switcher" className="hidden sm:flex items-center gap-2 mb-4 bg-slate-900/90 border border-slate-800 rounded-full px-3 py-1.5 backdrop-blur-md shadow-xl z-50">
+        <span className="text-xs font-semibold text-slate-400 mr-1 flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          Preview Mode:
+        </span>
+        <button
+          id="toggle-mobile-frame"
+          onClick={() => setDeviceMode('mobile-frame')}
+          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all ${
+            deviceMode === 'mobile-frame'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+          }`}
+        >
+          <Smartphone className="w-3.5 h-3.5" />
+          Mobile Frame (Play Store)
+        </button>
+        <button
+          id="toggle-fluid-view"
+          onClick={() => setDeviceMode('fluid')}
+          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all ${
+            deviceMode === 'fluid'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+          }`}
+        >
+          <Monitor className="w-3.5 h-3.5" />
+          Fluid Responsive
+        </button>
+      </aside>
+
+      {/* Main Container */}
+      <div
+        className={`w-full transition-all duration-300 ${
+          deviceMode === 'mobile-frame'
+            ? 'max-w-[430px] sm:min-h-[860px] sm:max-h-[920px] sm:rounded-[44px] sm:border-[8px] sm:border-slate-800/90 sm:shadow-2xl sm:shadow-blue-950/40 relative sm:overflow-hidden flex flex-col bg-[#070b14]'
+            : 'max-w-4xl min-h-screen sm:rounded-2xl sm:border sm:border-slate-800/90 bg-[#070b14] flex flex-col'
+        }`}
+      >
+        {/* Realistic Mobile Status Bar (Visible in phone frame mode) */}
+        {deviceMode === 'mobile-frame' && (
+          <div className="hidden sm:flex items-center justify-between px-6 pt-3 pb-1 text-slate-300 text-xs font-medium select-none z-50 bg-[#070b14]/90 backdrop-blur-md">
+            <span>{currentTime}</span>
+            {/* Dynamic Island / Speaker Pill */}
+            <div className="w-24 h-4 bg-slate-900 rounded-full flex items-center justify-center border border-slate-800/80">
+              <div className="w-2.5 h-2.5 rounded-full bg-slate-950 border border-slate-800 mr-2" />
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500/60" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Signal className="w-3.5 h-3.5 text-slate-300" />
+              <Wifi className="w-3.5 h-3.5 text-slate-300" />
+              <BatteryCharging className="w-4 h-4 text-emerald-400" />
+            </div>
+          </div>
+        )}
+
+        {/* Inner Scrollable Screen Content */}
+        <div className="flex-1 flex flex-col overflow-y-auto relative custom-scrollbar pb-20">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};

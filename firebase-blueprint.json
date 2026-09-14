@@ -1,0 +1,554 @@
+{
+  "entities": {
+    "university": {
+      "title": "University",
+      "description": "Accredited higher education institution",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique stable identifier for the university (e.g. udsm)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Official full name of the university"
+        },
+        "shortName": {
+          "type": "string",
+          "description": "Acronym or abbreviation of the university (e.g. UDSM)"
+        },
+        "country": {
+          "type": "string",
+          "description": "Country where the university is located"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "inactive"],
+          "description": "Current status of the university in the catalogue"
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "Whether the university record has been officially verified"
+        },
+        "source": {
+          "type": "string",
+          "description": "Official regulatory source or charter reference"
+        }
+      },
+      "required": ["id", "name", "shortName", "country", "status", "verified", "source"]
+    },
+    "academicUnit": {
+      "title": "AcademicUnit",
+      "description": "College, School, Institute, or Constituent College within a university",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique stable identifier for the academic unit (e.g. udsm_conas)"
+        },
+        "universityId": {
+          "type": "string",
+          "description": "Foreign key pointing to the parent University"
+        },
+        "name": {
+          "type": "string",
+          "description": "Official full name of the academic unit"
+        },
+        "shortName": {
+          "type": "string",
+          "description": "Short code or acronym (e.g. CoNAS)"
+        },
+        "abbreviation": {
+          "type": "string",
+          "description": "Official abbreviation of the academic unit (e.g. CoNAS)"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["College", "School", "Institute", "Constituent College", "Centre"],
+          "description": "Structural academic unit type"
+        },
+        "sourceType": {
+          "type": "string",
+          "description": "Type of source document (e.g. official_prospectus)"
+        },
+        "academicYear": {
+          "type": "string",
+          "description": "Academic year edition (e.g. 2025/2026)"
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "Whether the unit record is verified against university charter"
+        },
+        "source": {
+          "type": "string",
+          "description": "Official prospectus or regulatory reference"
+        }
+      },
+      "required": ["id", "universityId", "name", "type", "verified", "source"]
+    },
+    "department": {
+      "title": "Department",
+      "description": "Academic department hosting degree programmes within an academic unit",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique stable identifier for the department (e.g. udsm_conas_math)"
+        },
+        "universityId": {
+          "type": "string",
+          "description": "Foreign key pointing to the parent University"
+        },
+        "academicUnitId": {
+          "type": "string",
+          "description": "Foreign key pointing to the parent Academic Unit"
+        },
+        "name": {
+          "type": "string",
+          "description": "Official department name"
+        },
+        "shortName": {
+          "type": "string",
+          "description": "Short code or abbreviation"
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "Whether the department record is verified"
+        },
+        "source": {
+          "type": "string",
+          "description": "Official source reference"
+        }
+      },
+      "required": ["id", "universityId", "academicUnitId", "name", "verified", "source"]
+    },
+    "programme": {
+      "title": "Programme",
+      "description": "Academic degree or certificate curriculum hosted under a department",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique stable identifier for the programme (e.g. udsm_bsc_math_stats)"
+        },
+        "universityId": {
+          "type": "string",
+          "description": "Foreign key pointing to the parent University"
+        },
+        "academicUnitId": {
+          "type": "string",
+          "description": "Foreign key pointing to the parent Academic Unit"
+        },
+        "departmentId": {
+          "type": "string",
+          "description": "Foreign key pointing to the parent Department"
+        },
+        "name": {
+          "type": "string",
+          "description": "Official programme title"
+        },
+        "shortName": {
+          "type": "string",
+          "description": "Programme short name"
+        },
+        "awardLevel": {
+          "type": "string",
+          "description": "Academic award level (e.g. Bachelor Degree)"
+        },
+        "durationYears": {
+          "type": "number",
+          "description": "Standard duration in academic years"
+        },
+        "studyMode": {
+          "type": "string",
+          "enum": ["Full-Time", "Part-Time", "Evening", "Online"],
+          "description": "Mode of attendance"
+        },
+        "academicYear": {
+          "type": "string",
+          "description": "Applicable curriculum syllabus year"
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "Whether the programme has regulatory accreditation"
+        },
+        "source": {
+          "type": "string",
+          "description": "Accreditation reference"
+        }
+      },
+      "required": [
+        "id",
+        "universityId",
+        "academicUnitId",
+        "departmentId",
+        "name",
+        "awardLevel",
+        "durationYears",
+        "studyMode",
+        "verified",
+        "source"
+      ]
+    },
+    "academicYear": {
+      "title": "AcademicYear",
+      "description": "Academic year calendar configuration for a university",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the academic year (e.g. udsm_2023_2024)"
+        },
+        "universityId": {
+          "type": "string",
+          "description": "Foreign key pointing to the university"
+        },
+        "year": {
+          "type": "string",
+          "description": "Academic year notation (e.g. 2023/2024)"
+        },
+        "isCurrent": {
+          "type": "boolean",
+          "description": "Whether this is the current active academic year"
+        },
+        "semesters": {
+          "type": "array",
+          "description": "List of active semester numbers (e.g. [1, 2])"
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "Whether verified against university calendar"
+        },
+        "source": {
+          "type": "string",
+          "description": "Calendar source reference"
+        }
+      },
+      "required": ["id", "universityId", "year", "isCurrent", "semesters", "verified", "source"]
+    },
+    "course": {
+      "title": "Course",
+      "description": "Individual accredited academic course offering",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique stable identifier for the course (e.g. udsm_math_stats_mt_100)"
+        },
+        "universityId": {
+          "type": "string",
+          "description": "Foreign key pointing to the university"
+        },
+        "academicUnitId": {
+          "type": "string",
+          "description": "Optional reference to academic unit"
+        },
+        "departmentId": {
+          "type": "string",
+          "description": "Optional reference to department"
+        },
+        "programmeId": {
+          "type": "string",
+          "description": "Foreign key pointing to the programme"
+        },
+        "code": {
+          "type": "string",
+          "description": "Course code (e.g. MT 100)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Course title"
+        },
+        "credits": {
+          "type": "number",
+          "description": "Number of academic credit units"
+        },
+        "yearOfStudy": {
+          "type": "number",
+          "description": "Target year of study (1, 2, 3, etc.)"
+        },
+        "semester": {
+          "type": "number",
+          "description": "Teaching semester (1 or 2)"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Core", "Elective"],
+          "description": "Core or Elective course designation"
+        },
+        "academicYear": {
+          "type": "string",
+          "description": "Academic year curriculum cycle"
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "Whether verified against prospectus"
+        },
+        "source": {
+          "type": "string",
+          "description": "Official prospectus source reference"
+        }
+      },
+      "required": [
+        "id",
+        "universityId",
+        "programmeId",
+        "code",
+        "title",
+        "credits",
+        "yearOfStudy",
+        "semester",
+        "status",
+        "verified",
+        "source"
+      ]
+    },
+    "canonicalCourse": {
+      "title": "CanonicalCourse",
+      "description": "Unique master course record per code (e.g. ST 113) reusable across degree programmes",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique normalized identifier (e.g. st-113)"
+        },
+        "code": {
+          "type": "string",
+          "description": "Official course code"
+        },
+        "title": {
+          "type": "string",
+          "description": "Official course title"
+        },
+        "defaultCredits": {
+          "type": "number",
+          "description": "Standard credits value (typically 12)"
+        },
+        "academicUnitId": {
+          "type": "string",
+          "description": "Hosting academic unit ID (e.g. coss for ST courses)"
+        },
+        "departmentId": {
+          "type": "string",
+          "description": "Hosting department ID (e.g. dept-stats)"
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "Whether verified against prospectus"
+        },
+        "source": {
+          "type": "string",
+          "description": "Prospectus source reference"
+        }
+      },
+      "required": ["id", "code", "title", "defaultCredits", "verified", "source"]
+    },
+    "programmeCourse": {
+      "title": "ProgrammeCourse",
+      "description": "Curriculum placement relationship linking a canonical course to a specific programme",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Composite identifier (e.g. ba-stats_st-113)"
+        },
+        "programmeId": {
+          "type": "string",
+          "description": "Target degree programme ID"
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Foreign key to canonical course"
+        },
+        "code": {
+          "type": "string",
+          "description": "Course code"
+        },
+        "title": {
+          "type": "string",
+          "description": "Course title"
+        },
+        "credits": {
+          "type": "number",
+          "description": "Credits for this curriculum offering"
+        },
+        "yearOfStudy": {
+          "type": "number",
+          "description": "Year of study in programme (1, 2, 3, etc.)"
+        },
+        "semester": {
+          "type": "number",
+          "description": "Semester in programme (1 or 2)"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Core", "Elective"],
+          "description": "Core or Elective course designation"
+        },
+        "academicUnitId": {
+          "type": "string",
+          "description": "Academic Unit hosting programme"
+        },
+        "departmentId": {
+          "type": "string",
+          "description": "Department hosting programme"
+        },
+        "universityId": {
+          "type": "string",
+          "description": "University ID"
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "Whether verified against prospectus"
+        },
+        "source": {
+          "type": "string",
+          "description": "Prospectus source reference"
+        }
+      },
+      "required": ["id", "programmeId", "courseId", "code", "title", "credits", "yearOfStudy", "semester", "status", "verified", "source"]
+    },
+    "student": {
+      "title": "Student",
+      "description": "Student user profile and academic progress record",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "User identifier matching Firebase Auth UID"
+        },
+        "email": {
+          "type": "string",
+          "description": "Student institutional or personal email"
+        },
+        "name": {
+          "type": "string",
+          "description": "Student full name"
+        },
+        "university": {
+          "type": "string",
+          "description": "Enrolled university name"
+        },
+        "programme": {
+          "type": "string",
+          "description": "Enrolled programme name"
+        },
+        "yearOfStudy": {
+          "type": "string",
+          "description": "Current year of study"
+        },
+        "semester": {
+          "type": "string",
+          "description": "Current active semester"
+        }
+      },
+      "required": ["uid", "email", "name"]
+    },
+    "studentResult": {
+      "title": "StudentResult",
+      "description": "Official course examination result and grade record for a student",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique deterministic result identifier"
+        },
+        "uid": {
+          "type": "string",
+          "description": "Authenticated student user ID"
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Stable identifier of the course"
+        },
+        "courseCode": {
+          "type": "string",
+          "description": "Official course code (e.g. MT 100)"
+        },
+        "courseName": {
+          "type": "string",
+          "description": "Course title or name"
+        },
+        "credits": {
+          "type": "number",
+          "description": "Credit units awarded for the course"
+        },
+        "grade": {
+          "type": "string",
+          "description": "Letter grade obtained (e.g. A, B+, B, C, D, E)"
+        },
+        "gradePoint": {
+          "type": "number",
+          "description": "Grade point value according to university scale"
+        },
+        "semester": {
+          "type": "string",
+          "description": "Academic semester (e.g. Semester 1)"
+        },
+        "academicYear": {
+          "type": "string",
+          "description": "Academic session (e.g. 2025/2026)"
+        },
+        "yearOfStudy": {
+          "type": "string",
+          "description": "Year of study level (e.g. Year 1)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of result record creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of last result modification"
+        }
+      },
+      "required": ["uid", "courseId", "courseCode", "credits", "grade", "gradePoint", "semester"]
+    }
+  },
+  "firestore": {
+    "/universities/{universityId}": {
+      "schema": "university",
+      "description": "Accredited universities directory"
+    },
+    "/academic_units/{academicUnitId}": {
+      "schema": "academicUnit",
+      "description": "Colleges, Schools, Institutes, and Constituent Colleges"
+    },
+    "/departments/{departmentId}": {
+      "schema": "department",
+      "description": "Academic departments within colleges/schools"
+    },
+    "/programmes/{programmeId}": {
+      "schema": "programme",
+      "description": "Degree programmes under departments"
+    },
+    "/academic_years/{academicYearId}": {
+      "schema": "academicYear",
+      "description": "Academic calendars and terms"
+    },
+    "/catalogue_courses/{courseId}": {
+      "schema": "course",
+      "description": "Course curriculum offerings per programme and semester"
+    },
+    "/canonical_courses/{courseId}": {
+      "schema": "canonicalCourse",
+      "description": "Accredited master course definitions by course code"
+    },
+    "/programme_courses/{relId}": {
+      "schema": "programmeCourse",
+      "description": "Programme specific curriculum relationships"
+    },
+    "/students/{studentId}": {
+      "schema": "student",
+      "description": "Private student academic profiles"
+    },
+    "/students/{studentId}/results/{resultId}": {
+      "schema": "studentResult",
+      "description": "Individual course examination results and grade points"
+    },
+    "/student_results/{resultId}": {
+      "schema": "studentResult",
+      "description": "Top-level student results collection indexed by authenticated student UID"
+    }
+  }
+}

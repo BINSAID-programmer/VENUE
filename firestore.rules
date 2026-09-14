@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Public Academic Catalogue: Universities
+    match /universities/{universityId} {
+      allow read: if true;
+      allow write: if isValidId(universityId);
+    }
+
+    // Public Academic Catalogue: Academic Units (Colleges, Schools, Institutes)
+    match /academic_units/{academicUnitId} {
+      allow read: if true;
+      allow write: if isValidId(academicUnitId);
+    }
+
+    // Public Academic Catalogue: Departments
+    match /departments/{departmentId} {
+      allow read: if true;
+      allow write: if isValidId(departmentId);
+    }
+
+    // Public Academic Catalogue: Programmes
+    match /programmes/{programmeId} {
+      allow read: if true;
+      allow write: if isValidId(programmeId);
+    }
+
+    // Public Academic Catalogue: Academic Years
+    match /academic_years/{academicYearId} {
+      allow read: if true;
+      allow write: if isValidId(academicYearId);
+    }
+
+    // Public Academic Catalogue: Courses
+    match /catalogue_courses/{courseId} {
+      allow read: if true;
+      allow write: if isValidId(courseId);
+    }
+
+    // Public Academic Catalogue: Canonical Courses
+    match /canonical_courses/{courseId} {
+      allow read: if true;
+      allow write: if isValidId(courseId);
+    }
+
+    // Public Academic Catalogue: Programme Course Relationships
+    match /programme_courses/{relId} {
+      allow read: if true;
+      allow write: if isValidId(relId);
+    }
+
+    // Student Profiles (Isolated and private to the individual student)
+    match /students/{studentId} {
+      allow read, write: if isOwner(studentId) && isValidId(studentId);
+
+      // Student Results (Isolated subcollection for academic grades & GPA)
+      match /results/{resultId} {
+        allow read, write: if isOwner(studentId) && isValidId(resultId);
+      }
+    }
+
+    // Top-level student results collection (Enforcing authenticated owner validation)
+    match /student_results/{resultId} {
+      allow read, write: if isSignedIn() && (
+        (resource == null && request.resource.data.uid == request.auth.uid) ||
+        (resource != null && resource.data.uid == request.auth.uid && request.resource.data.uid == request.auth.uid)
+      ) && isValidId(resultId);
+    }
+
+    // Connection health check
+    match /test/{testId} {
+      allow read: if true;
+    }
+  }
+}
