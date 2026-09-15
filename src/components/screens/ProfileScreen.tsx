@@ -218,14 +218,32 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ profile, onUpdateP
           </div>
 
           {/* 5. Programme */}
-          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-850">
-            <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
-              <BookOpen className="w-3 h-3 text-purple-400" />
-              Degree Programme:
-            </span>
+          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-850 sm:col-span-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
+                <BookOpen className="w-3 h-3 text-purple-400" />
+                Degree Programme:
+              </span>
+              {profile.degreeLevel && (
+                <span className="text-[10px] font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <Award className="w-2.5 h-2.5" />
+                  {profile.degreeLevel}
+                </span>
+              )}
+            </div>
             <p className="font-semibold text-slate-100 mt-1">
               {profile.programmeName || profile.programme || <span className="text-slate-500 font-normal italic">Not specified</span>}
+              {profile.programmeCode ? (
+                <span className="ml-2 font-mono text-xs text-sky-400 bg-sky-950/50 px-1.5 py-0.5 rounded border border-sky-800/40">
+                  {profile.programmeCode}
+                </span>
+              ) : null}
             </p>
+            {profile.programmeDurationYears && (
+              <p className="text-[11px] text-slate-400 mt-1">
+                Standard Duration: {profile.programmeDurationYears} {profile.programmeDurationYears === 1 ? 'Year' : 'Years'} ({profile.programmeDurationYears * 2} Semesters)
+              </p>
+            )}
           </div>
 
           {/* 5. Academic Year */}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Settings,
   Moon,
+  Sun,
   Bell,
   WifiOff,
   Shield,
@@ -13,6 +14,7 @@ import {
   Smartphone,
   BookOpen,
 } from 'lucide-react';
+import { ThemeToggle } from '../ThemeToggle';
 
 interface SettingsScreenProps {
   onLogout: () => void;
@@ -75,20 +77,18 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onLogout, onRese
       <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
         <h3 className="text-xs font-bold text-white uppercase tracking-wider">Preferences</h3>
 
-        {/* Dark Theme Setting */}
-        <div className="flex items-center justify-between">
+        {/* Dark / Light Theme Setting */}
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-slate-850 text-sky-400 flex items-center justify-center">
               <Moon className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs sm:text-sm font-semibold text-white">Theme</p>
-              <p className="text-[11px] text-slate-400">Electric Navy & Dark Mode (Optimized)</p>
+              <p className="text-xs sm:text-sm font-semibold text-white">App Appearance</p>
+              <p className="text-[11px] text-slate-400">Choose between Light or Dark theme</p>
             </div>
           </div>
-          <span className="text-xs font-bold text-sky-400 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20">
-            Always Dark
-          </span>
+          <ThemeToggle variant="pill" />
         </div>
 
         {/* Notifications Toggle */}

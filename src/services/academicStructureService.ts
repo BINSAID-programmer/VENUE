@@ -29,6 +29,9 @@ import {
   AUDITED_PROGRAMMES,
   OFFICIAL_UDSM_UNIVERSITY,
 } from '../data/udsmAuditedCatalogue2025';
+import { ProgrammeRecord, DegreeLevel } from '../types';
+import { degreeProgrammeService, normalizeProgrammeRecord } from './degreeProgrammeService';
+export type { ProgrammeRecord, DegreeLevel };
 
 export type AcademicUnitType =
   | 'College'
@@ -71,21 +74,6 @@ export interface DepartmentRecord {
   universityId: string;
   name: string;
   shortName?: string;
-  verified?: boolean;
-  source?: string;
-}
-
-export interface ProgrammeRecord {
-  id: string;
-  departmentId: string;
-  academicUnitId: string;
-  universityId: string;
-  name: string;
-  shortName?: string;
-  durationYears: number;
-  awardLevel?: string;
-  studyMode?: string;
-  academicYear?: string;
   verified?: boolean;
   source?: string;
 }
@@ -822,7 +810,7 @@ class AcademicStructureService {
     this.allProgrammesInMemory = [
       ...AUDITED_PROGRAMMES,
       ...OTHER_UNIVERSITIES_PROGRAMMES,
-    ];
+    ].map(normalizeProgrammeRecord);
   }
 
   /**
@@ -976,56 +964,14 @@ class AcademicStructureService {
   /**
    * 4. Get Programmes under a specific Department
    * Queries Firestore with index: departmentId == id
+   * Strictly verifies that programmes belong to the given department.
    */
   async getProgrammes(
     departmentId: string,
     academicUnitId?: string,
     universityId = 'udsm'
   ): Promise<ProgrammeRecord[]> {
-    const cleanDeptId = (departmentId || '').toLowerCase().trim();
-
-    if (!cleanDeptId) return [];
-
-    if (this.programmesByDeptCache.has(cleanDeptId)) {
-      return this.programmesByDeptCache.get(cleanDeptId)!;
-    }
-
-    try {
-      const q = query(
-        collection(db, 'programmes'),
-        where('departmentId', '==', cleanDeptId)
-      );
-      const snap = await getDocs(q);
-
-      if (!snap.empty) {
-        const progs: ProgrammeRecord[] = [];
-        snap.forEach((d) => {
-          progs.push(d.data() as ProgrammeRecord);
-        });
-
-        progs.sort((a, b) => a.name.localeCompare(b.name));
-        this.programmesByDeptCache.set(cleanDeptId, progs);
-        return progs;
-      }
-    } catch (err) {
-      console.warn(`AcademicStructureService: Firestore programmes read error for ${cleanDeptId}:`, err);
-    }
-
-    // Memory fallback
-    let fallbackProgs = this.allProgrammesInMemory.filter(
-      (p) => p.departmentId.toLowerCase() === cleanDeptId
-    );
-
-    // If not found by dept directly but unit provided, look up by unit as gentle fallback
-    if (fallbackProgs.length === 0 && academicUnitId) {
-      fallbackProgs = this.allProgrammesInMemory.filter(
-        (p) => p.academicUnitId.toLowerCase() === academicUnitId.toLowerCase()
-      );
-    }
-
-    fallbackProgs.sort((a, b) => a.name.localeCompare(b.name));
-    this.programmesByDeptCache.set(cleanDeptId, fallbackProgs);
-    return fallbackProgs;
+    return degreeProgrammeService.getProgrammesByDepartment(departmentId, academicUnitId, universityId);
   }
 
   /**

@@ -675,8 +675,8 @@ export class FirestoreCatalogueService {
       // Check for duplicate course in programme/year/semester
       const existing = await this.getCoursesByProgrammeAndTerm({
         programmeId: course.programmeId,
-        yearOfStudy: course.yearOfStudy,
-        semester: course.semester,
+        yearOfStudy: Number(course.yearOfStudy) || 1,
+        semester: Number(course.semester) || 1,
         pageSize: 100,
       });
 

@@ -10,6 +10,7 @@ import {
 } from '../types';
 import { UDSM_BSC_MATH_STATS_COURSES } from '../data/udsmCatalogue';
 import { firestoreCatalogueService } from './firestoreCatalogueService';
+import { courseCurriculumService } from './courseCurriculumService';
 import {
   UDSM_ACADEMIC_UNITS,
   UDSM_PROGRAMMES,
@@ -954,14 +955,14 @@ class AcademicCatalogueService {
   ): Promise<CourseRecord[]> {
     if (!programmeId || !yearOfStudy || !semester) return [];
     try {
-      const res = await firestoreCatalogueService.getCoursesByProgrammeAndTerm({
+      const res = await courseCurriculumService.getCoursesByProgrammeAndTerm({
         programmeId,
         yearOfStudy,
         semester,
         pageSize,
       });
-      if (res.items.length > 0) {
-        return res.items.filter((c) => c.verified === true);
+      if (res.courses.length > 0) {
+        return res.courses.filter((c) => c.verified === true);
       }
     } catch {
       // Local fallback

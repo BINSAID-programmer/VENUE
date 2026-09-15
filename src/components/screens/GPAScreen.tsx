@@ -1,29 +1,32 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  ArrowLeft,
   GraduationCap,
   Award,
   BookOpen,
+  Calendar,
   Plus,
   Trash2,
   Edit2,
   CheckCircle2,
-  Clock,
   Sparkles,
+  ArrowLeft,
+  Building,
+  School,
   Info,
   ChevronDown,
   ChevronUp,
-  RotateCcw,
-  School,
-  Building,
-  Calendar,
+  Clock,
+  Check,
+  AlertCircle,
+  Hash,
+  Layers,
 } from 'lucide-react';
 import {
   StudentProfile,
   StudentResult,
-  CourseRecord,
   UniversityGradingSystem,
   CumulativeGpaSummary,
+  CourseRecord,
 } from '../../types';
 import {
   getStudentResults,
@@ -31,18 +34,29 @@ import {
   deleteStudentResult,
   syncStudentProfileGpa,
   getAuthenticatedUid,
+  calculateQualityPoints,
+  calculateSemesterGPA,
+  calculateCGPA,
 } from '../../services/gpaService';
 import {
   getGradingSystem,
-  calculateCumulativeGpa,
+  isValidGrade,
 } from '../../services/gradingService';
-import { academicCatalogueService } from '../../services/academicCatalogueService';
+import { courseCurriculumService } from '../../services/courseCurriculumService';
 
 interface GPAScreenProps {
   profile: StudentProfile;
-  onUpdateProfile: (updated: Partial<StudentProfile>) => void;
+  onUpdateProfile: (updates: Partial<StudentProfile>) => void;
   onBack: () => void;
 }
+
+const ACADEMIC_YEARS = [
+  '2025/2026',
+  '2024/2025',
+  '2023/2024',
+  '2022/2023',
+  '2021/2022',
+];
 
 export const GPAScreen: React.FC<GPAScreenProps> = ({
   profile,
@@ -73,6 +87,15 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
     profile.academicYear || '2025/2026'
   );
 
+  // Dynamic Programme Duration (Supports variable 1..6 year programmes)
+  const durationYears = useMemo(() => {
+    return profile.programmeDurationYears || 3;
+  }, [profile.programmeDurationYears]);
+
+  const availableYears = useMemo(() => {
+    return Array.from({ length: Math.max(1, durationYears) }, (_, i) => i + 1);
+  }, [durationYears]);
+
   // Active University Grading System
   const gradingSystem: UniversityGradingSystem = useMemo(() => {
     return getGradingSystem(profile.universityId || profile.university);
@@ -86,6 +109,7 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
     credits: number;
     currentGrade?: string;
     isCustom?: boolean;
+    isRepeated?: boolean;
   } | null>(null);
 
   const [isAddCustomOpen, setIsAddCustomOpen] = useState(false);
@@ -93,6 +117,7 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
   const [customCourseName, setCustomCourseName] = useState('');
   const [customCredits, setCustomCredits] = useState('12');
   const [customGrade, setCustomGrade] = useState('A');
+  const [customIsRepeated, setCustomIsRepeated] = useState(false);
 
   const [showGradingScaleRef, setShowGradingScaleRef] = useState(false);
 
@@ -130,13 +155,14 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
           profile.programmeId ||
           profile.programmeShort?.toLowerCase() ||
           'math-stats';
-        const courses = await academicCatalogueService.getCourses(
-          progId,
-          selectedYear,
-          selectedSemester
-        );
+        const res = await courseCurriculumService.getCoursesByProgrammeAndTerm({
+          programmeId: progId,
+          yearOfStudy: selectedYear,
+          semester: selectedSemester,
+          universityId: profile.universityId,
+        });
         if (isMounted) {
-          setCatalogueCourses(courses);
+          setCatalogueCourses(res.courses);
         }
       } catch (err) {
         console.warn('Error fetching catalogue courses:', err);
@@ -146,12 +172,12 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [profile.programmeId, profile.programmeShort, selectedYear, selectedSemester]);
+  }, [profile.programmeId, profile.programmeShort, selectedYear, selectedSemester, profile.universityId]);
 
-  // 3. Compute Real GPA & Cumulative Metrics
+  // 3. Compute Real GPA & Cumulative Metrics using calculation engine
   const gpaSummary: CumulativeGpaSummary = useMemo(() => {
     const semStr = `Semester ${selectedSemester}`;
-    return calculateCumulativeGpa(
+    return calculateCGPA(
       results,
       profile.universityId || profile.university,
       semStr,
@@ -159,7 +185,7 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
     );
   }, [results, profile.universityId, profile.university, selectedSemester, academicYear]);
 
-  // Selected semester key for display
+  // Selected semester labels for display
   const currentSemesterLabel = `Semester ${selectedSemester}`;
   const currentYearLabel = `Year ${selectedYear}`;
 
@@ -168,11 +194,12 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
     return gpaSummary.semesters.find(
       (s) =>
         s.semester.toLowerCase() === currentSemesterLabel.toLowerCase() &&
-        (!s.yearOfStudy || s.yearOfStudy === currentYearLabel)
+        (!s.yearOfStudy || s.yearOfStudy.toLowerCase() === currentYearLabel.toLowerCase())
     );
   }, [gpaSummary.semesters, currentSemesterLabel, currentYearLabel]);
 
   // Merge catalogue courses with student's recorded results for this semester
+  // Course database is the SINGLE SOURCE OF TRUTH for credits.
   const semesterCourseItems = useMemo(() => {
     const semName = `Semester ${selectedSemester}`;
     const relevantResults = results.filter((r) => {
@@ -191,6 +218,8 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
       const code = catCourse.courseCode || catCourse.code;
       const title = catCourse.courseName || catCourse.title;
       const cId = catCourse.courseId || catCourse.id;
+      // Credits strictly derived from course database
+      const credits = Number(catCourse.credits) > 0 ? Number(catCourse.credits) : 12;
 
       const foundResult = relevantResults.find(
         (r) =>
@@ -203,7 +232,7 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
         courseId: cId,
         courseCode: code,
         courseName: title,
-        credits: catCourse.credits || 12,
+        credits: foundResult ? foundResult.credits : credits,
         status: catCourse.status || 'Core',
         result: foundResult || null,
         isCustom: false,
@@ -256,6 +285,8 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
           academicYear,
           yearOfStudy: yearStr,
           universityId: profile.universityId || profile.university,
+          programmeId: profile.programmeId || profile.programmeShort,
+          isRepeated: editingResultModal.isRepeated,
         },
         studentUid
       );
@@ -273,8 +304,8 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
         creditsCompleted: updatedProfile.creditsCompleted,
       });
 
-      setStatusMessage(`Saved! Cumulative GPA: ${summary.cgpa} / ${summary.maxGpa}`);
-      setTimeout(() => setStatusMessage(null), 3000);
+      setStatusMessage(`Saved! Cumulative CGPA: ${summary.cgpa.toFixed(2)} / ${summary.maxGpa.toFixed(1)}`);
+      setTimeout(() => setStatusMessage(null), 3500);
       setEditingResultModal(null);
     } catch (err: any) {
       setStatusMessage(`Error saving result: ${err?.message || 'Please try again'}`);
@@ -304,7 +335,7 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
         creditsCompleted: updatedProfile.creditsCompleted,
       });
 
-      setStatusMessage(`Result removed. Updated GPA: ${summary.cgpa}`);
+      setStatusMessage(`Result removed. Updated CGPA: ${summary.cgpa.toFixed(2)}`);
       setTimeout(() => setStatusMessage(null), 3000);
     } catch (err: any) {
       setStatusMessage(`Error removing result: ${err?.message || 'Failed'}`);
@@ -332,12 +363,14 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
           courseId: cId,
           courseCode: customCourseCode.trim(),
           courseName: customCourseName.trim(),
-          credits: Number(customCredits) || 12,
+          credits: Math.max(1, Number(customCredits) || 12),
           grade: customGrade,
           semester: semStr,
           academicYear,
           yearOfStudy: yearStr,
           universityId: profile.universityId || profile.university,
+          programmeId: profile.programmeId || profile.programmeShort,
+          isRepeated: customIsRepeated,
         },
         studentUid
       );
@@ -357,7 +390,8 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
       setIsAddCustomOpen(false);
       setCustomCourseCode('');
       setCustomCourseName('');
-      setStatusMessage(`Course added! CGPA: ${summary.cgpa}`);
+      setCustomIsRepeated(false);
+      setStatusMessage(`Course added! CGPA: ${summary.cgpa.toFixed(2)}`);
       setTimeout(() => setStatusMessage(null), 3000);
     } catch (err: any) {
       setStatusMessage(`Error adding course: ${err?.message || 'Failed'}`);
@@ -366,10 +400,15 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
     }
   };
 
+  // Registered total credits for this semester (from curriculum list)
+  const totalRegisteredSemesterCredits = useMemo(() => {
+    return semesterCourseItems.reduce((sum, item) => sum + item.credits, 0);
+  }, [semesterCourseItems]);
+
   return (
-    <div className="p-4 sm:p-6 space-y-6 pb-28 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 space-y-6 pb-28 max-w-5xl mx-auto">
       {/* 1. Header Navigation Bar */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <button
           type="button"
           onClick={onBack}
@@ -382,10 +421,10 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
             <School className="w-3.5 h-3.5" />
-            {profile.universityShort || profile.university || 'UDSM'}
+            {profile.universityShort || profile.university || 'University'}
           </span>
-          <span className="text-[10px] text-slate-500 font-medium px-2 py-1 rounded-md bg-slate-900 border border-slate-800">
-            {gradingSystem.scaleType} Scale
+          <span className="text-[10px] text-slate-400 font-medium px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800">
+            {gradingSystem.scaleType} Grading Scale
           </span>
         </div>
       </div>
@@ -395,18 +434,18 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
         <div className="flex items-center gap-2 flex-wrap mb-1">
           <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
             <Building className="w-3.5 h-3.5 text-slate-500" />
-            {profile.institutionName || profile.college || 'Natural Sciences'}
+            {profile.institutionName || profile.college || 'Academic Unit'}
           </span>
           <span className="text-slate-600 text-xs">•</span>
           <span className="text-xs text-slate-400 font-medium">
-            {profile.departmentName || profile.department || 'Mathematics'}
+            {profile.departmentName || profile.department || 'Department'}
           </span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-          Academic GPA & Course Results
+          Academic GPA & Performance
         </h1>
         <p className="text-xs sm:text-sm text-slate-400 mt-1">
-          {profile.programmeName || profile.programme || 'BSc Mathematics & Statistics'} • Official Database-Driven Performance
+          {profile.programmeName || profile.programme || 'Degree Programme'} • Official Database-Driven GPA & CGPA Engine
         </p>
       </div>
 
@@ -419,7 +458,7 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
       )}
 
       {/* 2. Top Cumulative GPA Performance Dashboard */}
-      <div className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950/40 border border-slate-800 shadow-xl relative overflow-hidden">
+      <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950/40 border border-slate-800 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative z-10">
@@ -447,7 +486,7 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
                 {gpaSummary.classification.name}
               </span>
               <span className="text-[10px] text-slate-500 font-medium">
-                {gpaSummary.totalCoursesCount} Courses
+                {gpaSummary.totalGradedCoursesCount} of {gpaSummary.totalCoursesCount} Graded
               </span>
             </div>
           </div>
@@ -460,19 +499,27 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
                 {currentYearLabel} {currentSemesterLabel} GPA
               </span>
               <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-3xl sm:text-4xl font-extrabold text-amber-400 tracking-tight">
-                  {currentSemesterSummary ? currentSemesterSummary.gpa.toFixed(2) : '0.00'}
-                </span>
-                <span className="text-xs text-slate-500 font-medium">
-                  / {gpaSummary.maxGpa.toFixed(1)}
-                </span>
+                {currentSemesterSummary && currentSemesterSummary.isGraded ? (
+                  <>
+                    <span className="text-3xl sm:text-4xl font-extrabold text-amber-400 tracking-tight">
+                      {currentSemesterSummary.gpa.toFixed(2)}
+                    </span>
+                    <span className="text-xs text-slate-500 font-medium">
+                      / {gpaSummary.maxGpa.toFixed(1)}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-2xl sm:text-3xl font-extrabold text-slate-500 tracking-tight">
+                    —
+                  </span>
+                )}
               </div>
             </div>
 
             <div className="mt-3 pt-3 border-t border-slate-850 flex items-center justify-between text-[11px] text-slate-400">
-              <span>Semester Credits:</span>
+              <span>Graded Credits:</span>
               <span className="font-bold text-white">
-                {currentSemesterSummary ? currentSemesterSummary.totalCredits : 0} pts
+                {currentSemesterSummary ? currentSemesterSummary.totalCredits : 0} / {totalRegisteredSemesterCredits}
               </span>
             </div>
           </div>
@@ -509,12 +556,11 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
                 />
               </div>
               <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                <span>Degree Progress</span>
+                <span>Quality Points: {gpaSummary.totalQualityPoints.toFixed(1)}</span>
                 <span>
                   {Math.round(
                     (gpaSummary.totalCredits / (profile.totalCredits || 120)) * 100
-                  )}
-                  %
+                  )}%
                 </span>
               </div>
             </div>
@@ -524,13 +570,15 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
         {/* Formula Explainer Footer */}
         <div className="mt-4 pt-3 border-t border-slate-800/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-400">
           <span className="flex items-center gap-1.5 text-slate-400">
-            <Info className="w-3.5 h-3.5 text-blue-400" />
-            Formula: <span className="font-mono text-slate-300">GPA = Σ(Grade Point × Credits) / Σ(Credits)</span>
+            <Info className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+            <span>
+              Formula: <strong className="text-slate-300 font-mono">GPA = Σ(Quality Points) / Σ(Credits)</strong>. Missing grades are excluded.
+            </span>
           </span>
           <button
             type="button"
             onClick={() => setShowGradingScaleRef(!showGradingScaleRef)}
-            className="text-sky-400 hover:text-sky-300 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+            className="text-sky-400 hover:text-sky-300 text-[11px] font-semibold flex items-center gap-1 cursor-pointer shrink-0"
           >
             <span>{showGradingScaleRef ? 'Hide' : 'View'} University Grading Scale</span>
             {showGradingScaleRef ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -541,13 +589,13 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
       {/* Collapsible University Grading Scale Reference */}
       {showGradingScaleRef && (
         <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3 animate-fadeIn">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
               <School className="w-3.5 h-3.5 text-sky-400" />
               {gradingSystem.name}
             </h3>
-            <span className="text-[10px] text-slate-500 font-mono">
-              Max: {gradingSystem.maxGpa.toFixed(1)} • Pass: {gradingSystem.passGpa.toFixed(1)}
+            <span className="text-[10px] text-slate-400 font-mono">
+              Max: {gradingSystem.maxGpa.toFixed(1)} • Pass Threshold: {gradingSystem.passGpa.toFixed(1)}
             </span>
           </div>
 
@@ -587,26 +635,48 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
         </div>
       )}
 
-      {/* 3. Semester Navigation Chips */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-blue-400" />
-            Select Study Year & Semester
-          </span>
-          <button
-            type="button"
-            onClick={() => setIsAddCustomOpen(true)}
-            className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5 cursor-pointer shadow-sm shadow-blue-600/30 transition-all active:scale-95"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Custom Course</span>
-          </button>
+      {/* 3. Academic Year & Semester Selector */}
+      <div className="space-y-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/90">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-blue-400 shrink-0" />
+            <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+              Academic Term & Semester
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
+            {/* Academic Year Dropdown */}
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="text-slate-400 text-[11px]">Academic Year:</span>
+              <select
+                value={academicYear}
+                onChange={(e) => setAcademicYear(e.target.value)}
+                className="px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-semibold text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+              >
+                {ACADEMIC_YEARS.map((yr) => (
+                  <option key={yr} value={yr}>
+                    {yr}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Add Custom Course Button */}
+            <button
+              type="button"
+              onClick={() => setIsAddCustomOpen(true)}
+              className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5 cursor-pointer shadow-sm shadow-blue-600/30 transition-all active:scale-95"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Custom Course</span>
+            </button>
+          </div>
         </div>
 
-        {/* Year & Semester Switcher */}
-        <div className="flex flex-wrap gap-2">
-          {[1, 2, 3].map((y) =>
+        {/* Year & Semester Switcher Pills */}
+        <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-800/50">
+          {availableYears.map((y) =>
             [1, 2].map((s) => {
               const isSelected = selectedYear === y && selectedSemester === s;
               const semStr = `Semester ${s}`;
@@ -632,7 +702,7 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
                   }`}
                 >
                   <span>Y{y} Sem {s}</span>
-                  {matchingSem && matchingSem.resultsCount > 0 && (
+                  {matchingSem && matchingSem.isGraded && (
                     <span
                       className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
                         isSelected ? 'bg-blue-800 text-sky-200' : 'bg-slate-800 text-amber-300'
@@ -648,24 +718,24 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
         </div>
       </div>
 
-      {/* 4. Course Curriculum & Examination Results List */}
+      {/* 4. Course Curriculum & Examination Results Table */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-              <span>{currentYearLabel} • {currentSemesterLabel} Coursework</span>
+              <span>{currentYearLabel} • {currentSemesterLabel} Registered Courses</span>
               <span className="text-xs text-slate-400 font-normal">
                 ({semesterCourseItems.length} courses)
               </span>
             </h2>
             <p className="text-xs text-slate-400">
-              Official courses from the programme curriculum. Enter or update your letter grades below.
+              Official courses from the curriculum. Credits are loaded directly from the course database.
             </p>
           </div>
 
-          {currentSemesterSummary && (
+          {currentSemesterSummary && currentSemesterSummary.isGraded && (
             <div className="text-right">
-              <span className="text-[10px] text-slate-500 uppercase font-medium">Term GPA</span>
+              <span className="text-[10px] text-slate-500 uppercase font-medium">Semester GPA</span>
               <p className="text-sm font-bold text-amber-400">
                 {currentSemesterSummary.gpa.toFixed(2)}
               </p>
@@ -673,19 +743,19 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
           )}
         </div>
 
-        {/* Course Cards */}
+        {/* Course Cards / Table */}
         {isLoading ? (
           <div className="p-8 rounded-2xl bg-slate-900/60 border border-slate-800 text-center text-slate-400 text-xs">
-            Loading student course results and academic catalogue...
+            Loading student course results and academic curriculum...
           </div>
         ) : semesterCourseItems.length === 0 ? (
           <div className="p-8 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-3">
             <BookOpen className="w-8 h-8 text-slate-600 mx-auto" />
             <p className="text-sm text-slate-300 font-medium">
-              No courses found for {currentYearLabel} {currentSemesterLabel}.
+              No courses configured for {currentYearLabel} {currentSemesterLabel}.
             </p>
             <p className="text-xs text-slate-500 max-w-md mx-auto">
-              You can manually add custom elective or core courses using the button above.
+              You can manually add custom elective or core courses to compute your GPA for this term.
             </p>
             <button
               type="button"
@@ -697,61 +767,135 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3">
+          <div className="space-y-2">
+            {/* Desktop Table Header */}
+            <div className="hidden md:grid grid-cols-12 gap-3 px-4 py-2.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-950/80 rounded-xl border border-slate-850">
+              <div className="col-span-2">Course Code</div>
+              <div className="col-span-4">Course Name</div>
+              <div className="col-span-1 text-center">Credits</div>
+              <div className="col-span-2 text-center">Grade</div>
+              <div className="col-span-1 text-center">Grade Point</div>
+              <div className="col-span-1 text-center">Quality Pts</div>
+              <div className="col-span-1 text-right">Action</div>
+            </div>
+
+            {/* Course Rows */}
             {semesterCourseItems.map((item) => {
               const res = item.result;
-              const hasGrade = Boolean(res && res.grade);
-              const isPassing = res ? res.gradePoint >= gradingSystem.passGpa : false;
+              const hasGrade = Boolean(res && res.grade && isValidGrade(res.grade, profile.universityId));
+              const isPassing = res && hasGrade ? res.gradePoint >= gradingSystem.passGpa : false;
+              const qp = res && hasGrade ? (res.qualityPoints !== undefined ? res.qualityPoints : calculateQualityPoints(res.credits, res.gradePoint)) : null;
 
               return (
                 <div
                   key={item.courseId}
-                  className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-700/80 transition-all shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                  className="p-3.5 sm:p-4 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-700/80 transition-all shadow-sm"
                 >
-                  {/* Course Details */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
+                  {/* Desktop Grid Layout */}
+                  <div className="hidden md:grid grid-cols-12 gap-3 items-center">
+                    {/* Course Code & Badge */}
+                    <div className="col-span-2 flex items-center gap-1.5">
                       <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800 text-sky-400">
                         {item.courseCode}
                       </span>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300">
-                        {item.credits} Credits
-                      </span>
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-850 text-slate-400">
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-850 text-slate-400">
                         {item.status}
                       </span>
                     </div>
 
-                    <h3 className="text-sm font-bold text-white mt-1.5 leading-snug">
-                      {item.courseName}
-                    </h3>
-
-                    {res && (
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Grade Point: <span className="font-bold text-slate-200">{res.gradePoint.toFixed(1)}</span> • Weighted: <span className="font-bold text-slate-200">{(res.gradePoint * res.credits).toFixed(1)} pts</span>
+                    {/* Course Name */}
+                    <div className="col-span-4 min-w-0">
+                      <p className="text-xs sm:text-sm font-semibold text-white truncate" title={item.courseName}>
+                        {item.courseName}
                       </p>
-                    )}
-                  </div>
+                      {res?.isRepeated && (
+                        <span className="text-[9px] text-amber-400 font-medium flex items-center gap-1 mt-0.5">
+                          <Layers className="w-2.5 h-2.5" />
+                          Repeated Attempt ({res.attemptNumber || 2})
+                        </span>
+                      )}
+                    </div>
 
-                  {/* Grade Action & Display */}
-                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                    {hasGrade ? (
-                      <div className="flex items-center gap-2">
-                        {/* Grade Badge */}
-                        <div
-                          className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center border font-black shadow-inner ${
+                    {/* Credits */}
+                    <div className="col-span-1 text-center">
+                      <span className="text-xs font-bold text-slate-200">
+                        {item.credits}
+                      </span>
+                    </div>
+
+                    {/* Grade */}
+                    <div className="col-span-2 text-center">
+                      {hasGrade ? (
+                        <span
+                          className={`inline-flex items-center gap-1 font-bold text-xs px-2.5 py-0.5 rounded-md border ${
                             isPassing
                               ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400'
                               : 'bg-rose-500/15 border-rose-500/40 text-rose-400'
                           }`}
                         >
-                          <span className="text-base leading-none">{res?.grade}</span>
-                          <span className="text-[8px] font-semibold mt-0.5">
-                            {res?.gradePoint.toFixed(1)} GP
-                          </span>
-                        </div>
+                          {res?.grade}
+                          {isPassing ? <Check className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 px-2 py-0.5 rounded-md border border-dashed border-slate-800 bg-slate-950">
+                          <Clock className="w-2.5 h-2.5" />
+                          Grade not entered
+                        </span>
+                      )}
+                    </div>
 
-                        {/* Edit Grade Button */}
+                    {/* Grade Point */}
+                    <div className="col-span-1 text-center font-mono text-xs">
+                      {hasGrade ? (
+                        <span className="font-bold text-slate-200">{res?.gradePoint.toFixed(1)}</span>
+                      ) : (
+                        <span className="text-slate-600">—</span>
+                      )}
+                    </div>
+
+                    {/* Quality Points */}
+                    <div className="col-span-1 text-center font-mono text-xs">
+                      {hasGrade && qp !== null ? (
+                        <span className="font-bold text-sky-400">{qp.toFixed(1)}</span>
+                      ) : (
+                        <span className="text-slate-600">—</span>
+                      )}
+                    </div>
+
+                    {/* Action */}
+                    <div className="col-span-1 flex items-center justify-end gap-1.5">
+                      {hasGrade ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditingResultModal({
+                                courseId: item.courseId,
+                                courseCode: item.courseCode,
+                                courseName: item.courseName,
+                                credits: item.credits,
+                                currentGrade: res?.grade,
+                                isCustom: item.isCustom,
+                                isRepeated: res?.isRepeated,
+                              })
+                            }
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                            title="Edit Grade"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          {res?.id && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveResult(res.id!)}
+                              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
+                              title="Clear Result"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </>
+                      ) : (
                         <button
                           type="button"
                           onClick={() =>
@@ -760,46 +904,117 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
                               courseCode: item.courseCode,
                               courseName: item.courseName,
                               credits: item.credits,
-                              currentGrade: res?.grade,
                               isCustom: item.isCustom,
                             })
                           }
-                          className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
-                          title="Change Grade"
+                          className="px-2 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-sky-300 hover:text-white text-[11px] font-semibold cursor-pointer transition-all whitespace-nowrap"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          Enter Grade
                         </button>
+                      )}
+                    </div>
+                  </div>
 
-                        {/* Remove Grade Button */}
-                        {res?.id && (
+                  {/* Mobile Card Layout */}
+                  <div className="md:hidden flex flex-col gap-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800 text-sky-400">
+                            {item.courseCode}
+                          </span>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300">
+                            {item.credits} Credits
+                          </span>
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-850 text-slate-400">
+                            {item.status}
+                          </span>
+                        </div>
+                        <h3 className="text-xs sm:text-sm font-bold text-white mt-1.5 leading-snug">
+                          {item.courseName}
+                        </h3>
+                      </div>
+
+                      {hasGrade ? (
+                        <div
+                          className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center border font-black shrink-0 ${
+                            isPassing
+                              ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400'
+                              : 'bg-rose-500/15 border-rose-500/40 text-rose-400'
+                          }`}
+                        >
+                          <span className="text-sm leading-none">{res?.grade}</span>
+                          <span className="text-[8px] font-semibold mt-0.5">
+                            {res?.gradePoint.toFixed(1)} GP
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] font-medium text-slate-500 px-2 py-1 rounded-md border border-dashed border-slate-800 bg-slate-950 shrink-0">
+                          Grade not entered
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-850/80 text-xs">
+                      {hasGrade ? (
+                        <span className="text-slate-400 text-[11px]">
+                          Quality Points: <strong className="text-sky-400">{qp?.toFixed(1)} pts</strong>
+                        </span>
+                      ) : (
+                        <span className="text-slate-500 text-[11px]">Quality Points: —</span>
+                      )}
+
+                      <div className="flex items-center gap-1.5">
+                        {hasGrade ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setEditingResultModal({
+                                  courseId: item.courseId,
+                                  courseCode: item.courseCode,
+                                  courseName: item.courseName,
+                                  credits: item.credits,
+                                  currentGrade: res?.grade,
+                                  isCustom: item.isCustom,
+                                  isRepeated: res?.isRepeated,
+                                })
+                              }
+                              className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 text-xs font-medium flex items-center gap-1 cursor-pointer"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                              <span>Edit</span>
+                            </button>
+                            {res?.id && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveResult(res.id!)}
+                                className="p-1 rounded-lg bg-rose-500/10 text-rose-400 cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </>
+                        ) : (
                           <button
                             type="button"
-                            onClick={() => handleRemoveResult(res.id!)}
-                            className="p-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
-                            title="Remove Result"
+                            onClick={() =>
+                              setEditingResultModal({
+                                courseId: item.courseId,
+                                courseCode: item.courseCode,
+                                courseName: item.courseName,
+                                credits: item.credits,
+                                isCustom: item.isCustom,
+                              })
+                            }
+                            className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-sm shadow-blue-600/30"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Enter Grade</span>
                           </button>
                         )}
                       </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setEditingResultModal({
-                            courseId: item.courseId,
-                            courseCode: item.courseCode,
-                            courseName: item.courseName,
-                            credits: item.credits,
-                            isCustom: item.isCustom,
-                          })
-                        }
-                        className="px-3 py-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-sky-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Enter Grade</span>
-                      </button>
-                    )}
+                    </div>
                   </div>
                 </div>
               );
@@ -811,13 +1026,13 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
       {/* 5. Semester-by-Semester Academic Breakdown Table */}
       {gpaSummary.semesters.length > 0 && (
         <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-blue-400" />
               Semester Performance History
             </h3>
             <span className="text-[11px] text-slate-400 font-medium">
-              Overall CGPA: <span className="text-white font-bold">{gpaSummary.cgpa.toFixed(2)}</span>
+              Overall CGPA: <strong className="text-white">{gpaSummary.cgpa.toFixed(2)}</strong>
             </span>
           </div>
 
@@ -837,14 +1052,14 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-400 mt-0.5">
-                    {sem.resultsCount} Courses • {sem.totalCredits} Credits • {sem.totalWeightedPoints} Weighted Pts
+                    {sem.gradedCoursesCount} Graded ({sem.resultsCount} Total) • {sem.totalCredits} Credits • {sem.totalQualityPoints.toFixed(1)} Quality Pts
                   </p>
                 </div>
 
                 <div className="text-right shrink-0">
-                  <span className="text-[10px] text-slate-500 block uppercase">GPA</span>
+                  <span className="text-[10px] text-slate-500 block uppercase font-medium">Semester GPA</span>
                   <span className="text-sm font-extrabold text-amber-400">
-                    {sem.gpa.toFixed(2)}
+                    {sem.isGraded ? sem.gpa.toFixed(2) : '—'}
                   </span>
                 </div>
               </div>
@@ -862,7 +1077,7 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
                 <span className="font-mono text-xs font-bold text-sky-400 px-2 py-0.5 rounded bg-slate-950 border border-slate-800">
                   {editingResultModal.courseCode}
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-400 font-semibold">
                   {editingResultModal.credits} Credits
                 </span>
               </div>
@@ -870,14 +1085,16 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
                 {editingResultModal.courseName}
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Select the official grade obtained for {currentYearLabel} {currentSemesterLabel}:
+                Select official letter grade for {currentYearLabel} {currentSemesterLabel}:
               </p>
             </div>
 
             {/* University Grade Buttons Grid */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
               {gradingSystem.grades.map((g) => {
                 const isSelected = editingResultModal.currentGrade === g.grade;
+                const calculatedQp = calculateQualityPoints(editingResultModal.credits, g.gradePoint);
+
                 return (
                   <button
                     key={g.grade}
@@ -898,8 +1115,13 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
                         </span>
                       </div>
                       <span className="text-[10px] text-slate-400 block mt-0.5">
-                        {g.description} {g.percentageRange ? `(${g.percentageRange})` : ''}
+                        {calculatedQp.toFixed(1)} Quality Pts
                       </span>
+                      {g.percentageRange && (
+                        <span className="text-[9px] text-slate-500 block">
+                          {g.percentageRange}
+                        </span>
+                      )}
                     </div>
 
                     {isSelected && (
@@ -910,7 +1132,25 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
               })}
             </div>
 
-            <div className="flex justify-end pt-2">
+            {/* Repeated Course Checkbox */}
+            <div className="pt-2 border-t border-slate-800">
+              <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={Boolean(editingResultModal.isRepeated)}
+                  onChange={(e) =>
+                    setEditingResultModal({
+                      ...editingResultModal,
+                      isRepeated: e.target.checked,
+                    })
+                  }
+                  className="rounded border-slate-700 bg-slate-950 text-blue-600 focus:ring-0"
+                />
+                <span>This is a repeated course attempt</span>
+              </label>
+            </div>
+
+            <div className="flex justify-end pt-1">
               <button
                 type="button"
                 onClick={() => setEditingResultModal(null)}
@@ -928,7 +1168,7 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl space-y-4 animate-scaleUp">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white">Add Course Result</h3>
+              <h3 className="text-base font-bold text-white">Add Custom Course Result</h3>
               <span className="text-xs text-slate-400">
                 {currentYearLabel} {currentSemesterLabel}
               </span>
@@ -995,6 +1235,18 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="pt-1">
+                <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={customIsRepeated}
+                    onChange={(e) => setCustomIsRepeated(e.target.checked)}
+                    className="rounded border-slate-700 bg-slate-950 text-blue-600 focus:ring-0"
+                  />
+                  <span>This is a repeated course attempt</span>
+                </label>
               </div>
 
               <div className="flex gap-2 pt-2">

@@ -20,6 +20,7 @@ import {
 } from 'recharts';
 import { AIChartData } from '../types';
 import { BarChart3, TrendingUp, PieChart as PieIcon } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 interface AIChartViewerProps {
   chart: AIChartData;
@@ -28,11 +29,18 @@ interface AIChartViewerProps {
 const DEFAULT_COLORS = ['#38bdf8', '#818cf8', '#34d399', '#f472b6', '#fbbf24', '#a78bfa'];
 
 export const AIChartViewer: React.FC<AIChartViewerProps> = ({ chart }) => {
+  const { isDark } = useTheme();
   const { type, title, description, xAxisLabel, yAxisLabel, data = [], series = [] } = chart;
 
   if (!data || data.length === 0) {
     return null;
   }
+
+  const gridStroke = isDark ? '#334155' : '#e2e8f0';
+  const axisStroke = isDark ? '#94a3b8' : '#475569';
+  const tooltipBg = isDark ? '#0f172a' : '#ffffff';
+  const tooltipBorder = isDark ? '#334155' : '#cbd5e1';
+  const tooltipText = isDark ? '#38bdf8' : '#0284c7';
 
   // Derive series if not provided
   const activeSeries =
@@ -52,21 +60,21 @@ export const AIChartViewer: React.FC<AIChartViewerProps> = ({ chart }) => {
       case 'bar':
         return (
           <BarChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} opacity={0.6} />
             <XAxis
               dataKey="x"
-              stroke="#94a3b8"
+              stroke={axisStroke}
               fontSize={11}
-              label={xAxisLabel ? { value: xAxisLabel, position: 'bottom', fill: '#94a3b8', fontSize: 11, offset: 5 } : undefined}
+              label={xAxisLabel ? { value: xAxisLabel, position: 'bottom', fill: axisStroke, fontSize: 11, offset: 5 } : undefined}
             />
             <YAxis
-              stroke="#94a3b8"
+              stroke={axisStroke}
               fontSize={11}
-              label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11 } : undefined}
+              label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', fill: axisStroke, fontSize: 11 } : undefined}
             />
             <Tooltip
-              contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem', fontSize: '12px' }}
-              itemStyle={{ color: '#38bdf8' }}
+              contentStyle={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, borderRadius: '0.5rem', fontSize: '12px', color: tooltipText }}
+              itemStyle={{ color: tooltipText }}
             />
             {activeSeries.length > 1 && <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />}
             {activeSeries.map((s, idx) => (
@@ -90,21 +98,21 @@ export const AIChartViewer: React.FC<AIChartViewerProps> = ({ chart }) => {
                 <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} opacity={0.6} />
             <XAxis
               dataKey="x"
-              stroke="#94a3b8"
+              stroke={axisStroke}
               fontSize={11}
-              label={xAxisLabel ? { value: xAxisLabel, position: 'bottom', fill: '#94a3b8', fontSize: 11, offset: 5 } : undefined}
+              label={xAxisLabel ? { value: xAxisLabel, position: 'bottom', fill: axisStroke, fontSize: 11, offset: 5 } : undefined}
             />
             <YAxis
-              stroke="#94a3b8"
+              stroke={axisStroke}
               fontSize={11}
-              label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11 } : undefined}
+              label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', fill: axisStroke, fontSize: 11 } : undefined}
             />
             <Tooltip
-              contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem', fontSize: '12px' }}
-              itemStyle={{ color: '#38bdf8' }}
+              contentStyle={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, borderRadius: '0.5rem', fontSize: '12px', color: tooltipText }}
+              itemStyle={{ color: tooltipText }}
             />
             {activeSeries.length > 1 && <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />}
             {activeSeries.map((s, idx) => (
@@ -124,26 +132,26 @@ export const AIChartViewer: React.FC<AIChartViewerProps> = ({ chart }) => {
       case 'scatter':
         return (
           <ScatterChart margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} opacity={0.6} />
             <XAxis
               type="number"
               dataKey="x"
               name={xAxisLabel || 'X'}
-              stroke="#94a3b8"
+              stroke={axisStroke}
               fontSize={11}
-              label={xAxisLabel ? { value: xAxisLabel, position: 'bottom', fill: '#94a3b8', fontSize: 11, offset: 5 } : undefined}
+              label={xAxisLabel ? { value: xAxisLabel, position: 'bottom', fill: axisStroke, fontSize: 11, offset: 5 } : undefined}
             />
             <YAxis
               type="number"
               dataKey={activeSeries[0]?.dataKey || 'y'}
               name={yAxisLabel || 'Y'}
-              stroke="#94a3b8"
+              stroke={axisStroke}
               fontSize={11}
-              label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11 } : undefined}
+              label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', fill: axisStroke, fontSize: 11 } : undefined}
             />
             <Tooltip
               cursor={{ strokeDasharray: '3 3' }}
-              contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem', fontSize: '12px' }}
+              contentStyle={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, borderRadius: '0.5rem', fontSize: '12px', color: tooltipText }}
             />
             <Scatter name={title} data={data} fill="#38bdf8" />
           </ScatterChart>
@@ -153,7 +161,7 @@ export const AIChartViewer: React.FC<AIChartViewerProps> = ({ chart }) => {
         return (
           <PieChart margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
             <Tooltip
-              contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem', fontSize: '12px' }}
+              contentStyle={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, borderRadius: '0.5rem', fontSize: '12px', color: tooltipText }}
             />
             <Legend wrapperStyle={{ fontSize: '11px' }} />
             <Pie
@@ -166,7 +174,7 @@ export const AIChartViewer: React.FC<AIChartViewerProps> = ({ chart }) => {
               label={({ name, percent }: { name: string; percent: number }) =>
                 `${name} (${(percent * 100).toFixed(0)}%)`
               }
-              labelLine={{ stroke: '#64748b' }}
+              labelLine={{ stroke: axisStroke }}
             >
               {data.map((_, index) => (
                 <Cell key={`cell-${index}`} fill={DEFAULT_COLORS[index % DEFAULT_COLORS.length]} />
@@ -179,21 +187,21 @@ export const AIChartViewer: React.FC<AIChartViewerProps> = ({ chart }) => {
       default:
         return (
           <LineChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} opacity={0.6} />
             <XAxis
               dataKey="x"
-              stroke="#94a3b8"
+              stroke={axisStroke}
               fontSize={11}
-              label={xAxisLabel ? { value: xAxisLabel, position: 'bottom', fill: '#94a3b8', fontSize: 11, offset: 5 } : undefined}
+              label={xAxisLabel ? { value: xAxisLabel, position: 'bottom', fill: axisStroke, fontSize: 11, offset: 5 } : undefined}
             />
             <YAxis
-              stroke="#94a3b8"
+              stroke={axisStroke}
               fontSize={11}
-              label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11 } : undefined}
+              label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', fill: axisStroke, fontSize: 11 } : undefined}
             />
             <Tooltip
-              contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem', fontSize: '12px' }}
-              itemStyle={{ color: '#38bdf8' }}
+              contentStyle={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, borderRadius: '0.5rem', fontSize: '12px', color: tooltipText }}
+              itemStyle={{ color: tooltipText }}
             />
             {activeSeries.length > 1 && <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />}
             {activeSeries.map((s, idx) => (
@@ -225,12 +233,22 @@ export const AIChartViewer: React.FC<AIChartViewerProps> = ({ chart }) => {
   };
 
   return (
-    <div className="my-3 rounded-xl border border-sky-500/20 bg-slate-950/80 p-3 sm:p-4 shadow-md">
+    <div
+      className={`my-3 rounded-xl border p-3 sm:p-4 shadow-md transition-colors ${
+        isDark
+          ? 'border-sky-500/20 bg-slate-950/80'
+          : 'border-slate-200 bg-white shadow-sm'
+      }`}
+    >
       <div className="flex items-center gap-2 mb-1.5">
         {getIcon()}
-        <h4 className="text-xs sm:text-sm font-semibold text-slate-100">{title}</h4>
+        <h4 className={`text-xs sm:text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{title}</h4>
       </div>
-      {description && <p className="text-[11px] text-slate-400 mb-3 leading-relaxed">{description}</p>}
+      {description && (
+        <p className={`text-[11px] mb-3 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+          {description}
+        </p>
+      )}
       <div className="w-full h-56 sm:h-64 mt-2">
         <ResponsiveContainer width="100%" height="100%">
           {renderChartContent()}

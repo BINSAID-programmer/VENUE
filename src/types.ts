@@ -58,6 +58,9 @@ export interface StudentProfile {
   programmeName?: string;
   programmeShort: string;
   programmeId?: string;
+  programmeCode?: string;
+  degreeLevel?: string;
+  programmeDurationYears?: number;
   academicYear: string;
   yearOfStudy: string;
   semester: string;
@@ -70,6 +73,7 @@ export interface StudentProfile {
   studyHoursThisWeek: number;
   skills: string[];
   achievements: Achievement[];
+  themePreference?: 'dark' | 'light';
   isProfileComplete?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -156,19 +160,63 @@ export interface DepartmentRecord {
   programmeCount?: number;
 }
 
+export type DegreeLevel =
+  | 'Certificate'
+  | 'Diploma'
+  | "Bachelor's Degree"
+  | "Master's Degree"
+  | 'PhD'
+  | string;
+
 export interface ProgrammeRecord {
   id: string;
   universityId: string;
   academicUnitId: string;
+  collegeId?: string; // Canonical alias to parent academic unit
+  schoolId?: string; // Canonical alias to parent academic unit
+  instituteId?: string; // Canonical alias to parent academic unit
   departmentId: string;
   name: string;
+  code?: string;
   shortName?: string;
-  awardLevel: string;
+  degreeLevel?: DegreeLevel;
+  awardLevel?: string;
   durationYears: number;
-  studyMode: 'Full-Time' | 'Part-Time' | 'Evening' | 'Online';
-  academicYear: string;
-  verified: boolean;
-  source: string;
+  active?: boolean;
+  studyMode?: 'Full-Time' | 'Part-Time' | 'Evening' | 'Online' | string;
+  academicYear?: string;
+  verified?: boolean;
+  source?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProgrammeSemesterCurriculum {
+  semesterNumber: number; // 1 | 2
+  semesterLabel: string; // e.g. 'Semester 1'
+  courses: CourseRecord[];
+  totalCredits: number;
+  coreCredits: number;
+  electiveCredits: number;
+}
+
+export interface ProgrammeYearCurriculum {
+  yearNumber: number; // 1, 2, 3, 4, 5
+  yearLabel: string; // e.g. 'Year 1'
+  semesters: ProgrammeSemesterCurriculum[];
+  totalCredits: number;
+}
+
+export interface ProgrammeCurriculumStructure {
+  programme: ProgrammeRecord;
+  universityId: string;
+  academicUnitId: string;
+  departmentId: string;
+  durationYears: number;
+  degreeLevel: string;
+  years: ProgrammeYearCurriculum[];
+  totalCoursesCount: number;
+  totalCredits: number;
 }
 
 export interface AcademicYearRecord {
@@ -236,6 +284,9 @@ export interface CourseRecord {
   id: string; // Stable course id
   courseId?: string; // Stable alias to id
   universityId: string;
+  collegeId?: string; // Academic Unit / College identifier
+  schoolId?: string; // School identifier
+  instituteId?: string; // Institute identifier
   institutionId?: string; // College/School/Institute identifier
   academicUnitId?: string;
   departmentId?: string;
@@ -249,10 +300,14 @@ export interface CourseRecord {
   yearOfStudy: number | string;
   semester: number | string;
   status: CourseStatus;
+  courseType?: 'Core' | 'Elective' | 'Optional' | string;
+  active?: boolean;
   academicYear?: string;
   verified: boolean;
   source: string;
   sourceType?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // ============================================================================
@@ -262,15 +317,22 @@ export interface CourseRecord {
 export interface StudentResult {
   id?: string; // Unique deterministic result identifier: res_{courseId}_{semester}_{academicYear}
   uid: string; // Authenticated Firebase user UID
+  studentUid?: string; // Canonical alias to uid
+  universityId?: string;
+  programmeId?: string;
   courseId: string; // Stable course ID from catalogue or custom ID
   courseCode: string; // e.g. MT 100
   courseName: string; // e.g. Basic Mathematics
   credits: number; // e.g. 12 or 3
   grade: string; // e.g. A, B+, B, C, D, E
   gradePoint: number; // e.g. 5.0, 4.0, 3.0, 2.0, 1.0, 0.0
+  qualityPoints: number; // Quality Points = credits * gradePoint
   semester: string; // e.g. "Semester 1" or "1"
   academicYear: string; // e.g. "2025/2026"
   yearOfStudy?: string; // e.g. "Year 1" or "1"
+  attemptNumber?: number; // 1, 2, ... for repeated attempts
+  isRepeated?: boolean;
+  isIncludedInGpa?: boolean; // Whether active and counted towards GPA/CGPA
   createdAt: string; // ISO 8601 creation timestamp
   updatedAt: string; // ISO 8601 update timestamp
 }
@@ -307,16 +369,20 @@ export interface SemesterGpaSummary {
   academicYear: string;
   semester: string;
   yearOfStudy?: string;
-  totalCredits: number;
-  totalWeightedPoints: number;
+  totalCredits: number; // Sum of credits for graded courses included in GPA
+  totalQualityPoints: number; // Sum of (credits * gradePoint)
+  totalWeightedPoints: number; // Maintained for backwards compatibility
   gpa: number;
+  isGraded: boolean;
   resultsCount: number;
+  gradedCoursesCount: number;
   results: StudentResult[];
 }
 
 export interface CumulativeGpaSummary {
   totalCredits: number;
-  totalWeightedPoints: number;
+  totalQualityPoints: number;
+  totalWeightedPoints: number; // Maintained for backwards compatibility
   cgpa: number;
   maxGpa: number;
   scaleType: '5.0' | '4.0';
@@ -324,6 +390,7 @@ export interface CumulativeGpaSummary {
   currentSemesterGpa: number;
   semesters: SemesterGpaSummary[];
   totalCoursesCount: number;
+  totalGradedCoursesCount: number;
 }
 
 export interface CataloguePagination<T> {
@@ -336,14 +403,23 @@ export interface CataloguePagination<T> {
 export interface Course {
   id: string;
   code: string;
+  courseCode?: string;
   title: string;
+  courseName?: string;
   credits: number;
-  year?: 1 | 2 | 3;
-  semester?: 1 | 2;
-  type?: 'Core' | 'Elective';
+  year?: number; // Flexible year of study (1, 2, 3, 4, 5+)
+  yearOfStudy?: number | string;
+  semester?: number; // 1, 2
+  type?: 'Core' | 'Elective' | 'Optional' | string;
+  courseType?: 'Core' | 'Elective' | 'Optional' | string;
   department: string;
+  academicUnitId?: string;
+  collegeId?: string;
+  schoolId?: string;
+  instituteId?: string;
   universityId?: string;
   programmeId?: string;
+  programmeName?: string;
   instructor: {
     name: string;
     title: string;
@@ -363,6 +439,12 @@ export interface Course {
     type: string;
     description: string;
   }[];
+  active?: boolean;
+  verified?: boolean;
+  source?: string;
+  sourceType?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface StudyTask {
@@ -424,6 +506,19 @@ export interface AIMessage {
   generatedImageUrl?: string;
   imageGenStatus?: 'loading' | 'success' | 'unavailable' | 'error';
   imageGenPrompt?: string;
+}
+
+export interface AIChatConversation {
+  id: string;
+  userId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  lastMessagePreview?: string;
+  messageCount: number;
+  courseContext?: string;
+  languagePreference?: string;
+  pinned?: boolean;
 }
 
 export interface QuizQuestion {

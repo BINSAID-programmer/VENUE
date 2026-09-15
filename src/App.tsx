@@ -29,6 +29,7 @@ import {
   checkGoogleRedirectResult,
 } from './services/firebase';
 import { firestoreCatalogueService } from './services/firestoreCatalogueService';
+import { courseCurriculumService } from './services/courseCurriculumService';
 
 // Layout Components
 import { DeviceWrapper } from './components/layout/DeviceWrapper';
@@ -63,6 +64,7 @@ import { EditProfileScreen } from './components/screens/EditProfileScreen';
 import { FinancialPlannerScreen } from './components/screens/FinancialPlannerScreen';
 import { NotificationsScreen } from './components/screens/NotificationsScreen';
 import { SettingsScreen } from './components/screens/SettingsScreen';
+import { ThemeProvider } from './context/ThemeContext';
 
 export const App: React.FC = () => {
   // Navigation State
@@ -235,10 +237,13 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // Initialize verified official academic catalogue in Firestore (Phase 4A)
+  // Initialize verified official academic catalogue & curriculum in Firestore (Steps 2 & 3)
   useEffect(() => {
     firestoreCatalogueService.bootstrapOfficialCatalogueIfEmpty().catch((err) => {
       console.warn('Academic catalogue Firestore initialization note:', err);
+    });
+    courseCurriculumService.bootstrapOfficialCurriculumCoursesIfEmpty().catch((err) => {
+      console.warn('Curriculum courses Firestore initialization note:', err);
     });
   }, []);
 
@@ -425,8 +430,9 @@ export const App: React.FC = () => {
   const unreadNotifsCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <DeviceWrapper>
-      {/* App Header for Authenticated Screens */}
+    <ThemeProvider initialTheme={profile.themePreference}>
+      <DeviceWrapper>
+        {/* App Header for Authenticated Screens */}
       {showHeader && (
         <Header
           currentScreen={currentScreen}
@@ -828,6 +834,7 @@ export const App: React.FC = () => {
         />
       )}
     </DeviceWrapper>
+  </ThemeProvider>
   );
 };
 

@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 
+import { AUDITED_PROGRAMMES, AUDITED_DEPARTMENTS, AUDITED_ACADEMIC_UNITS } from './src/data/udsmAuditedCatalogue2025';
+
 dotenv.config();
 
 const app = express();
@@ -217,6 +219,79 @@ app.delete('/api/student/results/:uid/:resultId', (req, res) => {
     return res.json({ success: true, results: allResults[uid] });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err?.message || 'Failed to delete result' });
+  }
+});
+
+// Academic Degree Programmes API (Database-driven programme hierarchy)
+app.get('/api/academic/programmes', (req, res) => {
+  try {
+    const { departmentId, academicUnitId, universityId = 'udsm' } = req.query;
+    const cleanDept = typeof departmentId === 'string' ? departmentId.toLowerCase().trim() : '';
+    const cleanUnit = typeof academicUnitId === 'string' ? academicUnitId.toLowerCase().trim() : '';
+    const cleanUni = typeof universityId === 'string' ? universityId.toLowerCase().trim() : 'udsm';
+
+    let results = AUDITED_PROGRAMMES.filter((p) => p.universityId.toLowerCase() === cleanUni);
+
+    if (cleanDept) {
+      results = results.filter((p) => p.departmentId.toLowerCase() === cleanDept);
+    } else if (cleanUnit) {
+      results = results.filter((p) => p.academicUnitId.toLowerCase() === cleanUnit);
+    }
+
+    return res.json({
+      success: true,
+      count: results.length,
+      programmes: results,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || 'Failed to fetch programmes' });
+  }
+});
+
+app.get('/api/academic/programme/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const cleanId = (id || '').toLowerCase().trim();
+    const prog = AUDITED_PROGRAMMES.find((p) => p.id.toLowerCase() === cleanId);
+    if (!prog) {
+      return res.status(404).json({ success: false, message: 'Programme not found' });
+    }
+    return res.json({ success: true, programme: prog });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || 'Server error' });
+  }
+});
+
+app.post('/api/academic/validate-hierarchy', (req, res) => {
+  try {
+    const { universityId, academicUnitId, departmentId, programmeId } = req.body;
+    const cleanUni = (universityId || '').toLowerCase().trim();
+    const cleanUnit = (academicUnitId || '').toLowerCase().trim();
+    const cleanDept = (departmentId || '').toLowerCase().trim();
+    const cleanProg = (programmeId || '').toLowerCase().trim();
+
+    const prog = AUDITED_PROGRAMMES.find((p) => p.id.toLowerCase() === cleanProg);
+    if (!prog) {
+      return res.json({ valid: true, note: 'Custom or uncatalogued programme allowed' });
+    }
+
+    const errors: string[] = [];
+    if (prog.departmentId.toLowerCase() !== cleanDept) {
+      errors.push(`Programme "${prog.name}" belongs to department "${prog.departmentId}", not "${departmentId}".`);
+    }
+    if (prog.academicUnitId.toLowerCase() !== cleanUnit) {
+      errors.push(`Programme "${prog.name}" belongs to academic unit "${prog.academicUnitId}", not "${academicUnitId}".`);
+    }
+    if (prog.universityId.toLowerCase() !== cleanUni) {
+      errors.push(`Programme "${prog.name}" belongs to university "${prog.universityId}", not "${universityId}".`);
+    }
+
+    return res.json({
+      valid: errors.length === 0,
+      errors,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || 'Validation error' });
   }
 });
 
@@ -586,6 +661,29 @@ app.post('/api/tutor/generate-image', async (req, res) => {
       } catch (err: any) {
         lastError = err;
         console.warn(`Image generation with ${modelName} encountered:`, err?.message || err);
+      }
+    }
+
+    // Also attempt generateImages with imagen-3.0-generate-002 if available
+    if (!generatedImageUrl) {
+      try {
+        const imagenResponse = await (ai.models as any).generateImages?.({
+          model: 'imagen-3.0-generate-002',
+          prompt: cleanPrompt,
+          config: {
+            numberOfImages: 1,
+            outputMimeType: 'image/jpeg',
+            aspectRatio: '1:1',
+          },
+        });
+        const imgBytes = imagenResponse?.generatedImages?.[0]?.image?.imageBytes;
+        if (imgBytes) {
+          generatedImageUrl = `data:image/jpeg;base64,${imgBytes}`;
+          attemptedModel = 'imagen-3.0-generate-002';
+        }
+      } catch (imgErr: any) {
+        if (!lastError) lastError = imgErr;
+        console.warn('imagen-3.0-generate-002 attempt notice:', imgErr?.message || imgErr);
       }
     }
 

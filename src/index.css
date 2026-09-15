@@ -71,3 +71,108 @@
 .rotate-y-180 {
   transform: rotateY(180deg);
 }
+
+/* ============================================================
+   LIGHT THEME ENHANCEMENT (WCAG AA High-Contrast Compliance)
+   ============================================================ */
+html.theme-light {
+  color-scheme: light;
+}
+
+html.theme-light body {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+html.theme-light .venue-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.06);
+}
+
+html.theme-light .venue-card-elevated {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  box-shadow: 0 10px 25px -8px rgba(37, 99, 235, 0.12);
+}
+
+/* Background overrides in light theme */
+html.theme-light .bg-\[\#070b14\],
+html.theme-light .bg-\[\#04070e\] {
+  background-color: #f8fafc !important;
+}
+
+html.theme-light .bg-slate-950,
+html.theme-light .bg-slate-950\/90,
+html.theme-light .bg-slate-950\/80,
+html.theme-light .bg-slate-950\/70 {
+  background-color: #ffffff !important;
+}
+
+html.theme-light .bg-slate-900,
+html.theme-light .bg-slate-900\/90,
+html.theme-light .bg-slate-900\/80,
+html.theme-light .bg-slate-900\/70 {
+  background-color: #f8fafc !important;
+}
+
+html.theme-light .bg-slate-850,
+html.theme-light .bg-slate-800 {
+  background-color: #edf2f7 !important;
+}
+
+/* Text overrides in light theme */
+html.theme-light .text-white,
+html.theme-light .text-slate-100 {
+  color: #0f172a !important;
+}
+
+html.theme-light .text-slate-200,
+html.theme-light .text-slate-300 {
+  color: #1e293b !important;
+}
+
+html.theme-light .text-slate-400 {
+  color: #475569 !important;
+}
+
+/* Border overrides in light theme */
+html.theme-light .border-slate-800,
+html.theme-light .border-slate-800\/80,
+html.theme-light .border-slate-800\/90 {
+  border-color: #e2e8f0 !important;
+}
+
+html.theme-light .border-slate-700 {
+  border-color: #cbd5e1 !important;
+}
+
+/* Inputs & selects in light theme */
+html.theme-light input,
+html.theme-light textarea,
+html.theme-light select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Code & pre in light theme */
+html.theme-light pre {
+  background-color: #0f172a !important;
+  color: #a7f3d0 !important;
+}
+
+/* KaTeX equations in light theme */
+html.theme-light .katex-display-block {
+  color: #0284c7 !important;
+}
+
+/* Chat bubble styling for assistant in light theme */
+html.theme-light .ai-assistant-bubble {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.05);
+}
+

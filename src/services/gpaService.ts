@@ -1,21 +1,36 @@
 import {
   collection,
   doc,
-  getDoc,
   getDocs,
   setDoc,
   deleteDoc,
   query,
-  orderBy,
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
-import { StudentResult, StudentProfile } from '../types';
+import { StudentResult, StudentProfile, CumulativeGpaSummary } from '../types';
 import {
+  isValidGrade,
   mapGradeToGradePoint,
+  calculateQualityPoints,
+  calculateSemesterGPA,
+  calculateCGPA,
+  calculateSemesterGpa,
   calculateCumulativeGpa,
-  CumulativeGpaSummary,
+  filterActiveCourseAttempts,
 } from './gradingService';
 import { saveStudentProfile } from './studentProfileService';
+
+// Re-export calculation engine functions to keep UI completely decoupled
+export {
+  isValidGrade,
+  mapGradeToGradePoint,
+  calculateQualityPoints,
+  calculateSemesterGPA,
+  calculateCGPA,
+  calculateSemesterGpa,
+  calculateCumulativeGpa,
+  filterActiveCourseAttempts,
+};
 
 /**
  * Generates a stable deterministic result identifier:
@@ -83,9 +98,16 @@ export async function getStudentResults(providedUid?: string): Promise<StudentRe
       const results: StudentResult[] = [];
       snapshot.forEach((docSnap) => {
         const data = docSnap.data() as StudentResult;
+        const credits = Number(data.credits) || 0;
+        const gradePoint = Number(data.gradePoint) || 0;
+        const qp = data.qualityPoints !== undefined ? Number(data.qualityPoints) : calculateQualityPoints(credits, gradePoint);
+
         results.push({
           ...data,
           id: docSnap.id,
+          uid: data.uid || uid,
+          studentUid: data.studentUid || data.uid || uid,
+          qualityPoints: qp,
         });
       });
 
@@ -107,12 +129,18 @@ export async function getStudentResults(providedUid?: string): Promise<StudentRe
     if (res.ok) {
       const payload = await res.json();
       if (payload.success && Array.isArray(payload.results)) {
+        const enriched = payload.results.map((r: any) => ({
+          ...r,
+          qualityPoints: r.qualityPoints !== undefined
+            ? Number(r.qualityPoints)
+            : calculateQualityPoints(Number(r.credits) || 0, Number(r.gradePoint) || 0),
+        }));
         try {
-          localStorage.setItem(cacheKey, JSON.stringify(payload.results));
+          localStorage.setItem(cacheKey, JSON.stringify(enriched));
         } catch {
           // Ignore
         }
-        return payload.results;
+        return enriched;
       }
     }
   } catch {
@@ -124,8 +152,8 @@ export async function getStudentResults(providedUid?: string): Promise<StudentRe
 
 /**
  * Adds or edits a student course result.
- * Automatically computes grade points based on the active university grading system.
- * Prevents duplicate results by using the stable deterministic doc ID.
+ * Validates grade against official grading scale, computes quality points,
+ * and prevents duplicate records by using the deterministic document ID.
  */
 export async function saveStudentResult(
   resultInput: {
@@ -138,14 +166,26 @@ export async function saveStudentResult(
     academicYear?: string;
     yearOfStudy?: string;
     universityId?: string;
+    programmeId?: string;
+    attemptNumber?: number;
+    isRepeated?: boolean;
+    isIncludedInGpa?: boolean;
   },
   providedUid?: string
 ): Promise<{ result: StudentResult; allResults: StudentResult[] }> {
   const uid = getAuthenticatedUid(providedUid);
+  const grade = resultInput.grade ? resultInput.grade.trim().toUpperCase() : '';
+
+  // Validate grade against grading scale if provided
+  if (grade && !isValidGrade(grade, resultInput.universityId)) {
+    throw new Error(`Invalid grade "${grade}" for the configured university grading scale.`);
+  }
+
+  const credits = Math.max(1, Number(resultInput.credits) || 0);
   const academicYear = resultInput.academicYear || '2025/2026';
   const semester = resultInput.semester || 'Semester 1';
-  const grade = resultInput.grade.trim().toUpperCase();
-  const gradePoint = mapGradeToGradePoint(grade, resultInput.universityId);
+  const gradePoint = grade ? mapGradeToGradePoint(grade, resultInput.universityId) : 0.0;
+  const qualityPoints = calculateQualityPoints(credits, gradePoint);
   const nowIso = new Date().toISOString();
 
   const docId = buildResultDocId(resultInput.courseId, semester, academicYear);
@@ -153,15 +193,22 @@ export async function saveStudentResult(
   const newResult: StudentResult = {
     id: docId,
     uid,
+    studentUid: uid,
+    universityId: resultInput.universityId,
+    programmeId: resultInput.programmeId,
     courseId: resultInput.courseId,
     courseCode: resultInput.courseCode.trim(),
     courseName: resultInput.courseName.trim(),
-    credits: Number(resultInput.credits) || 0,
+    credits,
     grade,
     gradePoint,
+    qualityPoints,
     semester,
     academicYear,
     yearOfStudy: resultInput.yearOfStudy,
+    attemptNumber: resultInput.attemptNumber || 1,
+    isRepeated: Boolean(resultInput.isRepeated),
+    isIncludedInGpa: resultInput.isIncludedInGpa !== false,
     createdAt: nowIso,
     updatedAt: nowIso,
   };
@@ -262,7 +309,7 @@ export async function syncStudentProfileGpa(
   profile: StudentProfile,
   results: StudentResult[]
 ): Promise<{ updatedProfile: StudentProfile; summary: CumulativeGpaSummary }> {
-  const summary = calculateCumulativeGpa(
+  const summary = calculateCGPA(
     results,
     profile.universityId || profile.university,
     profile.semester,

@@ -16,6 +16,9 @@ import {
   Layers,
   Network,
   Loader2,
+  BadgeCheck,
+  Award,
+  Clock,
 } from 'lucide-react';
 import { StudentProfile } from '../../types';
 import { compressAndFormatImage } from '../../services/studentProfileService';
@@ -26,6 +29,7 @@ import {
   DepartmentRecord,
   ProgrammeRecord,
 } from '../../services/academicStructureService';
+import { degreeProgrammeService } from '../../services/degreeProgrammeService';
 
 interface EditProfileScreenProps {
   profile: StudentProfile;
@@ -385,6 +389,25 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
 
     // Official hierarchy validation if selecting from catalogue
     if (!isCustomUni && !isCustomCollege && !isCustomDept && !isCustomProg) {
+      const hierarchyValidation = degreeProgrammeService.validateSelection({
+        universityId: selectedUniversityId,
+        academicUnitId: selectedUnitId,
+        departmentId: selectedDepartmentId,
+        programmeId: selectedProgrammeId,
+        yearOfStudy,
+        departmentsCatalogue: departmentsList,
+        academicUnitsCatalogue: institutionsList,
+      });
+
+      if (!hierarchyValidation.valid) {
+        setIsSaving(false);
+        setErrorMessage(
+          hierarchyValidation.errors[0] ||
+            'Invalid academic combination: The selected degree programme does not belong to the chosen department.'
+        );
+        return;
+      }
+
       const validation = await academicStructureService.validateAcademicProfile({
         universityId: selectedUniversityId,
         institutionId: selectedUnitId,
@@ -452,6 +475,9 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
       programmeName: resolvedProgramme,
       programmeShort,
       programmeId: selectedProgrammeId,
+      programmeCode: matchedProg?.code || '',
+      degreeLevel: matchedProg?.degreeLevel || "Bachelor's Degree",
+      programmeDurationYears: matchedProg?.durationYears || 3,
       academicYear,
       yearOfStudy,
       semester,
@@ -831,11 +857,47 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
                 ) : null}
                 {programmesList.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} {p.shortName ? `(${p.shortName})` : ''} • {p.durationYears} Years
+                    {p.name} {p.code ? `[${p.code}]` : p.shortName ? `(${p.shortName})` : ''} • {p.degreeLevel || "Bachelor's Degree"} • {p.durationYears} {p.durationYears === 1 ? 'Year' : 'Years'}
                   </option>
                 ))}
                 {selectedDepartmentId && <option value="other">Other Degree Programme</option>}
               </select>
+
+              {/* Programme Metadata Card */}
+              {selectedProgrammeId && selectedProgrammeId !== 'other' && (() => {
+                const prog = programmesList.find((p) => p.id === selectedProgrammeId);
+                if (!prog) return null;
+                return (
+                  <div className="mt-2.5 p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 text-xs">
+                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                      <span className="px-2 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 font-medium text-[11px] flex items-center gap-1">
+                        <Award className="w-3 h-3" />
+                        {prog.degreeLevel || "Bachelor's Degree"}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-slate-800/80 text-slate-300 text-[11px] flex items-center gap-1 font-mono">
+                        <Clock className="w-3 h-3 text-slate-400" />
+                        {prog.durationYears} {prog.durationYears === 1 ? 'Year' : 'Years'} ({prog.durationYears * 2} Semesters)
+                      </span>
+                      {prog.verified && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[11px] flex items-center gap-1">
+                          <BadgeCheck className="w-3 h-3" />
+                          Official Programme
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-slate-400 text-[11px] leading-relaxed">
+                      Structured under <span className="text-slate-200 font-medium">{departmentName || 'Department'}</span>.
+                      {prog.source ? ` Source: ${prog.source}` : ''}
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {selectedDepartmentId && !isLoadingProgrammes && programmesList.length === 0 && (
+                <div className="mt-2 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300">
+                  No official degree programmes currently catalogued for this department in the 2025/2026 prospectus. You can select "Other Degree Programme" to enter your degree manually.
+                </div>
+              )}
 
               {selectedProgrammeId === 'other' && (
                 <input

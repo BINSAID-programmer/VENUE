@@ -1,6 +1,7 @@
 import React from 'react';
 import { Bell, ArrowLeft, Search, Sparkles, BookOpen, User, Settings as SettingsIcon } from 'lucide-react';
 import { ScreenId } from '../../types';
+import { ThemeToggle } from '../ThemeToggle';
 
 interface HeaderProps {
   currentScreen: ScreenId;
@@ -129,6 +130,9 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <SettingsIcon className="w-5 h-5 text-slate-300" />
           </button>
+
+          {/* Theme Quick Toggle */}
+          <ThemeToggle variant="icon" />
         </div>
       </div>
     </header>

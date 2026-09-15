@@ -475,3 +475,116 @@ export function validateProgrammeBatchNoDuplicates(programmes: ProgrammeRecord[]
     errors,
   };
 }
+
+/**
+ * Validates an Academic Hierarchy Combination to prevent invalid cross-unit / cross-department associations
+ * e.g., University A + College B + Department C + Programme belonging to Department D
+ */
+export function validateAcademicHierarchyCombination(params: {
+  universityId: string;
+  academicUnitId: string;
+  departmentId: string;
+  programmeId: string;
+  programmesCatalogue: ProgrammeRecord[];
+  departmentsCatalogue?: DepartmentRecord[];
+  academicUnitsCatalogue?: AcademicUnitRecord[];
+  yearOfStudy?: string | number;
+  semester?: string | number;
+}): ValidationResult {
+  const errors: string[] = [];
+  const {
+    universityId,
+    academicUnitId,
+    departmentId,
+    programmeId,
+    programmesCatalogue,
+    departmentsCatalogue = [],
+    academicUnitsCatalogue = [],
+    yearOfStudy,
+  } = params;
+
+  if (!universityId || !universityId.trim()) {
+    errors.push('University selection is required');
+  }
+
+  if (!academicUnitId || !academicUnitId.trim()) {
+    errors.push('College / School / Institute selection is required');
+  }
+
+  if (!departmentId || !departmentId.trim()) {
+    errors.push('Department selection is required');
+  }
+
+  if (!programmeId || !programmeId.trim()) {
+    errors.push('Degree Programme selection is required');
+  }
+
+  const cleanUni = (universityId || '').toLowerCase().trim();
+  const cleanUnit = (academicUnitId || '').toLowerCase().trim();
+  const cleanDept = (departmentId || '').toLowerCase().trim();
+  const cleanProg = (programmeId || '').toLowerCase().trim();
+
+  // 1. Verify academic unit belongs to university (if units catalogue provided)
+  if (academicUnitsCatalogue.length > 0) {
+    const matchedUnit = academicUnitsCatalogue.find((u) => u.id.toLowerCase().trim() === cleanUnit);
+    if (matchedUnit && matchedUnit.universityId.toLowerCase().trim() !== cleanUni) {
+      errors.push(
+        `Academic unit "${matchedUnit.name}" belongs to university "${matchedUnit.universityId}", not "${universityId}".`
+      );
+    }
+  }
+
+  // 2. Verify department belongs to academic unit (if departments catalogue provided)
+  if (departmentsCatalogue.length > 0) {
+    const matchedDept = departmentsCatalogue.find((d) => d.id.toLowerCase().trim() === cleanDept);
+    if (matchedDept && matchedDept.academicUnitId.toLowerCase().trim() !== cleanUnit) {
+      errors.push(
+        `Department "${matchedDept.name}" does not belong to the selected college/unit (${academicUnitId}).`
+      );
+    }
+  }
+
+  // 3. Verify programme belongs to department
+  const matchedProg = programmesCatalogue.find((p) => p.id.toLowerCase().trim() === cleanProg);
+  if (matchedProg) {
+    const progDept = matchedProg.departmentId.toLowerCase().trim();
+    if (progDept !== cleanDept) {
+      errors.push(
+        `Invalid academic combination: Programme "${matchedProg.name}" belongs to department "${matchedProg.departmentId}", not "${departmentId}".`
+      );
+    }
+
+    const progUnit = matchedProg.academicUnitId.toLowerCase().trim();
+    if (progUnit !== cleanUnit) {
+      errors.push(
+        `Invalid academic combination: Programme "${matchedProg.name}" is under academic unit "${matchedProg.academicUnitId}", not "${academicUnitId}".`
+      );
+    }
+
+    const progUni = matchedProg.universityId.toLowerCase().trim();
+    if (progUni !== cleanUni) {
+      errors.push(
+        `Invalid academic combination: Programme "${matchedProg.name}" is offered by university "${matchedProg.universityId}", not "${universityId}".`
+      );
+    }
+
+    // 4. Verify yearOfStudy does not exceed durationYears
+    if (yearOfStudy) {
+      const yearNum = typeof yearOfStudy === 'number'
+        ? yearOfStudy
+        : parseInt(yearOfStudy.replace(/\D/g, ''), 10);
+
+      if (!isNaN(yearNum) && yearNum > matchedProg.durationYears) {
+        errors.push(
+          `Year of Study (${yearNum}) exceeds the official duration of "${matchedProg.name}" (${matchedProg.durationYears} ${matchedProg.durationYears === 1 ? 'Year' : 'Years'}).`
+        );
+      }
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+

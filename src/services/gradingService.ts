@@ -252,6 +252,27 @@ export function getGradingSystem(universityId?: string): UniversityGradingSystem
 }
 
 /**
+ * Validates if a grade string belongs to the official grading system.
+ */
+export function isValidGrade(grade?: string, universityId?: string): boolean {
+  if (!grade) return false;
+  const gradingSystem = getGradingSystem(universityId);
+  const normalized = grade.trim().toUpperCase();
+  return gradingSystem.grades.some((g) => g.grade.toUpperCase() === normalized);
+}
+
+/**
+ * Calculates Quality Points for an individual course:
+ * Quality Points = Credits × Grade Point
+ * Maintains full precision numeric calculation.
+ */
+export function calculateQualityPoints(credits: number, gradePoint: number): number {
+  const safeCredits = Math.max(0, Number(credits) || 0);
+  const safeGradePoint = Math.max(0, Number(gradePoint) || 0);
+  return safeCredits * safeGradePoint;
+}
+
+/**
  * Maps a letter grade to its official numerical grade point.
  */
 export function mapGradeToGradePoint(grade: string, universityId?: string): number {
@@ -261,6 +282,57 @@ export function mapGradeToGradePoint(grade: string, universityId?: string): numb
     (g) => g.grade.toUpperCase() === normalizedGrade
   );
   return found ? found.gradePoint : 0.0;
+}
+
+/**
+ * Filters and prepares student results for repeated course attempts.
+ * If a course has been repeated, marks older attempts with isRepeated = true.
+ * Ensures only active attempts (defaulting to the latest/highest attempt) are included in GPA.
+ */
+export function filterActiveCourseAttempts(results: StudentResult[]): StudentResult[] {
+  if (!results || results.length <= 1) return results || [];
+
+  // Group by canonical course code / id
+  const courseAttempts = new Map<string, StudentResult[]>();
+  results.forEach((r) => {
+    const key = (r.courseCode || r.courseId || '').toUpperCase().replace(/\s+/g, '');
+    const list = courseAttempts.get(key) || [];
+    list.push(r);
+    courseAttempts.set(key, list);
+  });
+
+  const processed: StudentResult[] = [];
+
+  courseAttempts.forEach((attempts) => {
+    if (attempts.length === 1) {
+      processed.push({
+        ...attempts[0],
+        attemptNumber: attempts[0].attemptNumber || 1,
+        isRepeated: false,
+        isIncludedInGpa: attempts[0].isIncludedInGpa !== false,
+      });
+    } else {
+      // Multiple attempts exist: sort chronologically (or by createdAt/updatedAt)
+      attempts.sort((a, b) => {
+        const timeA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+        const timeB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+        return timeA - timeB;
+      });
+
+      attempts.forEach((att, idx) => {
+        const isLatest = idx === attempts.length - 1;
+        processed.push({
+          ...att,
+          attemptNumber: idx + 1,
+          isRepeated: true,
+          // Institutional policy: latest attempt is included by default
+          isIncludedInGpa: att.isIncludedInGpa !== undefined ? att.isIncludedInGpa : isLatest,
+        });
+      });
+    }
+  });
+
+  return processed;
 }
 
 /**
@@ -294,52 +366,90 @@ export function getDegreeClassification(
 // ============================================================================
 // GPA & CGPA MATHEMATICAL ENGINE
 // Formula:
-//   GPA = Σ(Grade Point × Course Credits) / Σ(Course Credits)
-//   CGPA = Σ(All Grade Points × Credits) / Σ(All Credits)
+//   Quality Points = Credits × Grade Point
+//   Semester GPA = Σ(Quality Points) / Σ(Credits)
+//   Cumulative GPA (CGPA) = Σ(All Quality Points) / Σ(All Credits)
 // ============================================================================
 
 /**
  * Calculates semester GPA for a set of student results:
- * Total Credits = Σ(Credits)
- * Total Weighted Points = Σ(Grade Point × Credits)
- * Semester GPA = Total Weighted Points / Total Credits
+ * Total Credits = Σ(Credits of graded courses)
+ * Total Quality Points = Σ(Credits × Grade Point)
+ * Semester GPA = Total Quality Points / Total Credits
+ *
+ * NOTE: Courses where grade is not entered or pending are EXCLUDED from
+ * the calculation and NOT treated as 0, preventing GPA distortion.
  */
-export function calculateSemesterGpa(results: StudentResult[]): {
+export function calculateSemesterGPA(
+  results: StudentResult[],
+  universityId?: string
+): {
   totalCredits: number;
+  totalQualityPoints: number;
   totalWeightedPoints: number;
   gpa: number;
+  isGraded: boolean;
+  gradedCoursesCount: number;
+  totalCoursesCount: number;
 } {
   if (!results || results.length === 0) {
-    return { totalCredits: 0, totalWeightedPoints: 0, gpa: 0.0 };
+    return {
+      totalCredits: 0,
+      totalQualityPoints: 0,
+      totalWeightedPoints: 0,
+      gpa: 0.0,
+      isGraded: false,
+      gradedCoursesCount: 0,
+      totalCoursesCount: 0,
+    };
   }
 
   let totalCredits = 0;
-  let totalWeightedPoints = 0;
+  let totalQualityPoints = 0;
+  let gradedCoursesCount = 0;
 
   for (const r of results) {
-    const credits = Number(r.credits) || 0;
-    const gradePoint = Number(r.gradePoint) || 0;
-    totalCredits += credits;
-    totalWeightedPoints += gradePoint * credits;
+    // Check if course is valid, active, and has an official entered grade
+    const hasGrade = Boolean(r.grade && r.grade.trim() && isValidGrade(r.grade, universityId));
+    const isIncluded = r.isIncludedInGpa !== false;
+
+    if (hasGrade && isIncluded) {
+      const credits = Math.max(0, Number(r.credits) || 0);
+      const gradePoint = Number(r.gradePoint !== undefined ? r.gradePoint : mapGradeToGradePoint(r.grade, universityId));
+      const qp = calculateQualityPoints(credits, gradePoint);
+
+      totalCredits += credits;
+      totalQualityPoints += qp;
+      gradedCoursesCount += 1;
+    }
   }
 
-  const gpa =
-    totalCredits > 0
-      ? Number((totalWeightedPoints / totalCredits).toFixed(2))
-      : 0.0;
+  const isGraded = totalCredits > 0 && gradedCoursesCount > 0;
+  // Compute using full float, round displayed GPA to 2 decimal places
+  const rawGpa = isGraded ? totalQualityPoints / totalCredits : 0.0;
+  const gpa = Number(rawGpa.toFixed(2));
 
   return {
     totalCredits,
-    totalWeightedPoints: Number(totalWeightedPoints.toFixed(2)),
+    totalQualityPoints: Number(totalQualityPoints.toFixed(2)),
+    totalWeightedPoints: Number(totalQualityPoints.toFixed(2)), // legacy alias
     gpa,
+    isGraded,
+    gradedCoursesCount,
+    totalCoursesCount: results.length,
   };
 }
 
+// Backward-compatible alias
+export const calculateSemesterGpa = calculateSemesterGPA;
+
 /**
- * Groups results by academic semester and calculates semester summaries
- * alongside cumulative CGPA across all completed courses.
+ * Calculates Cumulative GPA (CGPA) across all completed semesters:
+ * CGPA = Σ(Quality Points from all included semesters) / Σ(Credits from all included semesters)
+ *
+ * Mathematically weighted by credits across all eligible graded semesters.
  */
-export function calculateCumulativeGpa(
+export function calculateCGPA(
   results: StudentResult[],
   universityId?: string,
   currentSemester?: string,
@@ -350,6 +460,7 @@ export function calculateCumulativeGpa(
   if (!results || results.length === 0) {
     return {
       totalCredits: 0,
+      totalQualityPoints: 0,
       totalWeightedPoints: 0,
       cgpa: 0.0,
       maxGpa: gradingSystem.maxGpa,
@@ -358,10 +469,11 @@ export function calculateCumulativeGpa(
       currentSemesterGpa: 0.0,
       semesters: [],
       totalCoursesCount: 0,
+      totalGradedCoursesCount: 0,
     };
   }
 
-  // 1. Group results by composite semester key (e.g. "2025/2026_Semester 1")
+  // 1. Group results by composite semester key (e.g. "2025/2026 • Semester 1")
   const groups = new Map<string, StudentResult[]>();
 
   for (const r of results) {
@@ -379,17 +491,20 @@ export function calculateCumulativeGpa(
 
   groups.forEach((semResults, groupKey) => {
     const first = semResults[0];
-    const semCalc = calculateSemesterGpa(semResults);
+    const semCalc = calculateSemesterGPA(semResults, universityId);
 
     semesterSummaries.push({
       key: groupKey,
       academicYear: first.academicYear || '2025/2026',
       semester: first.semester || 'Semester 1',
-      yearOfStudy: first.yearOfStudy,
+      yearOfStudy: first.yearOfStudy ? String(first.yearOfStudy) : undefined,
       totalCredits: semCalc.totalCredits,
+      totalQualityPoints: semCalc.totalQualityPoints,
       totalWeightedPoints: semCalc.totalWeightedPoints,
       gpa: semCalc.gpa,
+      isGraded: semCalc.isGraded,
       resultsCount: semResults.length,
+      gradedCoursesCount: semCalc.gradedCoursesCount,
       results: semResults,
     });
   });
@@ -398,21 +513,24 @@ export function calculateCumulativeGpa(
   semesterSummaries.sort((a, b) => a.key.localeCompare(b.key));
 
   // 3. Compute Cumulative Performance
-  // CGPA = Σ(All Grade Points × Credits) / Σ(All Credits)
+  // CGPA = Σ(All Quality Points) / Σ(All Credits)
   let totalCumulativeCredits = 0;
-  let totalCumulativeWeightedPoints = 0;
+  let totalCumulativeQualityPoints = 0;
+  let totalGradedCoursesCount = 0;
 
-  for (const r of results) {
-    const credits = Number(r.credits) || 0;
-    const gp = Number(r.gradePoint) || 0;
-    totalCumulativeCredits += credits;
-    totalCumulativeWeightedPoints += gp * credits;
+  for (const sem of semesterSummaries) {
+    if (sem.isGraded) {
+      totalCumulativeCredits += sem.totalCredits;
+      totalCumulativeQualityPoints += sem.totalQualityPoints;
+      totalGradedCoursesCount += sem.gradedCoursesCount;
+    }
   }
 
-  const cgpa =
+  const rawCgpa =
     totalCumulativeCredits > 0
-      ? Number((totalCumulativeWeightedPoints / totalCumulativeCredits).toFixed(2))
+      ? totalCumulativeQualityPoints / totalCumulativeCredits
       : 0.0;
+  const cgpa = Number(rawCgpa.toFixed(2));
 
   // 4. Determine current semester GPA
   let currentSemesterGpa = 0.0;
@@ -423,18 +541,21 @@ export function calculateCumulativeGpa(
         (!currentAcademicYear ||
           s.academicYear.toLowerCase() === currentAcademicYear.toLowerCase())
     );
-    if (matchingSem) {
+    if (matchingSem && matchingSem.isGraded) {
       currentSemesterGpa = matchingSem.gpa;
     } else if (semesterSummaries.length > 0) {
-      currentSemesterGpa = semesterSummaries[semesterSummaries.length - 1].gpa;
+      const lastGraded = [...semesterSummaries].reverse().find((s) => s.isGraded);
+      currentSemesterGpa = lastGraded ? lastGraded.gpa : 0.0;
     }
   } else if (semesterSummaries.length > 0) {
-    currentSemesterGpa = semesterSummaries[semesterSummaries.length - 1].gpa;
+    const lastGraded = [...semesterSummaries].reverse().find((s) => s.isGraded);
+    currentSemesterGpa = lastGraded ? lastGraded.gpa : 0.0;
   }
 
   return {
     totalCredits: totalCumulativeCredits,
-    totalWeightedPoints: Number(totalCumulativeWeightedPoints.toFixed(2)),
+    totalQualityPoints: Number(totalCumulativeQualityPoints.toFixed(2)),
+    totalWeightedPoints: Number(totalCumulativeQualityPoints.toFixed(2)), // legacy alias
     cgpa,
     maxGpa: gradingSystem.maxGpa,
     scaleType: gradingSystem.scaleType,
@@ -442,5 +563,9 @@ export function calculateCumulativeGpa(
     currentSemesterGpa,
     semesters: semesterSummaries,
     totalCoursesCount: results.length,
+    totalGradedCoursesCount,
   };
 }
+
+// Backward-compatible alias
+export const calculateCumulativeGpa = calculateCGPA;

@@ -44,22 +44,25 @@ service cloud.firestore {
       allow write: if isValidId(academicYearId);
     }
 
-    // Public Academic Catalogue: Courses
+    // Public Academic Catalogue: Courses (Students have read-only access to official courses)
     match /catalogue_courses/{courseId} {
       allow read: if true;
-      allow write: if isValidId(courseId);
+      allow create: if isValidId(courseId);
+      allow update, delete: if request.auth != null && request.auth.token.admin == true;
     }
 
     // Public Academic Catalogue: Canonical Courses
     match /canonical_courses/{courseId} {
       allow read: if true;
-      allow write: if isValidId(courseId);
+      allow create: if isValidId(courseId);
+      allow update, delete: if request.auth != null && request.auth.token.admin == true;
     }
 
     // Public Academic Catalogue: Programme Course Relationships
     match /programme_courses/{relId} {
       allow read: if true;
-      allow write: if isValidId(relId);
+      allow create: if isValidId(relId);
+      allow update, delete: if request.auth != null && request.auth.token.admin == true;
     }
 
     // Student Profiles (Isolated and private to the individual student)
@@ -69,6 +72,15 @@ service cloud.firestore {
       // Student Results (Isolated subcollection for academic grades & GPA)
       match /results/{resultId} {
         allow read, write: if isOwner(studentId) && isValidId(resultId);
+      }
+
+      // Student AI Tutor Chats & Conversation History (Private to student)
+      match /chats/{chatId} {
+        allow read, write: if isOwner(studentId) && isValidId(chatId);
+
+        match /messages/{messageId} {
+          allow read, write: if isOwner(studentId) && isValidId(messageId);
+        }
       }
     }
 

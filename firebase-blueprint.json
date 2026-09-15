@@ -175,6 +175,31 @@
         "source": {
           "type": "string",
           "description": "Accreditation reference"
+        },
+        "code": {
+          "type": "string",
+          "description": "Official programme code (e.g. BSc Stats)"
+        },
+        "degreeLevel": {
+          "type": "string",
+          "enum": ["Certificate", "Diploma", "Bachelor's Degree", "Master's Degree", "PhD", "Bachelor Degree", "Postgraduate Diploma"],
+          "description": "Academic degree level"
+        },
+        "collegeId": {
+          "type": "string",
+          "description": "Alias to parent academic unit identifier"
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Whether the programme is currently offered"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
         }
       },
       "required": [

@@ -11,6 +11,7 @@ import {
   Network,
   Loader2,
   BookOpen,
+  Award,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StudentProfile } from '../../types';
@@ -21,6 +22,7 @@ import {
   DepartmentRecord,
   ProgrammeRecord,
 } from '../../services/academicStructureService';
+import { degreeProgrammeService } from '../../services/degreeProgrammeService';
 
 interface OnboardingScreenProps {
   initialProfile: StudentProfile;
@@ -242,6 +244,9 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         programmeName: matchedProg?.name || programme,
         programmeShort: matchedProg?.shortName || programme,
         programmeId: selectedProgId,
+        programmeCode: matchedProg?.code || '',
+        degreeLevel: matchedProg?.degreeLevel || "Bachelor's Degree",
+        programmeDurationYears: matchedProg?.durationYears || 3,
         yearOfStudy,
         semester,
         isProfileComplete: true,
@@ -631,16 +636,22 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                         }`}
                       >
                         <div className="pr-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-white">{p.name}</span>
+                          <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                            <span className="text-[10px] font-semibold text-blue-400 bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <Award className="w-2.5 h-2.5" />
+                              {p.degreeLevel || "Bachelor's Degree"}
+                            </span>
                             {p.shortName && (
-                              <span className="text-[10px] font-semibold text-sky-400 bg-blue-500/10 border border-blue-500/30 px-2 py-0.5 rounded-full">
+                              <span className="text-[10px] font-semibold text-slate-300 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded-full">
                                 {p.shortName}
                               </span>
                             )}
                           </div>
+                          <span className="text-xs sm:text-sm font-bold text-white block">
+                            {p.name}
+                          </span>
                           <p className="text-[11px] text-slate-400 mt-1">
-                            Standard Duration: {p.durationYears} Years
+                            Duration: {p.durationYears} {p.durationYears === 1 ? 'Year' : 'Years'} ({p.durationYears * 2} Semesters)
                           </p>
                         </div>
 
