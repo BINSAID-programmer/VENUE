@@ -76,10 +76,12 @@ service cloud.firestore {
 
       // Student AI Tutor Chats & Conversation History (Private to student)
       match /chats/{chatId} {
-        allow read, write: if isOwner(studentId) && isValidId(chatId);
+        allow get, list: if isOwner(studentId);
+        allow write: if isOwner(studentId) && isValidId(chatId);
 
         match /messages/{messageId} {
-          allow read, write: if isOwner(studentId) && isValidId(messageId);
+          allow get, list: if isOwner(studentId);
+          allow write: if isOwner(studentId) && isValidId(messageId);
         }
       }
     }

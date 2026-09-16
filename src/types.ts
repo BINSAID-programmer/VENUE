@@ -489,7 +489,9 @@ export interface AIChartData {
 export interface AIMessage {
   id: string;
   sender: 'user' | 'assistant';
+  role?: 'user' | 'assistant';
   text: string;
+  content?: string;
   timestamp: string;
   steps?: string[];
   formula?: string;
@@ -499,6 +501,14 @@ export interface AIMessage {
   originalQuery?: string;
   imageUrl?: string;
   imageMimeType?: string;
+  imageName?: string;
+  imageSize?: string;
+  imageAttachment?: {
+    name?: string;
+    size?: string;
+    mimeType?: string;
+    dataUrl?: string;
+  };
   chart?: AIChartData;
   diagramSvg?: string;
   detectedLanguage?: string;
@@ -514,6 +524,7 @@ export interface AIChatConversation {
   title: string;
   createdAt: string;
   updatedAt: string;
+  messages?: AIMessage[];
   lastMessagePreview?: string;
   messageCount: number;
   courseContext?: string;

@@ -528,6 +528,75 @@
         }
       },
       "required": ["uid", "courseId", "courseCode", "credits", "grade", "gradePoint", "semester"]
+    },
+    "aiChatConversation": {
+      "title": "AIChatConversation",
+      "description": "Persistent AI Tutor conversation record with messages",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the conversation"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Authenticated student user UID"
+        },
+        "title": {
+          "type": "string",
+          "description": "Descriptive conversation title"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of latest update"
+        },
+        "lastMessagePreview": {
+          "type": "string",
+          "description": "Snippet of latest message"
+        },
+        "messageCount": {
+          "type": "number",
+          "description": "Total count of messages in conversation"
+        },
+        "courseContext": {
+          "type": "string",
+          "description": "Academic course code or context"
+        },
+        "languagePreference": {
+          "type": "string",
+          "description": "Language choice (e.g. auto, English, Kiswahili)"
+        }
+      },
+      "required": ["id", "userId", "title", "createdAt", "updatedAt"]
+    },
+    "aiChatMessage": {
+      "title": "AIChatMessage",
+      "description": "Single message inside an AI Tutor conversation",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique message identifier"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "assistant", "system"],
+          "description": "Message sender role"
+        },
+        "text": {
+          "type": "string",
+          "description": "Message text content"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Message timestamp"
+        }
+      },
+      "required": ["id", "text", "timestamp"]
     }
   },
   "firestore": {
@@ -570,6 +639,14 @@
     "/students/{studentId}/results/{resultId}": {
       "schema": "studentResult",
       "description": "Individual course examination results and grade points"
+    },
+    "/students/{studentId}/chats/{chatId}": {
+      "schema": "aiChatConversation",
+      "description": "Persistent AI Tutor conversations for authenticated student"
+    },
+    "/students/{studentId}/chats/{chatId}/messages/{messageId}": {
+      "schema": "aiChatMessage",
+      "description": "Individual messages in an AI Tutor conversation"
     },
     "/student_results/{resultId}": {
       "schema": "studentResult",

@@ -692,6 +692,7 @@ export const App: React.FC = () => {
             initialCourse={selectedCourse}
             courses={courses}
             studentName={profile.name}
+            userId={profile.uid || undefined}
           />
         )}
 

@@ -19,16 +19,31 @@ import {
   UploadCloud,
   Download,
   Info,
+  Plus,
+  MessageSquare,
+  Clock,
+  History,
 } from 'lucide-react';
-import { AIMessage, Course } from '../../types';
+import { AIMessage, Course, AIChatConversation } from '../../types';
 import { MathRenderer, MathBlock } from '../MathRenderer';
 import { AIChartViewer } from '../AIChartViewer';
 import { CameraCaptureModal } from '../CameraCaptureModal';
+import { AIChatHistoryDrawer } from '../AIChatHistoryDrawer';
+import {
+  getActiveUserId,
+  listUserConversations,
+  loadMoreUserConversations,
+  loadConversationMessages,
+  saveConversationMessages,
+  updateConversationTitle,
+  deleteConversation,
+} from '../../services/aiChatService';
 
 interface AITutorScreenProps {
   initialCourse?: Course | null;
   courses: Course[];
   studentName?: string;
+  userId?: string;
 }
 
 interface ImageAttachment {
@@ -61,7 +76,25 @@ function isImageGenerationRequest(query: string): boolean {
   );
 }
 
-export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, courses, studentName }) => {
+export const AITutorScreen: React.FC<AITutorScreenProps> = ({
+  initialCourse,
+  courses,
+  studentName,
+  userId,
+}) => {
+  const effectiveUserId = userId || getActiveUserId();
+
+  // Chat History & Persistence State
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [activeConversationTitle, setActiveConversationTitle] = useState<string>('New Chat');
+  const [conversations, setConversations] = useState<AIChatConversation[]>([]);
+  const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
+  const [isLoadingChat, setIsLoadingChat] = useState(false);
+  const [hasMoreChats, setHasMoreChats] = useState(false);
+  const [isLoadingMoreChats, setIsLoadingMoreChats] = useState(false);
+  const [isRenamingActive, setIsRenamingActive] = useState(false);
+  const [editActiveTitle, setEditActiveTitle] = useState('');
+
   const [selectedCourseContext, setSelectedCourseContext] = useState<string>(
     initialCourse ? initialCourse.code : 'All Courses'
   );
@@ -76,27 +109,131 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, cou
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const [messages, setMessages] = useState<AIMessage[]>([
-    {
-      id: 'msg-init',
-      sender: 'assistant',
-      text: `Habari${studentName ? ` ${studentName}` : ''}! I am your VENUE AI Tutor.\n\nYou can ask me university mathematics, statistics, economics, and programming problems in **English**, **Kiswahili**, or mixed language. You can also photograph or upload handwritten solutions, equations, and diagrams.`,
-      timestamp: 'Just now',
-      suggestions: [
-        'Solve (a+b)/c when a=5, b=7, c=3 step by step',
-        'Explain Bayes\' Theorem with formula and proof',
-        'Plot quadratic curve y = x^2 - 4x + 3 with roots',
-        'Eleza kwa Kiswahili: Normal Distribution',
-        'Derive OLS estimators for linear regression',
-      ],
-    },
-  ]);
+  const initialWelcomeMessage: AIMessage = {
+    id: 'msg-init',
+    sender: 'assistant',
+    role: 'assistant',
+    text: `Habari${studentName ? ` ${studentName}` : ''}! I am your VENUE AI Tutor.\n\nYou can ask me university mathematics, statistics, economics, and programming problems in **English**, **Kiswahili**, or mixed language. You can also photograph or upload handwritten solutions, equations, and diagrams.`,
+    timestamp: 'Just now',
+    suggestions: [
+      'Solve (a+b)/c when a=5, b=7, c=3 step by step',
+      'Explain Bayes\' Theorem with formula and proof',
+      'Plot quadratic curve y = x^2 - 4x + 3 with roots',
+      'Eleza kwa Kiswahili: Normal Distribution',
+      'Derive OLS estimators for linear regression',
+    ],
+  };
+
+  const [messages, setMessages] = useState<AIMessage[]>([initialWelcomeMessage]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  // Load user's conversations on mount or UID switch
+  useEffect(() => {
+    let isMounted = true;
+    async function loadInitialConversations() {
+      try {
+        const res = await listUserConversations(effectiveUserId, 20);
+        if (!isMounted) return;
+        setConversations(res.conversations);
+        setHasMoreChats(res.hasMore);
+      } catch (err) {
+        console.warn('Error fetching conversations:', err);
+      }
+    }
+    loadInitialConversations();
+    return () => {
+      isMounted = false;
+    };
+  }, [effectiveUserId]);
+
+  const handleNewChat = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsTyping(false);
+    setInputQuery('');
+    setSelectedImage(null);
+    setActiveConversationId(null);
+    setActiveConversationTitle('New Chat');
+    setIsRenamingActive(false);
+    setMessages([initialWelcomeMessage]);
+  };
+
+  const handleSelectConversation = async (chat: AIChatConversation) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsTyping(false);
+    setInputQuery('');
+    setSelectedImage(null);
+    setIsRenamingActive(false);
+    setActiveConversationId(chat.id);
+    setActiveConversationTitle(chat.title);
+    if (chat.courseContext) {
+      setSelectedCourseContext(chat.courseContext);
+    }
+    if (chat.languagePreference) {
+      setLanguagePreference(chat.languagePreference);
+    }
+
+    try {
+      setIsLoadingChat(true);
+      const msgs = await loadConversationMessages(chat.id, effectiveUserId);
+      if (msgs && msgs.length > 0) {
+        setMessages(msgs);
+      } else {
+        setMessages([initialWelcomeMessage]);
+      }
+    } catch (err) {
+      console.warn('Failed to load conversation messages:', err);
+    } finally {
+      setIsLoadingChat(false);
+    }
+  };
+
+  const handleRenameConversation = async (chatId: string, newTitle: string) => {
+    const clean = newTitle.trim();
+    if (!clean) return;
+    await updateConversationTitle(chatId, clean, effectiveUserId);
+    setConversations((prev) =>
+      prev.map((c) => (c.id === chatId ? { ...c, title: clean } : c))
+    );
+    if (activeConversationId === chatId) {
+      setActiveConversationTitle(clean);
+    }
+  };
+
+  const handleDeleteConversation = async (chatId: string) => {
+    await deleteConversation(chatId, effectiveUserId);
+    setConversations((prev) => prev.filter((c) => c.id !== chatId));
+    if (activeConversationId === chatId) {
+      handleNewChat();
+    }
+  };
+
+  const handleLoadMoreConversations = async () => {
+    if (isLoadingMoreChats || !hasMoreChats || conversations.length === 0) return;
+    setIsLoadingMoreChats(true);
+    try {
+      const last = conversations[conversations.length - 1];
+      const { conversations: more, hasMore } = await loadMoreUserConversations(
+        effectiveUserId,
+        last.updatedAt,
+        20
+      );
+      setConversations((prev) => [...prev, ...more]);
+      setHasMoreChats(hasMore);
+    } finally {
+      setIsLoadingMoreChats(false);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -251,11 +388,32 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, cou
       baseMessages = messages.filter((m) => m.id !== errorMsgIdToRemove);
     }
 
+    // Determine conversation ID: either continue current or start brand new
+    let currentChatId = activeConversationId;
+    if (!currentChatId) {
+      currentChatId = `chat_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      setActiveConversationId(currentChatId);
+      const autoTitle = (query || 'Academic Analysis').slice(0, 36).trim();
+      setActiveConversationTitle(autoTitle);
+    }
+
     const userMsg: AIMessage = {
       id: `user-${Date.now()}`,
       sender: 'user',
+      role: 'user',
       text: query || 'Analyze attached problem image',
+      content: query || 'Analyze attached problem image',
       imageUrl: imageToSend?.dataUrl,
+      imageAttachment: imageToSend
+        ? {
+            name: imageToSend.name,
+            size: imageToSend.size,
+            mimeType: imageToSend.mimeType,
+          }
+        : undefined,
+      imageName: imageToSend?.name,
+      imageSize: imageToSend?.size,
+      imageMimeType: imageToSend?.mimeType,
       timestamp: 'Just now',
       courseContext: selectedCourseContext,
     };
@@ -266,6 +424,15 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, cou
     setSelectedImage(null);
     setIsTyping(true);
     setRetryingQuery(textToSend ? query : null);
+
+    // Persist user question immediately so it's never lost if user navigates away
+    saveConversationMessages(
+      currentChatId,
+      newMessages,
+      effectiveUserId,
+      selectedCourseContext,
+      languagePreference
+    );
 
     try {
       // 1. Check if user explicitly asked to generate an image
@@ -284,7 +451,9 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, cou
           const imgSuccessMsg: AIMessage = {
             id: `ai-img-${Date.now()}`,
             sender: 'assistant',
+            role: 'assistant',
             text: `Here is the generated illustration for: **${query}**`,
+            content: `Here is the generated illustration for: **${query}**`,
             generatedImageUrl: genJson.imageUrl,
             isImageGeneration: true,
             imageGenStatus: 'success',
@@ -292,7 +461,19 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, cou
             timestamp: 'Just now',
             courseContext: selectedCourseContext,
           };
-          setMessages((prev) => [...prev, imgSuccessMsg]);
+          const finalMessages = [...newMessages, imgSuccessMsg];
+          setMessages(finalMessages);
+          await saveConversationMessages(
+            currentChatId,
+            finalMessages,
+            effectiveUserId,
+            selectedCourseContext,
+            languagePreference
+          );
+          listUserConversations(effectiveUserId).then((r) => {
+            setConversations(r.conversations);
+            setHasMoreChats(r.hasMore);
+          });
           return;
         }
 
@@ -301,7 +482,9 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, cou
           const imgUnavailableMsg: AIMessage = {
             id: `ai-img-${Date.now()}`,
             sender: 'assistant',
+            role: 'assistant',
             text: genJson.fallbackMessage || `Image generation request received for "${query}". AI image generation is currently unavailable under your current API key tier.`,
+            content: genJson.fallbackMessage || `Image generation request received for "${query}". AI image generation is currently unavailable under your current API key tier.`,
             isImageGeneration: true,
             imageGenStatus: 'unavailable',
             imageGenPrompt: query,
@@ -312,7 +495,19 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, cou
             timestamp: 'Just now',
             courseContext: selectedCourseContext,
           };
-          setMessages((prev) => [...prev, imgUnavailableMsg]);
+          const finalMessages = [...newMessages, imgUnavailableMsg];
+          setMessages(finalMessages);
+          await saveConversationMessages(
+            currentChatId,
+            finalMessages,
+            effectiveUserId,
+            selectedCourseContext,
+            languagePreference
+          );
+          listUserConversations(effectiveUserId).then((r) => {
+            setConversations(r.conversations);
+            setHasMoreChats(r.hasMore);
+          });
           return;
         }
       }
@@ -357,7 +552,9 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, cou
       const assistantMsg: AIMessage = {
         id: `ai-${Date.now()}`,
         sender: 'assistant',
+        role: 'assistant',
         text: aiData.text || 'No response generated.',
+        content: aiData.text || 'No response generated.',
         steps: Array.isArray(aiData.steps) && aiData.steps.length > 0 ? aiData.steps : undefined,
         formula: typeof aiData.formula === 'string' && aiData.formula.trim() ? aiData.formula.trim() : undefined,
         suggestions: Array.isArray(aiData.suggestions) && aiData.suggestions.length > 0 ? aiData.suggestions : undefined,
@@ -368,7 +565,19 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, cou
         courseContext: selectedCourseContext,
       };
 
-      setMessages((prev) => [...prev, assistantMsg]);
+      const finalMessages = [...newMessages, assistantMsg];
+      setMessages(finalMessages);
+      await saveConversationMessages(
+        currentChatId,
+        finalMessages,
+        effectiveUserId,
+        selectedCourseContext,
+        languagePreference
+      );
+      listUserConversations(effectiveUserId).then((r) => {
+        setConversations(r.conversations);
+        setHasMoreChats(r.hasMore);
+      });
     } catch (err: any) {
       if (err.name === 'AbortError') {
         return;
@@ -383,7 +592,11 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, cou
       const errorMsg: AIMessage = {
         id: `ai-err-${Date.now()}`,
         sender: 'assistant',
+        role: 'assistant',
         text: isMissingSecret
+          ? 'Gemini API key is not configured. Please open Google AI Studio under Settings > Secrets and add your GEMINI_API_KEY to activate live AI responses.'
+          : `Unable to receive answer from Gemini: ${err?.message || 'Network error'}. Please check your connection or retry.`,
+        content: isMissingSecret
           ? 'Gemini API key is not configured. Please open Google AI Studio under Settings > Secrets and add your GEMINI_API_KEY to activate live AI responses.'
           : `Unable to receive answer from Gemini: ${err?.message || 'Network error'}. Please check your connection or retry.`,
         timestamp: 'Just now',
@@ -392,7 +605,19 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, cou
         originalQuery: query,
       };
 
-      setMessages((prev) => [...prev, errorMsg]);
+      const finalMessages = [...newMessages, errorMsg];
+      setMessages(finalMessages);
+      await saveConversationMessages(
+        currentChatId,
+        finalMessages,
+        effectiveUserId,
+        selectedCourseContext,
+        languagePreference
+      );
+      listUserConversations(effectiveUserId).then((r) => {
+        setConversations(r.conversations);
+        setHasMoreChats(r.hasMore);
+      });
     } finally {
       setIsTyping(false);
       setRetryingQuery(null);
@@ -432,8 +657,36 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, cou
           </div>
         </div>
 
-        {/* Controls: Language Preference & Course Context */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Controls: New Chat, History Drawer, Language & Course */}
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+          {/* New Chat Action Button */}
+          <button
+            id="ai-tutor-new-chat-btn"
+            onClick={handleNewChat}
+            title="Start a new conversation"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm active:scale-95 transition-all"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>New Chat</span>
+          </button>
+
+          {/* History / Recent Chats Trigger Button */}
+          <button
+            id="ai-tutor-history-drawer-btn"
+            onClick={() => setIsHistoryDrawerOpen(true)}
+            title="Open Recent Chats"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 text-xs font-medium hover:border-slate-700 active:scale-95 transition-all"
+          >
+            <MessageSquare className="w-3.5 h-3.5 text-sky-400" />
+            <span className="hidden sm:inline">Recent Chats</span>
+            <span className="sm:hidden">History</span>
+            {conversations.length > 0 && (
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-500/20 text-sky-300 font-bold border border-blue-500/30">
+                {conversations.length}
+              </span>
+            )}
+          </button>
+
           {/* Language Preference Selector */}
           <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1">
             <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -471,6 +724,68 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, cou
         </div>
       </div>
 
+      {/* Active Conversation Sub-header Bar with Inline Rename */}
+      {activeConversationId && (
+        <div className="flex items-center justify-between px-2.5 py-1 bg-slate-900/60 border-b border-slate-800/60 text-xs">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold shrink-0">Current Chat:</span>
+            {isRenamingActive ? (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (editActiveTitle.trim() && activeConversationId) {
+                    handleRenameConversation(activeConversationId, editActiveTitle.trim());
+                  }
+                  setIsRenamingActive(false);
+                }}
+                className="flex items-center gap-1.5 min-w-0 max-w-sm"
+              >
+                <input
+                  type="text"
+                  value={editActiveTitle}
+                  onChange={(e) => setEditActiveTitle(e.target.value)}
+                  autoFocus
+                  className="px-2 py-0.5 text-xs bg-slate-950 border border-blue-500 rounded text-white focus:outline-none"
+                />
+                <button type="submit" title="Save" className="p-0.5 text-emerald-400 hover:text-emerald-300">
+                  <Check className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsRenamingActive(false)}
+                  title="Cancel"
+                  className="p-0.5 text-slate-400 hover:text-slate-300"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </form>
+            ) : (
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-slate-200 font-medium truncate">{activeConversationTitle}</span>
+                <button
+                  id="btn-edit-active-chat-title"
+                  onClick={() => {
+                    setEditActiveTitle(activeConversationTitle);
+                    setIsRenamingActive(true);
+                  }}
+                  title="Rename active chat"
+                  className="p-1 rounded text-slate-400 hover:text-sky-300 transition-colors"
+                >
+                  <Edit3 className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 text-[10px] text-slate-400">
+            <span className="inline-flex items-center gap-1 text-emerald-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Synced
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Drag & Drop Visual Indicator */}
       {isDragging && (
         <div className="my-2 p-4 rounded-xl border-2 border-dashed border-sky-400 bg-sky-950/40 text-center flex flex-col items-center justify-center gap-1 text-sky-300 animate-pulse">
@@ -481,11 +796,17 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, cou
 
       {/* Messages Scroll Area */}
       <div className="flex-1 overflow-y-auto py-3 space-y-4 pr-1 custom-scrollbar">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex items-start gap-2 sm:gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+        {isLoadingChat ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-2.5 text-sky-400">
+            <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+            <span className="text-xs font-medium text-slate-300">Loading conversation history...</span>
+          </div>
+        ) : (
+          messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`flex items-start gap-2 sm:gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
             {msg.sender === 'assistant' && (
               <div
                 className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
@@ -741,7 +1062,8 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, cou
               </div>
             )}
           </div>
-        ))}
+        ))
+      )}
 
         {/* Thinking Loading State */}
         {isTyping && (
@@ -973,6 +1295,21 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({ initialCourse, cou
           </div>
         </div>
       )}
+
+      {/* AIChatHistoryDrawer for Recent Chats */}
+      <AIChatHistoryDrawer
+        isOpen={isHistoryDrawerOpen}
+        onClose={() => setIsHistoryDrawerOpen(false)}
+        conversations={conversations}
+        activeChatId={activeConversationId}
+        onSelectChat={handleSelectConversation}
+        onNewChat={handleNewChat}
+        onRenameChat={handleRenameConversation}
+        onDeleteChat={handleDeleteConversation}
+        hasMore={hasMoreChats}
+        onLoadMore={handleLoadMoreConversations}
+        isLoadingMore={isLoadingMoreChats}
+      />
     </div>
   );
 };
