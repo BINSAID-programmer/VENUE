@@ -132,7 +132,7 @@ export const AIChatHistoryDrawer: React.FC<AIChatHistoryDrawerProps> = ({
         className={`relative z-10 w-full max-w-xs sm:max-w-sm h-full flex flex-col shadow-2xl transition-all ${
           isDark
             ? 'bg-slate-950 border-r border-slate-800/90 text-slate-100'
-            : 'bg-white border-r border-slate-200 text-slate-900'
+            : 'bg-white border-r border-slate-200 text-slate-800'
         }`}
       >
         {/* Drawer Header */}
@@ -180,7 +180,7 @@ export const AIChatHistoryDrawer: React.FC<AIChatHistoryDrawerProps> = ({
             className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs transition-colors ${
               isDark
                 ? 'bg-slate-900/90 border-slate-800 text-slate-200 focus-within:border-blue-500/60'
-                : 'bg-slate-50 border-slate-200 text-slate-800 focus-within:border-blue-500/60'
+                : 'bg-slate-50 border-slate-200 text-slate-800 focus-within:border-blue-500/60 focus-within:bg-white'
             }`}
           >
             <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -190,7 +190,7 @@ export const AIChatHistoryDrawer: React.FC<AIChatHistoryDrawerProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search chat history..."
-              className="bg-transparent w-full focus:outline-none placeholder:text-slate-500 text-xs"
+              className="bg-transparent w-full focus:outline-none placeholder:text-slate-500 text-xs text-slate-800 dark:text-slate-200"
             />
             {searchQuery && (
               <button
@@ -241,7 +241,7 @@ export const AIChatHistoryDrawer: React.FC<AIChatHistoryDrawerProps> = ({
                     isActive
                       ? isDark
                         ? 'bg-blue-600/20 border-blue-500/50 text-sky-200 shadow-sm'
-                        : 'bg-blue-50 border-blue-300 text-blue-900 shadow-sm'
+                        : 'bg-blue-50 border-blue-200 text-blue-900 shadow-xs'
                       : isDark
                       ? 'border-transparent hover:bg-slate-900/70 hover:border-slate-800 text-slate-300'
                       : 'border-transparent hover:bg-slate-100 hover:border-slate-200 text-slate-700'
@@ -263,7 +263,7 @@ export const AIChatHistoryDrawer: React.FC<AIChatHistoryDrawerProps> = ({
                         className={`w-full text-xs font-medium px-2 py-1 rounded border focus:outline-none ${
                           isDark
                             ? 'bg-slate-900 text-white border-blue-500'
-                            : 'bg-white text-slate-900 border-blue-500'
+                            : 'bg-white text-slate-900 border-blue-500 shadow-xs'
                         }`}
                       />
                       <button
@@ -395,7 +395,11 @@ export const AIChatHistoryDrawer: React.FC<AIChatHistoryDrawerProps> = ({
                 id="chat-drawer-load-more-btn"
                 onClick={onLoadMore}
                 disabled={isLoadingMore}
-                className="w-full py-2 px-3 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-sky-400 text-xs font-medium flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+                className={`w-full py-2 px-3 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 ${
+                  isDark
+                    ? 'border-slate-800 hover:border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-sky-400'
+                    : 'border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 text-blue-700 shadow-xs'
+                }`}
               >
                 {isLoadingMore ? (
                   <>

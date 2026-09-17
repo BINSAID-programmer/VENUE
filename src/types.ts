@@ -73,7 +73,7 @@ export interface StudentProfile {
   studyHoursThisWeek: number;
   skills: string[];
   achievements: Achievement[];
-  themePreference?: 'dark' | 'light';
+  themePreference?: 'dark' | 'light' | 'system';
   isProfileComplete?: boolean;
   createdAt?: string;
   updatedAt?: string;

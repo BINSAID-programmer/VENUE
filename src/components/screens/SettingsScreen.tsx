@@ -13,8 +13,10 @@ import {
   Sparkles,
   Smartphone,
   BookOpen,
+  Palette,
 } from 'lucide-react';
 import { ThemeToggle } from '../ThemeToggle';
+import { ThemeSelector } from '../ThemeSelector';
 
 interface SettingsScreenProps {
   onLogout: () => void;
@@ -77,18 +79,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onLogout, onRese
       <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
         <h3 className="text-xs font-bold text-white uppercase tracking-wider">Preferences</h3>
 
-        {/* Dark / Light Theme Setting */}
-        <div className="flex items-center justify-between gap-2">
+        {/* Dark / Light / System Theme Setting */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-1">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-slate-850 text-sky-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-slate-850 text-sky-400 flex items-center justify-center shrink-0">
               <Moon className="w-4 h-4" />
             </div>
             <div>
               <p className="text-xs sm:text-sm font-semibold text-white">App Appearance</p>
-              <p className="text-[11px] text-slate-400">Choose between Light or Dark theme</p>
+              <p className="text-[11px] text-slate-400">Light, Dark, or System mode</p>
             </div>
           </div>
-          <ThemeToggle variant="pill" />
+          <ThemeToggle variant="segmented" />
+        </div>
+
+        {/* Multi-Theme Palette Selector */}
+        <div className="pt-3 border-t border-slate-800/80 space-y-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-slate-850 text-purple-400 flex items-center justify-center shrink-0">
+              <Palette className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs sm:text-sm font-semibold text-white">VENUE Color Personalities</p>
+              <p className="text-[11px] text-slate-400">8 low-contrast academic themes (4 Light &amp; 4 Dark)</p>
+            </div>
+          </div>
+          <ThemeSelector />
         </div>
 
         {/* Notifications Toggle */}

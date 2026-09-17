@@ -1,61 +1,328 @@
 @import "tailwindcss";
 
+/* ============================================================
+   VENUE MULTI-THEME TOKENS (8 LOW-CONTRAST ACADEMIC PALETTES)
+   4 Light Themes + 4 Dark Themes
+   ============================================================ */
+
+/* 1. SOFT BLUE (Light Theme 1 - Default Light) */
+:root,
+html.theme-soft-blue,
+[data-color-theme='soft-blue'] {
+  color-scheme: light;
+  --venue-bg-page: #f0f3f8;
+  --venue-bg-viewport: #e1e7f0;
+  --venue-bg-card: #ffffff;
+  --venue-bg-card-elevated: #f8fafc;
+  --venue-bg-subtle: #f4f7fb;
+  --venue-border: #d6e0ec;
+  --venue-border-subtle: #e2ebf5;
+  --venue-text-primary: #0f172a;
+  --venue-text-secondary: #334155;
+  --venue-text-muted: #5f7088;
+  --venue-accent-primary: #2563eb;
+  --venue-accent-hover: #1d4ed8;
+  --venue-accent-subtle: #e8f0fe;
+  --venue-accent-text: #1d4ed8;
+  --venue-nav-bg: rgba(255, 255, 255, 0.96);
+  --venue-input-bg: #f8fafc;
+  --venue-focus-ring: rgba(37, 99, 235, 0.2);
+  --venue-status-success: #059669;
+  --venue-status-warning: #d97706;
+  --venue-status-error: #e11d48;
+  --venue-bubble-assistant: #f4f7fb;
+  --venue-bubble-user: #2563eb;
+  --venue-bubble-user-text: #ffffff;
+  --venue-scrollbar-track: #e2e7f0;
+  --venue-scrollbar-thumb: #b4c2d4;
+}
+
+/* 2. SAGE (Light Theme 2) */
+html.theme-sage,
+[data-color-theme='sage'] {
+  color-scheme: light;
+  --venue-bg-page: #edf2ee;
+  --venue-bg-viewport: #dde5df;
+  --venue-bg-card: #ffffff;
+  --venue-bg-card-elevated: #f5f8f5;
+  --venue-bg-subtle: #f1f6f2;
+  --venue-border: #ccded2;
+  --venue-border-subtle: #dbe9df;
+  --venue-text-primary: #111b13;
+  --venue-text-secondary: #273a2c;
+  --venue-text-muted: #566e5c;
+  --venue-accent-primary: #2d6b46;
+  --venue-accent-hover: #235637;
+  --venue-accent-subtle: #e5f2e8;
+  --venue-accent-text: #235637;
+  --venue-nav-bg: rgba(255, 255, 255, 0.96);
+  --venue-input-bg: #f5f8f5;
+  --venue-focus-ring: rgba(45, 107, 70, 0.2);
+  --venue-status-success: #2d6b46;
+  --venue-status-warning: #d97706;
+  --venue-status-error: #e11d48;
+  --venue-bubble-assistant: #f1f6f2;
+  --venue-bubble-user: #2d6b46;
+  --venue-bubble-user-text: #ffffff;
+  --venue-scrollbar-track: #dde5df;
+  --venue-scrollbar-thumb: #b2c5b7;
+}
+
+/* 3. ROSE (Light Theme 3) */
+html.theme-rose,
+[data-color-theme='rose'] {
+  color-scheme: light;
+  --venue-bg-page: #f5f0f2;
+  --venue-bg-viewport: #e8dfe2;
+  --venue-bg-card: #ffffff;
+  --venue-bg-card-elevated: #fcf7f8;
+  --venue-bg-subtle: #f8f2f4;
+  --venue-border: #ded0d4;
+  --venue-border-subtle: #eae0e3;
+  --venue-text-primary: #201316;
+  --venue-text-secondary: #3e282e;
+  --venue-text-muted: #6d565d;
+  --venue-accent-primary: #9b415a;
+  --venue-accent-hover: #83354b;
+  --venue-accent-subtle: #faedf1;
+  --venue-accent-text: #83354b;
+  --venue-nav-bg: rgba(255, 255, 255, 0.96);
+  --venue-input-bg: #fcf7f8;
+  --venue-focus-ring: rgba(155, 65, 90, 0.2);
+  --venue-status-success: #059669;
+  --venue-status-warning: #d97706;
+  --venue-status-error: #9b415a;
+  --venue-bubble-assistant: #f8f2f4;
+  --venue-bubble-user: #9b415a;
+  --venue-bubble-user-text: #ffffff;
+  --venue-scrollbar-track: #e8dfe2;
+  --venue-scrollbar-thumb: #c7b5ba;
+}
+
+/* 4. LAVENDER (Light Theme 4) */
+html.theme-lavender,
+[data-color-theme='lavender'] {
+  color-scheme: light;
+  --venue-bg-page: #f2eff7;
+  --venue-bg-viewport: #e4dfed;
+  --venue-bg-card: #ffffff;
+  --venue-bg-card-elevated: #f9f7fc;
+  --venue-bg-subtle: #f4f0fa;
+  --venue-border: #d8d1e5;
+  --venue-border-subtle: #e6e1f0;
+  --venue-text-primary: #181323;
+  --venue-text-secondary: #332947;
+  --venue-text-muted: #625778;
+  --venue-accent-primary: #6c47a6;
+  --venue-accent-hover: #573788;
+  --venue-accent-subtle: #f0ebfa;
+  --venue-accent-text: #573788;
+  --venue-nav-bg: rgba(255, 255, 255, 0.96);
+  --venue-input-bg: #f9f7fc;
+  --venue-focus-ring: rgba(108, 71, 166, 0.2);
+  --venue-status-success: #059669;
+  --venue-status-warning: #d97706;
+  --venue-status-error: #e11d48;
+  --venue-bubble-assistant: #f4f0fa;
+  --venue-bubble-user: #6c47a6;
+  --venue-bubble-user-text: #ffffff;
+  --venue-scrollbar-track: #e4dfed;
+  --venue-scrollbar-thumb: #c0b7d4;
+}
+
+/* 5. MIDNIGHT BLUE (Dark Theme 1 - Default Dark) */
+html.dark,
+html.theme-dark,
+html.theme-midnight-blue,
+[data-theme='dark'],
+[data-color-theme='midnight-blue'] {
+  color-scheme: dark;
+  --venue-bg-page: #0c101a;
+  --venue-bg-viewport: #070a12;
+  --venue-bg-card: #131926;
+  --venue-bg-card-elevated: #192233;
+  --venue-bg-subtle: #192233;
+  --venue-border: #232f45;
+  --venue-border-subtle: #1c2638;
+  --venue-text-primary: #f1f5f9;
+  --venue-text-secondary: #cbd5e1;
+  --venue-text-muted: #8293a8;
+  --venue-accent-primary: #3b82f6;
+  --venue-accent-hover: #2563eb;
+  --venue-accent-subtle: rgba(59, 130, 246, 0.16);
+  --venue-accent-text: #60a5fa;
+  --venue-nav-bg: rgba(12, 16, 26, 0.94);
+  --venue-input-bg: #111622;
+  --venue-focus-ring: rgba(59, 130, 246, 0.25);
+  --venue-status-success: #10b981;
+  --venue-status-warning: #f59e0b;
+  --venue-status-error: #f43f5e;
+  --venue-bubble-assistant: #192233;
+  --venue-bubble-user: #2563eb;
+  --venue-bubble-user-text: #ffffff;
+  --venue-scrollbar-track: rgba(15, 23, 42, 0.6);
+  --venue-scrollbar-thumb: rgba(56, 189, 248, 0.25);
+}
+
+/* 6. DEEP SAGE (Dark Theme 2) */
+html.theme-deep-sage,
+[data-color-theme='deep-sage'] {
+  color-scheme: dark;
+  --venue-bg-page: #0d1410;
+  --venue-bg-viewport: #080d0a;
+  --venue-bg-card: #141e18;
+  --venue-bg-card-elevated: #1b2921;
+  --venue-bg-subtle: #1b2921;
+  --venue-border: #263a2f;
+  --venue-border-subtle: #1f3026;
+  --venue-text-primary: #edf4ef;
+  --venue-text-secondary: #c4d6c8;
+  --venue-text-muted: #809887;
+  --venue-accent-primary: #448a5c;
+  --venue-accent-hover: #37734c;
+  --venue-accent-subtle: rgba(68, 138, 92, 0.18);
+  --venue-accent-text: #70c48e;
+  --venue-nav-bg: rgba(13, 20, 16, 0.94);
+  --venue-input-bg: #111a14;
+  --venue-focus-ring: rgba(68, 138, 92, 0.25);
+  --venue-status-success: #448a5c;
+  --venue-status-warning: #f59e0b;
+  --venue-status-error: #f43f5e;
+  --venue-bubble-assistant: #1b2921;
+  --venue-bubble-user: #37734c;
+  --venue-bubble-user-text: #ffffff;
+  --venue-scrollbar-track: rgba(13, 20, 16, 0.7);
+  --venue-scrollbar-thumb: rgba(68, 138, 92, 0.35);
+}
+
+/* 7. DEEP ROSE (Dark Theme 3) */
+html.theme-deep-rose,
+[data-color-theme='deep-rose'] {
+  color-scheme: dark;
+  --venue-bg-page: #140f12;
+  --venue-bg-viewport: #0c090b;
+  --venue-bg-card: #1f161a;
+  --venue-bg-card-elevated: #2b1f25;
+  --venue-bg-subtle: #2b1f25;
+  --venue-border: #3b2b33;
+  --venue-border-subtle: #2f2229;
+  --venue-text-primary: #f6eff1;
+  --venue-text-secondary: #d9c8cc;
+  --venue-text-muted: #9a8288;
+  --venue-accent-primary: #b3566f;
+  --venue-accent-hover: #9c475d;
+  --venue-accent-subtle: rgba(179, 86, 111, 0.18);
+  --venue-accent-text: #e08b9f;
+  --venue-nav-bg: rgba(20, 15, 18, 0.94);
+  --venue-input-bg: #1a1216;
+  --venue-focus-ring: rgba(179, 86, 111, 0.25);
+  --venue-status-success: #10b981;
+  --venue-status-warning: #f59e0b;
+  --venue-status-error: #b3566f;
+  --venue-bubble-assistant: #2b1f25;
+  --venue-bubble-user: #9c475d;
+  --venue-bubble-user-text: #ffffff;
+  --venue-scrollbar-track: rgba(20, 15, 18, 0.7);
+  --venue-scrollbar-thumb: rgba(179, 86, 111, 0.35);
+}
+
+/* 8. DEEP VIOLET (Dark Theme 4) */
+html.theme-deep-violet,
+[data-color-theme='deep-violet'] {
+  color-scheme: dark;
+  --venue-bg-page: #110e1a;
+  --venue-bg-viewport: #0a0812;
+  --venue-bg-card: #191426;
+  --venue-bg-card-elevated: #231c36;
+  --venue-bg-subtle: #231c36;
+  --venue-border: #33294c;
+  --venue-border-subtle: #29203d;
+  --venue-text-primary: #f3eff9;
+  --venue-text-secondary: #d1c8e0;
+  --venue-text-muted: #8e83a7;
+  --venue-accent-primary: #855ec7;
+  --venue-accent-hover: #714dae;
+  --venue-accent-subtle: rgba(133, 94, 199, 0.18);
+  --venue-accent-text: #b091e3;
+  --venue-nav-bg: rgba(17, 14, 26, 0.94);
+  --venue-input-bg: #151121;
+  --venue-focus-ring: rgba(133, 94, 199, 0.25);
+  --venue-status-success: #10b981;
+  --venue-status-warning: #f59e0b;
+  --venue-status-error: #f43f5e;
+  --venue-bubble-assistant: #231c36;
+  --venue-bubble-user: #714dae;
+  --venue-bubble-user-text: #ffffff;
+  --venue-scrollbar-track: rgba(17, 14, 26, 0.7);
+  --venue-scrollbar-thumb: rgba(133, 94, 199, 0.35);
+}
+
+/* Base body styles driven by design variables */
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background-color: #070b14;
-    color: #f1f5f9;
+    background-color: var(--venue-bg-page);
+    color: var(--venue-text-primary);
     overflow-x: hidden;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 }
 
-/* Custom scrollbar for mobile feel */
+/* Custom scrollbar driven by active theme variables */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--venue-scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.25);
+  background: var(--venue-scrollbar-thumb);
   border-radius: 9999px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.5);
+/* Device Shell Integration */
+.venue-device-outer {
+  background-color: var(--venue-bg-viewport) !important;
 }
 
-/* Glassmorphism & Neon Glow utilities */
+.venue-device-frame {
+  background-color: var(--venue-bg-page) !important;
+}
+
+.venue-status-bar {
+  background-color: var(--venue-nav-bg) !important;
+  border-bottom-color: var(--venue-border) !important;
+  color: var(--venue-text-muted) !important;
+}
+
+/* Core Card Utilities */
 .venue-card {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(56, 189, 248, 0.12);
+  background: var(--venue-bg-card);
+  border: 1px solid var(--venue-border);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
 }
 
 .venue-card-elevated {
-  background: linear-gradient(135deg, rgba(17, 24, 39, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  box-shadow: 0 10px 30px -10px rgba(0, 102, 255, 0.15);
+  background: var(--venue-bg-card-elevated);
+  border: 1px solid var(--venue-border);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
 }
 
-.venue-glow-blue {
-  box-shadow: 0 0 25px -5px rgba(0, 102, 255, 0.35);
+/* Header & Bottom Navigation */
+header {
+  background-color: var(--venue-nav-bg) !important;
+  border-bottom-color: var(--venue-border) !important;
 }
 
-.venue-glow-cyan {
-  box-shadow: 0 0 25px -5px rgba(56, 189, 248, 0.35);
+nav {
+  background-color: var(--venue-nav-bg) !important;
+  border-top-color: var(--venue-border) !important;
 }
 
-.venue-gradient-accent {
-  background: linear-gradient(135deg, #0066FF 0%, #38BDF8 100%);
-}
-
+/* 3D transforms */
 .perspective-1000 {
   perspective: 1000px;
 }
@@ -73,106 +340,320 @@
 }
 
 /* ============================================================
-   LIGHT THEME ENHANCEMENT (WCAG AA High-Contrast Compliance)
+   LIGHT THEMES OVERRIDES FOR TAILWIND UTILITIES
+   Ensures soft, non-washed-out, high-readability appearance
    ============================================================ */
-html.theme-light {
-  color-scheme: light;
+html.light,
+html.theme-light,
+[data-theme='light'] {
+  /* Screen background overrides */
+  .bg-\[\#070b14\],
+  .bg-\[\#04070e\] {
+    background-color: var(--venue-bg-page) !important;
+  }
+
+  /* Primary card / section surfaces */
+  .bg-slate-950,
+  .bg-slate-950\/95,
+  .bg-slate-950\/90,
+  .bg-slate-950\/80,
+  .bg-slate-950\/70,
+  .bg-slate-900,
+  .bg-slate-900\/95,
+  .bg-slate-900\/90,
+  .bg-slate-900\/80,
+  .bg-slate-900\/70 {
+    background-color: var(--venue-bg-card) !important;
+  }
+
+  /* Nested sub-surfaces, chips, inner sections */
+  .bg-slate-850,
+  .bg-slate-800,
+  .bg-slate-800\/80,
+  .bg-slate-800\/70,
+  .bg-slate-800\/60,
+  .bg-slate-800\/50,
+  .bg-slate-800\/40,
+  .bg-slate-950\/60,
+  .bg-slate-950\/50,
+  .bg-slate-950\/40,
+  .bg-slate-900\/60,
+  .bg-slate-900\/50,
+  .bg-slate-900\/40 {
+    background-color: var(--venue-bg-subtle) !important;
+  }
+
+  /* Card gradient stops in light mode */
+  .from-slate-900,
+  .from-slate-950 {
+    --tw-gradient-from: var(--venue-bg-card) !important;
+    --tw-gradient-to: rgba(255, 255, 255, 0) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--venue-bg-card), var(--tw-gradient-to) !important;
+  }
+
+  .via-blue-950\/60,
+  .via-blue-950,
+  .via-slate-950,
+  .via-sky-950\/40 {
+    --tw-gradient-stops: var(--tw-gradient-from), var(--venue-bg-subtle), var(--tw-gradient-to) !important;
+  }
+
+  .to-slate-900,
+  .to-slate-950 {
+    --tw-gradient-to: var(--venue-bg-card) !important;
+  }
+
+  /* Typography: Dark, crisp, high-contrast headings and clear body */
+  .text-white,
+  .text-slate-100 {
+    color: var(--venue-text-primary) !important;
+  }
+
+  .text-slate-200,
+  .text-slate-300 {
+    color: var(--venue-text-secondary) !important;
+  }
+
+  .text-slate-400,
+  .text-slate-500 {
+    color: var(--venue-text-muted) !important;
+  }
+
+  /* Accent texts in light mode */
+  .text-sky-400,
+  .text-sky-300,
+  .text-blue-400,
+  .text-blue-300 {
+    color: var(--venue-accent-text) !important;
+  }
+
+  /* Soft accent badge backgrounds in light mode */
+  .bg-blue-500\/10,
+  .bg-blue-500\/15,
+  .bg-blue-500\/20,
+  .bg-sky-500\/10,
+  .bg-sky-500\/15,
+  .bg-sky-500\/20 {
+    background-color: var(--venue-accent-subtle) !important;
+  }
+
+  /* Borders in light mode */
+  .border-slate-800,
+  .border-slate-800\/80,
+  .border-slate-800\/90,
+  .border-slate-800\/60,
+  .border-slate-800\/40,
+  .border-slate-850,
+  .border-slate-700 {
+    border-color: var(--venue-border) !important;
+  }
+
+  /* Form controls */
+  input,
+  textarea,
+  select {
+    background-color: var(--venue-input-bg) !important;
+    color: var(--venue-text-primary) !important;
+    border-color: var(--venue-border) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    background-color: var(--venue-bg-card) !important;
+    border-color: var(--venue-accent-primary) !important;
+    box-shadow: 0 0 0 3px var(--venue-focus-ring) !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--venue-text-muted) !important;
+  }
+
+  /* Chat Bubbles in Light Mode */
+  .ai-assistant-bubble {
+    background-color: var(--venue-bubble-assistant) !important;
+    border-color: var(--venue-border) !important;
+    color: var(--venue-text-primary) !important;
+  }
+
+  .ai-user-bubble {
+    background-color: var(--venue-bubble-user) !important;
+    color: var(--venue-bubble-user-text) !important;
+  }
+
+  /* Markdown tables */
+  .markdown-body th {
+    background-color: var(--venue-bg-subtle) !important;
+    color: var(--venue-text-primary) !important;
+    border-color: var(--venue-border) !important;
+  }
+
+  .markdown-body td {
+    background-color: var(--venue-bg-card) !important;
+    color: var(--venue-text-secondary) !important;
+    border-color: var(--venue-border) !important;
+  }
 }
 
-html.theme-light body {
-  background-color: #f1f5f9;
-  color: #0f172a;
+/* ============================================================
+   DARK THEMES OVERRIDES FOR TAILWIND UTILITIES
+   Provides unique personality for all 4 dark themes
+   ============================================================ */
+html.dark,
+html.theme-dark,
+[data-theme='dark'] {
+  .bg-\[\#070b14\],
+  .bg-\[\#04070e\] {
+    background-color: var(--venue-bg-page) !important;
+  }
+
+  .bg-slate-950,
+  .bg-slate-950\/95,
+  .bg-slate-950\/90,
+  .bg-slate-950\/80,
+  .bg-slate-950\/70,
+  .bg-slate-900,
+  .bg-slate-900\/95,
+  .bg-slate-900\/90,
+  .bg-slate-900\/80,
+  .bg-slate-900\/70 {
+    background-color: var(--venue-bg-card) !important;
+  }
+
+  .bg-slate-850,
+  .bg-slate-800,
+  .bg-slate-800\/80,
+  .bg-slate-800\/70,
+  .bg-slate-800\/60,
+  .bg-slate-800\/50,
+  .bg-slate-800\/40,
+  .bg-slate-950\/60,
+  .bg-slate-950\/50,
+  .bg-slate-950\/40,
+  .bg-slate-900\/60,
+  .bg-slate-900\/50,
+  .bg-slate-900\/40 {
+    background-color: var(--venue-bg-subtle) !important;
+  }
+
+  .border-slate-800,
+  .border-slate-800\/80,
+  .border-slate-800\/90,
+  .border-slate-800\/60,
+  .border-slate-800\/40,
+  .border-slate-850,
+  .border-slate-700 {
+    border-color: var(--venue-border) !important;
+  }
+
+  .text-white,
+  .text-slate-100 {
+    color: var(--venue-text-primary) !important;
+  }
+
+  .text-slate-200,
+  .text-slate-300 {
+    color: var(--venue-text-secondary) !important;
+  }
+
+  .text-slate-400,
+  .text-slate-500 {
+    color: var(--venue-text-muted) !important;
+  }
+
+  .text-sky-400,
+  .text-sky-300,
+  .text-blue-400,
+  .text-blue-300 {
+    color: var(--venue-accent-text) !important;
+  }
+
+  .bg-blue-500\/10,
+  .bg-blue-500\/15,
+  .bg-blue-500\/20,
+  .bg-sky-500\/10,
+  .bg-sky-500\/15,
+  .bg-sky-500\/20 {
+    background-color: var(--venue-accent-subtle) !important;
+  }
+
+  input,
+  textarea,
+  select {
+    background-color: var(--venue-input-bg) !important;
+    color: var(--venue-text-primary) !important;
+    border-color: var(--venue-border) !important;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: var(--venue-accent-primary) !important;
+    box-shadow: 0 0 0 3px var(--venue-focus-ring) !important;
+  }
+
+  /* Chat Bubbles in Dark Mode */
+  .ai-assistant-bubble {
+    background-color: var(--venue-bubble-assistant) !important;
+    border-color: var(--venue-border) !important;
+    color: var(--venue-text-primary) !important;
+  }
+
+  .ai-user-bubble {
+    background-color: var(--venue-bubble-user) !important;
+    color: var(--venue-bubble-user-text) !important;
+  }
 }
 
-html.theme-light .venue-card {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(203, 213, 225, 0.9);
-  box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.06);
+/* ============================================================
+   CRITICAL TEXT LEGIBILITY PRESERVATION
+   Ensures white text on solid colored buttons & badges is NEVER washed out
+   ============================================================ */
+button.bg-blue-600,
+button.bg-blue-500,
+button.bg-sky-500,
+button.bg-emerald-600,
+button.bg-red-600,
+button.bg-rose-600,
+button[class*="from-blue-600"],
+button[class*="from-sky-500"],
+button[class*="bg-gradient-to-"],
+a[class*="bg-gradient-to-"],
+.btn-primary,
+.user-chat-bubble,
+.badge-white-text {
+  color: #ffffff !important;
 }
 
-html.theme-light .venue-card-elevated {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
-  border: 1px solid rgba(37, 99, 235, 0.25);
-  box-shadow: 0 10px 25px -8px rgba(37, 99, 235, 0.12);
+button.bg-blue-600 *,
+button.bg-blue-500 *,
+button.bg-sky-500 *,
+button.bg-emerald-600 *,
+button.bg-red-600 *,
+button.bg-rose-600 *,
+button[class*="from-blue-600"] *,
+button[class*="from-sky-500"] *,
+button[class*="bg-gradient-to-"] *,
+.user-chat-bubble * {
+  color: #ffffff !important;
 }
 
-/* Background overrides in light theme */
-html.theme-light .bg-\[\#070b14\],
-html.theme-light .bg-\[\#04070e\] {
-  background-color: #f8fafc !important;
-}
-
-html.theme-light .bg-slate-950,
-html.theme-light .bg-slate-950\/90,
-html.theme-light .bg-slate-950\/80,
-html.theme-light .bg-slate-950\/70 {
-  background-color: #ffffff !important;
-}
-
-html.theme-light .bg-slate-900,
-html.theme-light .bg-slate-900\/90,
-html.theme-light .bg-slate-900\/80,
-html.theme-light .bg-slate-900\/70 {
-  background-color: #f8fafc !important;
-}
-
-html.theme-light .bg-slate-850,
-html.theme-light .bg-slate-800 {
-  background-color: #edf2f7 !important;
-}
-
-/* Text overrides in light theme */
-html.theme-light .text-white,
-html.theme-light .text-slate-100 {
-  color: #0f172a !important;
-}
-
-html.theme-light .text-slate-200,
-html.theme-light .text-slate-300 {
-  color: #1e293b !important;
-}
-
-html.theme-light .text-slate-400 {
-  color: #475569 !important;
-}
-
-/* Border overrides in light theme */
-html.theme-light .border-slate-800,
-html.theme-light .border-slate-800\/80,
-html.theme-light .border-slate-800\/90 {
-  border-color: #e2e8f0 !important;
-}
-
-html.theme-light .border-slate-700 {
-  border-color: #cbd5e1 !important;
-}
-
-/* Inputs & selects in light theme */
-html.theme-light input,
-html.theme-light textarea,
-html.theme-light select {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
-}
-
-/* Code & pre in light theme */
-html.theme-light pre {
+/* Code & pre styling */
+pre {
   background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #334155 !important;
+}
+
+code {
+  color: var(--venue-accent-text) !important;
+  background-color: var(--venue-bg-subtle) !important;
+  border-radius: 4px;
+}
+
+pre code {
   color: #a7f3d0 !important;
+  background-color: transparent !important;
 }
-
-/* KaTeX equations in light theme */
-html.theme-light .katex-display-block {
-  color: #0284c7 !important;
-}
-
-/* Chat bubble styling for assistant in light theme */
-html.theme-light .ai-assistant-bubble {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.05);
-}
-

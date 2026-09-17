@@ -822,10 +822,10 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({
             <div
               className={`max-w-[94%] sm:max-w-[85%] rounded-2xl p-3.5 sm:p-4 text-xs sm:text-sm leading-relaxed ${
                 msg.sender === 'user'
-                  ? 'bg-gradient-to-r from-blue-600 to-sky-600 text-white rounded-tr-xs shadow-md shadow-blue-600/20'
+                  ? 'bg-gradient-to-r from-blue-600 to-sky-600 text-white rounded-tr-xs shadow-md shadow-blue-600/20 user-chat-bubble'
                   : msg.isError
                   ? 'bg-red-950/40 border border-red-800/60 text-red-100 rounded-tl-xs shadow-sm'
-                  : 'bg-slate-900/90 border border-slate-800 text-slate-200 rounded-tl-xs shadow-sm'
+                  : 'bg-slate-900/90 border border-slate-800 text-slate-200 rounded-tl-xs shadow-sm ai-assistant-bubble'
               }`}
             >
               {/* Header language tags if detected */}

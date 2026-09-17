@@ -1,6 +1,7 @@
 import React from 'react';
 import { Home, BookOpen, Sparkles, Search, MoreHorizontal } from 'lucide-react';
 import { ScreenId } from '../../types';
+import { useTheme } from '../../context/ThemeContext';
 
 interface BottomNavProps {
   currentScreen: ScreenId;
@@ -8,6 +9,8 @@ interface BottomNavProps {
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({ currentScreen, onNavigate }) => {
+  const { isDark } = useTheme();
+
   const navItems = [
     { id: 'home' as ScreenId, label: 'Home', icon: Home },
     { id: 'courses' as ScreenId, label: 'Courses', icon: BookOpen },
@@ -17,7 +20,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentScreen, onNavigate 
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#070b14]/95 backdrop-blur-xl border-t border-slate-800/80 px-2 py-2 max-w-md mx-auto sm:max-w-xl md:max-w-2xl lg:max-w-4xl transition-all">
+    <nav
+      className={`fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl border-t px-2 py-2 max-w-md mx-auto sm:max-w-xl md:max-w-2xl lg:max-w-4xl transition-all ${
+        isDark
+          ? 'bg-[#070b14]/95 border-slate-800/80 text-slate-100'
+          : 'bg-white/95 border-slate-200/90 text-slate-800 shadow-lg shadow-slate-900/5'
+      }`}
+    >
       <div className="flex items-center justify-around gap-1">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -61,7 +70,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentScreen, onNavigate 
                 </div>
                 <span
                   className={`text-[10px] font-semibold tracking-tight mt-1 transition-colors ${
-                    isActive ? 'text-sky-400 font-bold' : 'text-slate-400 group-hover:text-slate-200'
+                    isActive
+                      ? 'text-sky-500 dark:text-sky-400 font-bold'
+                      : isDark
+                      ? 'text-slate-400 group-hover:text-slate-200'
+                      : 'text-slate-500 group-hover:text-slate-900'
                   }`}
                 >
                   AI Tutor
@@ -77,14 +90,20 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentScreen, onNavigate 
               onClick={() => onNavigate(item.id)}
               className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all min-w-[54px] cursor-pointer ${
                 isActive
-                  ? 'text-sky-400 font-semibold'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 active:scale-95'
+                  ? 'text-blue-600 dark:text-sky-400 font-bold'
+                  : isDark
+                  ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 active:scale-95'
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 active:scale-95'
               }`}
             >
               <div className="relative">
-                <Icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110 text-sky-400' : ''}`} />
+                <Icon
+                  className={`w-5 h-5 transition-transform ${
+                    isActive ? 'scale-110 text-blue-600 dark:text-sky-400' : ''
+                  }`}
+                />
                 {isActive && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-sky-400 rounded-full" />
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-600 dark:bg-sky-400 rounded-full" />
                 )}
               </div>
               <span className="text-[10px] mt-1 tracking-tight truncate font-medium">
@@ -97,3 +116,4 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentScreen, onNavigate 
     </nav>
   );
 };
+

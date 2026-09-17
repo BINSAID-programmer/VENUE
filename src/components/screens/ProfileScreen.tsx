@@ -17,8 +17,10 @@ import {
   BookOpen,
   School,
   AlertCircle,
+  Moon,
 } from 'lucide-react';
 import { StudentProfile } from '../../types';
+import { ThemeToggle } from '../ThemeToggle';
 
 interface ProfileScreenProps {
   profile: StudentProfile;
@@ -267,6 +269,21 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ profile, onUpdateP
               {profile.yearOfStudy || 'Year 1'} • {profile.semester || 'Semester 1'}
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* Theme & Display Preferences */}
+      <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+        <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+          <Moon className="w-3.5 h-3.5 text-sky-400" />
+          Theme & Visual Appearance
+        </h3>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-xl bg-slate-950/60 border border-slate-850">
+          <div>
+            <p className="text-xs font-semibold text-white">Interface Theme</p>
+            <p className="text-[11px] text-slate-400">Switch between Light, Dark, or System mode</p>
+          </div>
+          <ThemeToggle variant="segmented" />
         </div>
       </div>
 

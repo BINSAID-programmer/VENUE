@@ -136,8 +136,8 @@ export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onL
         },
         {
           id: 'settings' as ScreenId,
-          name: 'Settings & About VENUE',
-          desc: 'Preferences, dark theme configuration, and app details',
+          name: 'Settings & Color Themes',
+          desc: '8 soft academic color themes, alerts & app configuration',
           icon: Settings,
           color: 'text-slate-300 bg-slate-800 border-slate-700',
         },
