@@ -45,7 +45,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   // Dynamic verified courses strictly matching currently authenticated student's profile:
   // university + programme + yearOfStudy + semester
-  const myCourses = getVerifiedStudentCourses(profile);
+  // VENUE MUST NEVER ASSUME THAT A USER IS A MATHEMATICS & STATISTICS STUDENT.
+  const myCourses = courses || [];
+  const pid = (profile?.programmeId || '').toLowerCase().trim();
+  const isMissingCurriculum = pid.startsWith('bsc-ed-') && pid !== 'bsc-ed';
 
   const quickFeatureTiles = [
     {
@@ -65,7 +68,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     {
       id: 'ai-tutor' as ScreenId,
       title: 'AI Tutor',
-      count: 'Math & Stats',
+      count: 'Academic Help',
       icon: Sparkles,
       color: 'from-sky-500/20 to-indigo-500/10 border-sky-500/30 text-sky-400',
       isGlowing: true,
@@ -87,21 +90,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     {
       id: 'past-papers' as ScreenId,
       title: 'Past Papers',
-      count: 'UE & CA Archive',
+      count: 'Exam Archive',
       icon: FileText,
       color: 'from-indigo-600/20 to-blue-500/10 border-indigo-500/30 text-indigo-400',
     },
     {
       id: 'quiz' as ScreenId,
       title: 'Quizzes',
-      count: '3 Levels',
+      count: 'Practice & Test',
       icon: HelpCircle,
       color: 'from-amber-500/20 to-orange-500/10 border-amber-500/30 text-amber-400',
     },
     {
       id: 'flashcards' as ScreenId,
       title: 'Flashcards',
-      count: 'Formula Decks',
+      count: 'Study Decks',
       icon: Layers,
       color: 'from-purple-500/20 to-indigo-500/10 border-purple-500/30 text-purple-400',
     },
@@ -115,7 +118,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     {
       id: 'career' as ScreenId,
       title: 'Career',
-      count: '5 Quant Paths',
+      count: 'Career Paths',
       icon: Briefcase,
       color: 'from-cyan-500/20 to-blue-500/10 border-cyan-500/30 text-cyan-400',
     },
@@ -307,10 +310,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <span>VENUE Academic AI Assistant</span>
             </div>
             <h3 className="text-sm font-bold text-white">
-              Stuck on a Mathematics or Statistics problem?
+              {profile?.programme ? `Need help with ${profile.programmeShort || profile.programme}?` : 'Academic Study Assistant'}
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
-              Get step-by-step proofs for Real Analysis, derivations for ST 210, and code for R/Python.
+              Get explanations, lecture summaries, problem breakdowns, and revision guidance for your courses.
             </p>
           </div>
           <button
@@ -329,19 +332,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             onClick={() => onNavigate('ai-tutor')}
             className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800 transition-colors cursor-pointer"
           >
-            "Prove Heine-Borel Theorem"
+            "Explain core concept"
           </button>
           <button
             onClick={() => onNavigate('ai-tutor')}
             className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800 transition-colors cursor-pointer"
           >
-            "MGF of Gamma Distribution"
+            "Generate practice quiz"
           </button>
           <button
             onClick={() => onNavigate('ai-tutor')}
             className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800 transition-colors cursor-pointer"
           >
-            "Rank-Nullity Intuition"
+            "Summarize lecture notes"
           </button>
         </div>
       </section>
@@ -387,14 +390,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <div className="w-10 h-10 rounded-xl bg-slate-800/80 text-slate-400 flex items-center justify-center mx-auto">
               <BookOpen className="w-5 h-5 text-slate-400" />
             </div>
-            <p className="text-sm font-semibold text-slate-200">
-              No verified courses available yet.
-            </p>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              {profile.university && profile.programme
-                ? `No verified courses matching ${profile.universityShort || profile.university} • ${profile.programmeShort || profile.programme}${profile.yearOfStudy ? ` (${profile.yearOfStudy}${profile.semester ? `, ${profile.semester}` : ''})` : ''}.`
-                : 'Save your university, programme, year of study, and semester in your profile to view verified courses.'}
-            </p>
+            {isMissingCurriculum ? (
+              <div className="space-y-1.5 pt-1">
+                <span className="inline-block text-[11px] font-bold px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 uppercase tracking-wider">
+                  CURRICULUM DATA MISSING — DO NOT INFER
+                </span>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed pt-1">
+                  Official prospectus curriculum data for this department's degree programme has not yet been published in the academic catalogue. Courses from other departments are strictly isolated and never inferred.
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-slate-200">
+                  No verified courses available yet.
+                </p>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                  {profile.university && profile.programme
+                    ? `No verified courses matching ${profile.universityShort || profile.university} • ${profile.programmeShort || profile.programme}${profile.yearOfStudy ? ` (${profile.yearOfStudy}${profile.semester ? `, ${profile.semester}` : ''})` : ''}.`
+                    : 'Save your university, programme, year of study, and semester in your profile to view verified courses.'}
+                </p>
+              </>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

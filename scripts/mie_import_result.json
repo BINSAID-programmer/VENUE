@@ -1,0 +1,307 @@
+{
+  "academicUnit": "College of Engineering and Technology (CoET)",
+  "department": "Department of Mechanical and Industrial Engineering",
+  "programmes": [
+    {
+      "id": "bsc-mech",
+      "name": "Bachelor of Science in Mechanical Engineering"
+    },
+    {
+      "id": "bsc-ie",
+      "name": "Bachelor of Science in Industrial Engineering"
+    },
+    {
+      "id": "bsc-tdt",
+      "name": "Bachelor of Science in Textile Design and Technology"
+    },
+    {
+      "id": "bsc-te",
+      "name": "Bachelor of Science in Textile Engineering"
+    }
+  ],
+  "relationshipsCreatedCount": 224,
+  "canonicalCreatedCount": 0,
+  "canonicalReusedCount": 157,
+  "conflictsSkippedCount": 31,
+  "conflicts": [
+    {
+      "progId": "bsc-mech",
+      "code": "ME 101",
+      "suppliedTitle": "Engineering Drawing",
+      "suppliedCredits": 8,
+      "existingTitle": "Engineering Mechanics (Statics)",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-mech",
+      "code": "DS 115",
+      "suppliedTitle": "Development Perspectives II",
+      "suppliedCredits": 12,
+      "existingTitle": "Development Perspectives II",
+      "existingCredits": 8,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-mech",
+      "code": "EE 151",
+      "suppliedTitle": "Fundamentals of Electrical Engineering",
+      "suppliedCredits": 12,
+      "existingTitle": "Fundamentals of Electrical Engineering I",
+      "existingCredits": 8,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-mech",
+      "code": "ME 103",
+      "suppliedTitle": "Computer Aided Drafting",
+      "suppliedCredits": 8,
+      "existingTitle": "Workshop Technology and Practice",
+      "existingCredits": 10,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-mech",
+      "code": "ME 201",
+      "suppliedTitle": "Design Methodology",
+      "suppliedCredits": 8,
+      "existingTitle": "Thermodynamics I",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-mech",
+      "code": "ME 206",
+      "suppliedTitle": "Strength of Materials II",
+      "suppliedCredits": 8,
+      "existingTitle": "Strength of Materials II",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-mech",
+      "code": "ME 202",
+      "suppliedTitle": "Machine Elements and Design I",
+      "suppliedCredits": 12,
+      "existingTitle": "Mechanics of Materials",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-mech",
+      "code": "ME 208",
+      "suppliedTitle": "Dynamics",
+      "suppliedCredits": 8,
+      "existingTitle": "Dynamics",
+      "existingCredits": 6,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-mech",
+      "code": "ME 302",
+      "suppliedTitle": "Machine Elements and Design II",
+      "suppliedCredits": 12,
+      "existingTitle": "Control Systems Engineering",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-mech",
+      "code": "ME 303",
+      "suppliedTitle": "Computer Aided Design",
+      "suppliedCredits": 8,
+      "existingTitle": "Internal Combustion Engines",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-mech",
+      "code": "ME 402",
+      "suppliedTitle": "Material Handling Systems",
+      "suppliedCredits": 8,
+      "existingTitle": "Refrigeration and Air Conditioning",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-mech",
+      "code": "ME 499",
+      "suppliedTitle": "Final Project II",
+      "suppliedCredits": 12,
+      "existingTitle": "Mechanical Engineering Final Project",
+      "existingCredits": 16,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-ie",
+      "code": "ME 101",
+      "suppliedTitle": "Engineering Drawing",
+      "suppliedCredits": 8,
+      "existingTitle": "Engineering Mechanics (Statics)",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-ie",
+      "code": "DS 115",
+      "suppliedTitle": "Development Perspectives II",
+      "suppliedCredits": 12,
+      "existingTitle": "Development Perspectives II",
+      "existingCredits": 8,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-ie",
+      "code": "EE 151",
+      "suppliedTitle": "Fundamentals of Electrical Engineering",
+      "suppliedCredits": 12,
+      "existingTitle": "Fundamentals of Electrical Engineering I",
+      "existingCredits": 8,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-ie",
+      "code": "ME 103",
+      "suppliedTitle": "Computer Aided Drafting",
+      "suppliedCredits": 8,
+      "existingTitle": "Workshop Technology and Practice",
+      "existingCredits": 10,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-ie",
+      "code": "ME 201",
+      "suppliedTitle": "Design Methodology",
+      "suppliedCredits": 8,
+      "existingTitle": "Thermodynamics I",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-ie",
+      "code": "ME 202",
+      "suppliedTitle": "Machine Elements and Design I",
+      "suppliedCredits": 12,
+      "existingTitle": "Mechanics of Materials",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-ie",
+      "code": "ME 303",
+      "suppliedTitle": "Computer Aided Design",
+      "suppliedCredits": 8,
+      "existingTitle": "Internal Combustion Engines",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-ie",
+      "code": "ME 326",
+      "suppliedTitle": "Combustion and Heat Transfer",
+      "suppliedCredits": 8,
+      "existingTitle": "Combustion and Heat Transfer",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-tdt",
+      "code": "CL 111",
+      "suppliedTitle": "Communications Skills for Engineers",
+      "suppliedCredits": 8,
+      "existingTitle": "Communication Skills for Engineers I",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-tdt",
+      "code": "EE 171",
+      "suppliedTitle": "Computers Programming for Engineers",
+      "suppliedCredits": 12,
+      "existingTitle": "Introduction to Computers and Programming for Engineers",
+      "existingCredits": 8,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-tdt",
+      "code": "ME 101",
+      "suppliedTitle": "Engineering Drawing",
+      "suppliedCredits": 8,
+      "existingTitle": "Engineering Mechanics (Statics)",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-tdt",
+      "code": "ME 103",
+      "suppliedTitle": "Computer Aided Drafting",
+      "suppliedCredits": 8,
+      "existingTitle": "Workshop Technology and Practice",
+      "existingCredits": 10,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-tdt",
+      "code": "DS 115",
+      "suppliedTitle": "Development Perspectives II",
+      "suppliedCredits": 12,
+      "existingTitle": "Development Perspectives II",
+      "existingCredits": 8,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-te",
+      "code": "DS 114",
+      "suppliedTitle": "Development Perspectives I",
+      "suppliedCredits": 8,
+      "existingTitle": "Development Perspectives I",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-te",
+      "code": "ME 101",
+      "suppliedTitle": "Engineering Drawing",
+      "suppliedCredits": 8,
+      "existingTitle": "Engineering Mechanics (Statics)",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-te",
+      "code": "DS 115",
+      "suppliedTitle": "Development Perspectives II",
+      "suppliedCredits": 12,
+      "existingTitle": "Development Perspectives II",
+      "existingCredits": 8,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-te",
+      "code": "EE 151",
+      "suppliedTitle": "Fundamentals of Electrical Engineering",
+      "suppliedCredits": 12,
+      "existingTitle": "Fundamentals of Electrical Engineering I",
+      "existingCredits": 8,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-te",
+      "code": "ME 103",
+      "suppliedTitle": "Computer Aided Drafting",
+      "suppliedCredits": 8,
+      "existingTitle": "Workshop Technology and Practice",
+      "existingCredits": 10,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    },
+    {
+      "progId": "bsc-te",
+      "code": "MT 171",
+      "suppliedTitle": "Matrices and Basic Calculus for Non-Majors",
+      "suppliedCredits": 12,
+      "existingTitle": "One Variable Calculus and Differential Equations for Non-Majors",
+      "existingCredits": 12,
+      "actionTaken": "STOPPED individual course import. Preserved existing canonical course untouched. Flagged for manual review."
+    }
+  ]
+}

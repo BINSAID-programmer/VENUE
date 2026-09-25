@@ -57,8 +57,8 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
 
   // Academic Hierarchy States
   const [universitiesList, setUniversitiesList] = useState<UniversityRecord[]>([]);
-  const [selectedUniversityId, setSelectedUniversityId] = useState<string>('udsm');
-  const [universityName, setUniversityName] = useState<string>(profile.university || 'University of Dar es Salaam');
+  const [selectedUniversityId, setSelectedUniversityId] = useState<string>(profile.universityId || '');
+  const [universityName, setUniversityName] = useState<string>(profile.university || '');
   const [customUniversity, setCustomUniversity] = useState('');
 
   const [institutionsList, setInstitutionsList] = useState<AcademicUnitRecord[]>([]);
@@ -426,7 +426,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
 
     const resolvedUniversity = isCustomUni
       ? customUniversity.trim()
-      : universityName || 'University of Dar es Salaam';
+      : universityName || profile.university || 'University';
 
     const resolvedCollege = isCustomCollege
       ? customCollege.trim()

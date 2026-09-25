@@ -1,0 +1,106 @@
+[
+  {
+    "programmeId": "ba-history",
+    "code": "CL 106",
+    "error": "UNEXPECTED_COURSE",
+    "expected": "NONE",
+    "actual": "Y1S1 Communication Skills (8 cr, Core)",
+    "docId": "ba-history_cl_106"
+  },
+  {
+    "programmeId": "ba-history",
+    "code": "DS 112",
+    "error": "UNEXPECTED_COURSE",
+    "expected": "NONE",
+    "actual": "Y1S1 Development Perspectives I (8 cr, Core)",
+    "docId": "ba-history_ds_112"
+  },
+  {
+    "programmeId": "ba-history",
+    "code": "HU 101",
+    "error": "UNEXPECTED_COURSE",
+    "expected": "NONE",
+    "actual": "Y1S1 Foundation of Bachelor of Arts in History I (12 cr, Core)",
+    "docId": "ba-history_hu_101"
+  },
+  {
+    "programmeId": "ba-history",
+    "code": "HU 102",
+    "error": "UNEXPECTED_COURSE",
+    "expected": "NONE",
+    "actual": "Y1S1 Quantitative Methods for Bachelor of Arts in History (12 cr, Core)",
+    "docId": "ba-history_hu_102"
+  },
+  {
+    "programmeId": "ba-history",
+    "code": "HU 103",
+    "error": "UNEXPECTED_COURSE",
+    "expected": "NONE",
+    "actual": "Y1S2 Principles and Applications of Bachelor of Arts in History (12 cr, Core)",
+    "docId": "ba-history_hu_103"
+  },
+  {
+    "programmeId": "ba-history",
+    "code": "HU 104",
+    "error": "UNEXPECTED_COURSE",
+    "expected": "NONE",
+    "actual": "Y1S2 Information Technology for Bachelor of Arts in History (8 cr, Core)",
+    "docId": "ba-history_hu_104"
+  },
+  {
+    "programmeId": "ba-history",
+    "code": "HU 201",
+    "error": "UNEXPECTED_COURSE",
+    "expected": "NONE",
+    "actual": "Y2S1 Intermediate Bachelor of Arts in History Theory I (12 cr, Core)",
+    "docId": "ba-history_hu_201"
+  },
+  {
+    "programmeId": "ba-history",
+    "code": "HU 202",
+    "error": "UNEXPECTED_COURSE",
+    "expected": "NONE",
+    "actual": "Y2S1 Research Methods in Bachelor of Arts in History (12 cr, Core)",
+    "docId": "ba-history_hu_202"
+  },
+  {
+    "programmeId": "ba-history",
+    "code": "HU 203",
+    "error": "UNEXPECTED_COURSE",
+    "expected": "NONE",
+    "actual": "Y2S2 Advanced Bachelor of Arts in History Laboratory/Field Practice (12 cr, Core)",
+    "docId": "ba-history_hu_203"
+  },
+  {
+    "programmeId": "ba-history",
+    "code": "HU 204",
+    "error": "UNEXPECTED_COURSE",
+    "expected": "NONE",
+    "actual": "Y2S2 Special Topics in Bachelor of Arts in History (12 cr, Core)",
+    "docId": "ba-history_hu_204"
+  },
+  {
+    "programmeId": "ba-history",
+    "code": "HU 301",
+    "error": "UNEXPECTED_COURSE",
+    "expected": "NONE",
+    "actual": "Y3S1 Senior Seminar in Bachelor of Arts in History (12 cr, Core)",
+    "docId": "ba-history_hu_301"
+  },
+  {
+    "programmeId": "ba-history",
+    "code": "HU 302",
+    "error": "UNEXPECTED_COURSE",
+    "expected": "NONE",
+    "actual": "Y3S1 Professional Practice and Ethics in Bachelor of Arts in History (12 cr, Core)",
+    "docId": "ba-history_hu_302"
+  },
+  {
+    "programmeId": "ba-history",
+    "code": "HU 399",
+    "error": "UNEXPECTED_COURSE",
+    "expected": "NONE",
+    "actual": "Y3S2 Final Year Undergraduate Project in Bachelor of Arts in History (16 cr, Core)",
+    "docId": "ba-history_hu_399"
+  }
+]

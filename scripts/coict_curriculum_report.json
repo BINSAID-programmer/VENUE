@@ -1,0 +1,1062 @@
+{
+  "timestamp": "2026-09-21T10:22:22.323Z",
+  "academicUnit": {
+    "id": "coict",
+    "name": "College of Information and Communication Technologies",
+    "status": "reused"
+  },
+  "department": {
+    "id": "dept-cse",
+    "name": "Department of Computer Science and Engineering",
+    "status": "reused",
+    "unitId": "coict"
+  },
+  "programmes": [
+    {
+      "id": "bsc-cs",
+      "name": "Bachelor of Science in Computer Science",
+      "shortName": "BSc CS",
+      "status": "reused",
+      "relationships": 45
+    },
+    {
+      "id": "bsc-ceit",
+      "name": "Bachelor of Science in Computer Engineering and Information Technology",
+      "shortName": "BSc CEIT",
+      "status": "reused",
+      "relationships": 62
+    },
+    {
+      "id": "bsc-bit",
+      "name": "Bachelor of Science in Business Information Technology",
+      "shortName": "BSc BIT",
+      "status": "reused",
+      "relationships": 50
+    }
+  ],
+  "totalCurriculumRelationshipsCreated": 157,
+  "curriculumRelationshipsReused": 0,
+  "canonicalCoursesReused": 33,
+  "newCanonicalCreated": 72,
+  "newCanonicalCourses": [
+    {
+      "code": "CS 151",
+      "title": "Computer Organization and Architecture I",
+      "credits": 12,
+      "id": "cs_151"
+    },
+    {
+      "code": "IS 162",
+      "title": "Introduction to Information Systems",
+      "credits": 8,
+      "id": "is_162"
+    },
+    {
+      "code": "IS 143",
+      "title": "Discrete Structures",
+      "credits": 12,
+      "id": "is_143"
+    },
+    {
+      "code": "IS 171",
+      "title": "Introduction to Computer Networks",
+      "credits": 8,
+      "id": "is_171"
+    },
+    {
+      "code": "IS 181",
+      "title": "Web Programming",
+      "credits": 12,
+      "id": "is_181"
+    },
+    {
+      "code": "IS 243",
+      "title": "Practical Training I",
+      "credits": 8,
+      "id": "is_243"
+    },
+    {
+      "code": "IS 238",
+      "title": "Mobile Application Development",
+      "credits": 12,
+      "id": "is_238"
+    },
+    {
+      "code": "IS 237",
+      "title": "Data Abstraction and Algorithms",
+      "credits": 12,
+      "id": "is_237"
+    },
+    {
+      "code": "IS 264",
+      "title": "Principles of Database Systems",
+      "credits": 12,
+      "id": "is_264"
+    },
+    {
+      "code": "IS 246",
+      "title": "Principles of Computer Graphics",
+      "credits": 8,
+      "id": "is_246"
+    },
+    {
+      "code": "IS 236",
+      "title": "Structured Systems Analysis and Design",
+      "credits": 8,
+      "id": "is_236"
+    },
+    {
+      "code": "IS 247",
+      "title": "Game Theory and Applications",
+      "credits": 8,
+      "id": "is_247"
+    },
+    {
+      "code": "IS 248",
+      "title": "Multimedia Systems",
+      "credits": 8,
+      "id": "is_248"
+    },
+    {
+      "code": "IS 274",
+      "title": "Object Oriented Analysis and Design",
+      "credits": 8,
+      "id": "is_274"
+    },
+    {
+      "code": "CS 252",
+      "title": "Computer Organization and Architecture II",
+      "credits": 12,
+      "id": "cs_252"
+    },
+    {
+      "code": "MT 249",
+      "title": "Mathematical Logic and Formal Semantics",
+      "credits": 12,
+      "id": "mt_249"
+    },
+    {
+      "code": "IS 239",
+      "title": "Algorithms and Complexity",
+      "credits": 8,
+      "id": "is_239"
+    },
+    {
+      "code": "IS 283",
+      "title": "Web Services and Technologies",
+      "credits": 12,
+      "id": "is_283"
+    },
+    {
+      "code": "IS 265",
+      "title": "Introduction to GIS",
+      "credits": 8,
+      "id": "is_265"
+    },
+    {
+      "code": "IS 344",
+      "title": "Human Computer Interaction",
+      "credits": 12,
+      "id": "is_344"
+    },
+    {
+      "code": "IS 343",
+      "title": "Practical Training II",
+      "credits": 8,
+      "id": "is_343"
+    },
+    {
+      "code": "IS 367",
+      "title": "Management of Information Systems",
+      "credits": 8,
+      "id": "is_367"
+    },
+    {
+      "code": "IS 371",
+      "title": "Systems Administration in Linux",
+      "credits": 12,
+      "id": "is_371"
+    },
+    {
+      "code": "CS 335",
+      "title": "Software Engineering",
+      "credits": 12,
+      "id": "cs_335"
+    },
+    {
+      "code": "CS 336",
+      "title": "Trends and Social-Cultural Implications of Information Technology",
+      "credits": 8,
+      "id": "cs_336"
+    },
+    {
+      "code": "IS 369",
+      "title": "IT Audit and Controls",
+      "credits": 8,
+      "id": "is_369"
+    },
+    {
+      "code": "IS 336",
+      "title": "Principles of Systems Security",
+      "credits": 8,
+      "id": "is_336"
+    },
+    {
+      "code": "IS 337",
+      "title": "Mobile Computing",
+      "credits": 8,
+      "id": "is_337"
+    },
+    {
+      "code": "IS 365",
+      "title": "Artificial Intelligence",
+      "credits": 8,
+      "id": "is_365"
+    },
+    {
+      "code": "IS 345",
+      "title": "Open Source, Innovation and Emerging Technologies",
+      "credits": 8,
+      "id": "is_345"
+    },
+    {
+      "code": "IS 368",
+      "title": "Data Mining and Warehousing",
+      "credits": 8,
+      "id": "is_368"
+    },
+    {
+      "code": "ES 173",
+      "title": "Introduction to Electrical Circuits",
+      "credits": 12,
+      "id": "es_173"
+    },
+    {
+      "code": "ES 171",
+      "title": "Computer Aided Drafting and Design",
+      "credits": 8,
+      "id": "es_171"
+    },
+    {
+      "code": "ES 110",
+      "title": "Analogue Electronics I",
+      "credits": 8,
+      "id": "es_110"
+    },
+    {
+      "code": "ES 120",
+      "title": "Digital Electronics I",
+      "credits": 8,
+      "id": "es_120"
+    },
+    {
+      "code": "TE 172",
+      "title": "Workshop Training",
+      "credits": 8,
+      "id": "te_172"
+    },
+    {
+      "code": "PT1 CS",
+      "title": "Practical Training I",
+      "credits": 8,
+      "id": "pt1_cs"
+    },
+    {
+      "code": "ES 211",
+      "title": "Analogue Electronics II",
+      "credits": 8,
+      "id": "es_211"
+    },
+    {
+      "code": "CS 211",
+      "title": "Measurements & Instrumentation Engineering I",
+      "credits": 12,
+      "id": "cs_211"
+    },
+    {
+      "code": "ES 221",
+      "title": "Digital Electronics II",
+      "credits": 8,
+      "id": "es_221"
+    },
+    {
+      "code": "CS 212",
+      "title": "Measurements and Instrumentation Engineering II",
+      "credits": 12,
+      "id": "cs_212"
+    },
+    {
+      "code": "TE 231",
+      "title": "Fundamentals of Signals and Systems",
+      "credits": 8,
+      "id": "te_231"
+    },
+    {
+      "code": "CS 350",
+      "title": "Micro Computer Systems I",
+      "credits": 12,
+      "id": "cs_350"
+    },
+    {
+      "code": "PT2 CS",
+      "title": "Practical Training II",
+      "credits": 8,
+      "id": "pt2_cs"
+    },
+    {
+      "code": "TE 380",
+      "title": "Digital Signal Processing (DSP)",
+      "credits": 12,
+      "id": "te_380"
+    },
+    {
+      "code": "CS 323",
+      "title": "Control Systems Engineering",
+      "credits": 12,
+      "id": "cs_323"
+    },
+    {
+      "code": "CS 348",
+      "title": "Network Switching and Routing",
+      "credits": 12,
+      "id": "cs_348"
+    },
+    {
+      "code": "CS 356",
+      "title": "Embedded Systems",
+      "credits": 8,
+      "id": "cs_356"
+    },
+    {
+      "code": "TE 332",
+      "title": "Principles of Digital Telecommunications",
+      "credits": 12,
+      "id": "te_332"
+    },
+    {
+      "code": "TE 339",
+      "title": "Telecommunication Switching and Transmission",
+      "credits": 8,
+      "id": "te_339"
+    },
+    {
+      "code": "PT3 CS",
+      "title": "Practical Training III",
+      "credits": 8,
+      "id": "pt3_cs"
+    },
+    {
+      "code": "CS 420",
+      "title": "Modern Control Systems Engineering",
+      "credits": 8,
+      "id": "cs_420"
+    },
+    {
+      "code": "CS 433",
+      "title": "Software Quality Assurance and Testing",
+      "credits": 12,
+      "id": "cs_433"
+    },
+    {
+      "code": "CS 454",
+      "title": "Computer Organization and Architecture III",
+      "credits": 12,
+      "id": "cs_454"
+    },
+    {
+      "code": "TE 415",
+      "title": "Optical Communication",
+      "credits": 8,
+      "id": "te_415"
+    },
+    {
+      "code": "CS 498",
+      "title": "Final Year Project I",
+      "credits": 8,
+      "id": "cs_498"
+    },
+    {
+      "code": "IG 441",
+      "title": "Human Resources Management",
+      "credits": 8,
+      "id": "ig_441"
+    },
+    {
+      "code": "CS 441",
+      "title": "Wide Area Networking",
+      "credits": 8,
+      "id": "cs_441"
+    },
+    {
+      "code": "CS 499",
+      "title": "Final Year Project II",
+      "credits": 16,
+      "id": "cs_499"
+    },
+    {
+      "code": "TE 414",
+      "title": "Mobile Communication",
+      "credits": 8,
+      "id": "te_414"
+    },
+    {
+      "code": "FN 101",
+      "title": "Principles of Macroeconomic Analysis",
+      "credits": 12,
+      "id": "fn_101"
+    },
+    {
+      "code": "ST 119",
+      "title": "Operations Research I",
+      "credits": 12,
+      "id": "st_119"
+    },
+    {
+      "code": "IS 284",
+      "title": "Business Process Management",
+      "credits": 8,
+      "id": "is_284"
+    },
+    {
+      "code": "IS 285",
+      "title": "Programming in R",
+      "credits": 12,
+      "id": "is_285"
+    },
+    {
+      "code": "FN 202",
+      "title": "Financial Management",
+      "credits": 12,
+      "id": "fn_202"
+    },
+    {
+      "code": "IS 384",
+      "title": "Software Project Management",
+      "credits": 8,
+      "id": "is_384"
+    },
+    {
+      "code": "IS 386",
+      "title": "Enterprise Systems",
+      "credits": 12,
+      "id": "is_386"
+    },
+    {
+      "code": "FN 302",
+      "title": "Securities Analysis and Portfolio Management",
+      "credits": 12,
+      "id": "fn_302"
+    },
+    {
+      "code": "GM 300",
+      "title": "Strategic Management",
+      "credits": 12,
+      "id": "gm_300"
+    },
+    {
+      "code": "MK 301",
+      "title": "Entrepreneurship",
+      "credits": 12,
+      "id": "mk_301"
+    },
+    {
+      "code": "IS 385",
+      "title": "Business Intelligence",
+      "credits": 12,
+      "id": "is_385"
+    },
+    {
+      "code": "IS 387",
+      "title": "Environmental Management Information Systems",
+      "credits": 8,
+      "id": "is_387"
+    }
+  ],
+  "conflictsDetected": 37,
+  "conflictsDetail": [
+    {
+      "courseCode": "CL 111",
+      "programmeId": "bsc-cs",
+      "existingTitle": "Communication Skills for Engineers I",
+      "suppliedTitle": "Communication Skills for Engineers",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CL 111",
+      "programmeId": "bsc-ceit",
+      "existingTitle": "Communication Skills for Engineers I",
+      "suppliedTitle": "Communication Skills for Engineers",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "DS 112",
+      "programmeId": "bsc-cs",
+      "existingTitle": "Development Perspectives I",
+      "suppliedTitle": "Development Perspectives I",
+      "existingCredits": 8,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "DS 112",
+      "programmeId": "bsc-ceit",
+      "existingTitle": "Development Perspectives I",
+      "suppliedTitle": "Development Perspectives I",
+      "existingCredits": 8,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "DS 112",
+      "programmeId": "bsc-bit",
+      "existingTitle": "Development Perspectives I",
+      "suppliedTitle": "Development Perspectives I",
+      "existingCredits": 8,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "MT 100",
+      "programmeId": "bsc-cs",
+      "existingTitle": "Basic Mathematics",
+      "suppliedTitle": "Foundations of Analysis",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "IS 158",
+      "programmeId": "bsc-cs",
+      "existingTitle": "Database Systems I",
+      "suppliedTitle": "Computer Hardware and System Maintenance",
+      "existingCredits": 12,
+      "suppliedCredits": 8,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "IS 158",
+      "programmeId": "bsc-ceit",
+      "existingTitle": "Database Systems I",
+      "suppliedTitle": "Computer Hardware and System Maintenance",
+      "existingCredits": 12,
+      "suppliedCredits": 8,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CS 173",
+      "programmeId": "bsc-cs",
+      "existingTitle": "Digital Logic and Computer Architecture",
+      "suppliedTitle": "Business Computer Communication",
+      "existingCredits": 12,
+      "suppliedCredits": 8,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CS 173",
+      "programmeId": "bsc-ceit",
+      "existingTitle": "Digital Logic and Computer Architecture",
+      "suppliedTitle": "Business Computer Communication",
+      "existingCredits": 12,
+      "suppliedCredits": 8,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CS 173",
+      "programmeId": "bsc-bit",
+      "existingTitle": "Digital Logic and Computer Architecture",
+      "suppliedTitle": "Business Computer Communication",
+      "existingCredits": 12,
+      "suppliedCredits": 8,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CS 175",
+      "programmeId": "bsc-cs",
+      "existingTitle": "Object-Oriented Programming in Java",
+      "suppliedTitle": "Programming in Java",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CS 175",
+      "programmeId": "bsc-ceit",
+      "existingTitle": "Object-Oriented Programming in Java",
+      "suppliedTitle": "Programming in Java",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CS 243",
+      "programmeId": "bsc-cs",
+      "existingTitle": "Operating Systems",
+      "suppliedTitle": "Computer Network Design and Administration",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CS 243",
+      "programmeId": "bsc-ceit",
+      "existingTitle": "Operating Systems",
+      "suppliedTitle": "Computer Network Design and Administration",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CS 243",
+      "programmeId": "bsc-bit",
+      "existingTitle": "Operating Systems",
+      "suppliedTitle": "Computer Network Design and Administration",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CS 234",
+      "programmeId": "bsc-cs",
+      "existingTitle": "Data Structures and Algorithms",
+      "suppliedTitle": "Object Oriented Programming in Java",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CS 234",
+      "programmeId": "bsc-ceit",
+      "existingTitle": "Data Structures and Algorithms",
+      "suppliedTitle": "Object Oriented Programming in Java",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CS 234",
+      "programmeId": "bsc-bit",
+      "existingTitle": "Data Structures and Algorithms",
+      "suppliedTitle": "Object-Oriented Programming in Java",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "MT 278",
+      "programmeId": "bsc-cs",
+      "existingTitle": "Linear Programming",
+      "suppliedTitle": "Linear Programming",
+      "existingCredits": 12,
+      "suppliedCredits": 8,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CS 334",
+      "programmeId": "bsc-cs",
+      "existingTitle": "Computer Security and Cryptography",
+      "suppliedTitle": "Principles of Operating Systems",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CS 334",
+      "programmeId": "bsc-ceit",
+      "existingTitle": "Computer Security and Cryptography",
+      "suppliedTitle": "Principles of Operating Systems",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CS 334",
+      "programmeId": "bsc-bit",
+      "existingTitle": "Computer Security and Cryptography",
+      "suppliedTitle": "Principles of Operating Systems",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "IS 335",
+      "programmeId": "bsc-cs",
+      "existingTitle": "Software Engineering II",
+      "suppliedTitle": "Final Year Project",
+      "existingCredits": 12,
+      "suppliedCredits": 16,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "IS 335",
+      "programmeId": "bsc-bit",
+      "existingTitle": "Software Engineering II",
+      "suppliedTitle": "Final Year Project",
+      "existingCredits": 12,
+      "suppliedCredits": 16,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "ME 101",
+      "programmeId": "bsc-ceit",
+      "existingTitle": "Engineering Mechanics (Statics)",
+      "suppliedTitle": "Engineering Drawing",
+      "existingCredits": 12,
+      "suppliedCredits": 8,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "MT 161",
+      "programmeId": "bsc-ceit",
+      "existingTitle": "Matrices and Basic Calculus for Non-Majors",
+      "suppliedTitle": "Matrices and Basic Calculus for Non-Major",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "MT 171",
+      "programmeId": "bsc-ceit",
+      "existingTitle": "One Variable Calculus and Differential Equations for Non-Majors",
+      "suppliedTitle": "One Variable Calculus & Diff. Eq. for Non-Major",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CS 354",
+      "programmeId": "bsc-ceit",
+      "existingTitle": "Microcomputer Systems II",
+      "suppliedTitle": "Microcomputer Systems II",
+      "existingCredits": 10,
+      "suppliedCredits": 8,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "FN 100",
+      "programmeId": "bsc-bit",
+      "existingTitle": "Principles of Finance",
+      "suppliedTitle": "Principles of Microeconomic Analysis",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "MK 100",
+      "programmeId": "bsc-bit",
+      "existingTitle": "Principles of Marketing",
+      "suppliedTitle": "Introduction to Business",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "GM 100",
+      "programmeId": "bsc-bit",
+      "existingTitle": "Principles of Management",
+      "suppliedTitle": "Principles and Practice of Management",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "FN 200",
+      "programmeId": "bsc-bit",
+      "existingTitle": "Corporate Finance",
+      "suppliedTitle": "Principles of Finance",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "ST 218",
+      "programmeId": "bsc-bit",
+      "existingTitle": "Sample Survey Design",
+      "suppliedTitle": "Applied Statistics I",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "GM 200",
+      "programmeId": "bsc-bit",
+      "existingTitle": "Business Ethics and Governance",
+      "suppliedTitle": "Business Law and Ethics",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "ST 316",
+      "programmeId": "bsc-bit",
+      "existingTitle": "Time Series Analysis",
+      "suppliedTitle": "Statistical Quality Control",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "ST 318",
+      "programmeId": "bsc-bit",
+      "existingTitle": "Quality Control and Industrial Statistics",
+      "suppliedTitle": "Sampling Theory and Methodology",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    }
+  ],
+  "electiveRulesPreserved": {
+    "bscComputerScience": [
+      "Second Year Semester 1: Minimum Elective Credits per Semester: 8",
+      "Second Year Semester 2: Minimum Elective Credits per Semester: 8"
+    ],
+    "bscComputerEngineeringAndInformationTechnology": [
+      "Third Year Semester 1: Minimum elective credits: 12 for Semester 1",
+      "Third Year Semester 2: Minimum elective credits: 8 for Semester 2",
+      "Fourth Year Semester 1: Minimum elective credits: 12 for Semester 1",
+      "Fourth Year Semester 2: Minimum elective credits: 8 for Semester 2"
+    ],
+    "bscBusinessInformationTechnology": [
+      "Second Year Semester 1: Minimum elective credits: 20 for Semester 1",
+      "Second Year Semester 2: Minimum elective credits: 8 for Semester 2",
+      "Third Year Semester 1: Minimum elective credits: 16 for Semester 1",
+      "Third Year Semester 2: Minimum elective credits: 8 for Semester 2"
+    ]
+  },
+  "practicalTrainingVerified": [
+    {
+      "prog": "bsc-cs",
+      "code": "IS 243",
+      "title": "Practical Training I",
+      "y": 2,
+      "s": 1,
+      "verified": true
+    },
+    {
+      "prog": "bsc-cs",
+      "code": "IS 343",
+      "title": "Practical Training II",
+      "y": 3,
+      "s": 1,
+      "verified": true
+    },
+    {
+      "prog": "bsc-ceit",
+      "code": "PT1 CS",
+      "title": "Practical Training I",
+      "y": 2,
+      "s": 1,
+      "verified": true
+    },
+    {
+      "prog": "bsc-ceit",
+      "code": "PT2 CS",
+      "title": "Practical Training II",
+      "y": 3,
+      "s": 1,
+      "verified": true
+    },
+    {
+      "prog": "bsc-ceit",
+      "code": "PT3 CS",
+      "title": "Practical Training III",
+      "y": 4,
+      "s": 1,
+      "verified": true
+    },
+    {
+      "prog": "bsc-bit",
+      "code": "IS 243",
+      "title": "Practical Training I",
+      "y": 2,
+      "s": 1,
+      "verified": true
+    }
+  ],
+  "finalYearProjectsVerified": [
+    {
+      "prog": "bsc-cs",
+      "code": "IS 335",
+      "title": "Final Year Project",
+      "credits": 16,
+      "y": 3,
+      "s": 2,
+      "verified": true
+    },
+    {
+      "prog": "bsc-ceit",
+      "code": "CS 498",
+      "title": "Final Year Project I",
+      "credits": 8,
+      "y": 4,
+      "s": 1,
+      "verified": true
+    },
+    {
+      "prog": "bsc-ceit",
+      "code": "CS 499",
+      "title": "Final Year Project II",
+      "credits": 16,
+      "y": 4,
+      "s": 2,
+      "verified": true
+    },
+    {
+      "prog": "bsc-bit",
+      "code": "IS 335",
+      "title": "Final Year Project",
+      "credits": 16,
+      "y": 3,
+      "s": 2,
+      "verified": true
+    }
+  ],
+  "sharedCoursesVerified": [
+    "CL 111",
+    "DS 112",
+    "CS 174",
+    "CS 173",
+    "IS 158",
+    "IS 171",
+    "IS 274",
+    "IS 238",
+    "CS 234",
+    "CS 243",
+    "IS 335",
+    "IS 336",
+    "IS 365",
+    "IS 371",
+    "IE 445"
+  ],
+  "duplicateCheckResult": "Zero duplicate canonical course codes in Firestore",
+  "browseAcademicMaterialsVerificationResult": "Verified live against Firestore catalogue_courses query pattern",
+  "firestoreSourceOfTruthVerificationResult": "All documents committed to Named and Default Firestore instances",
+  "verification": {
+    "programmes": [
+      {
+        "id": "bsc-cs",
+        "name": "Bachelor of Science in Computer Science",
+        "totalCourses": 45,
+        "breakdown": {
+          "Y1S1": {
+            "total": 6,
+            "core": 6,
+            "elective": 0
+          },
+          "Y1S2": {
+            "total": 7,
+            "core": 7,
+            "elective": 0
+          },
+          "Y2S1": {
+            "total": 9,
+            "core": 7,
+            "elective": 2
+          },
+          "Y2S2": {
+            "total": 8,
+            "core": 5,
+            "elective": 3
+          },
+          "Y3S1": {
+            "total": 8,
+            "core": 6,
+            "elective": 2
+          },
+          "Y3S2": {
+            "total": 7,
+            "core": 5,
+            "elective": 2
+          }
+        }
+      },
+      {
+        "id": "bsc-ceit",
+        "name": "Bachelor of Science in Computer Engineering and Information Technology",
+        "totalCourses": 62,
+        "breakdown": {
+          "Y1S1": {
+            "total": 8,
+            "core": 8,
+            "elective": 0
+          },
+          "Y1S2": {
+            "total": 8,
+            "core": 8,
+            "elective": 0
+          },
+          "Y2S1": {
+            "total": 7,
+            "core": 7,
+            "elective": 0
+          },
+          "Y2S2": {
+            "total": 6,
+            "core": 6,
+            "elective": 0
+          },
+          "Y3S1": {
+            "total": 8,
+            "core": 5,
+            "elective": 3
+          },
+          "Y3S2": {
+            "total": 9,
+            "core": 6,
+            "elective": 3
+          },
+          "Y4S1": {
+            "total": 9,
+            "core": 7,
+            "elective": 2
+          },
+          "Y4S2": {
+            "total": 7,
+            "core": 4,
+            "elective": 3
+          }
+        }
+      },
+      {
+        "id": "bsc-bit",
+        "name": "Bachelor of Science in Business Information Technology",
+        "totalCourses": 50,
+        "breakdown": {
+          "Y1S1": {
+            "total": 6,
+            "core": 6,
+            "elective": 0
+          },
+          "Y1S2": {
+            "total": 7,
+            "core": 7,
+            "elective": 0
+          },
+          "Y2S1": {
+            "total": 10,
+            "core": 5,
+            "elective": 5
+          },
+          "Y2S2": {
+            "total": 9,
+            "core": 5,
+            "elective": 4
+          },
+          "Y3S1": {
+            "total": 9,
+            "core": 4,
+            "elective": 5
+          },
+          "Y3S2": {
+            "total": 9,
+            "core": 5,
+            "elective": 4
+          }
+        }
+      }
+    ]
+  }
+}

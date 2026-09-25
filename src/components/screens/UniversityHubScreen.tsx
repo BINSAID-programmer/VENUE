@@ -76,6 +76,8 @@ export const UniversityHubScreen: React.FC<UniversityHubScreenProps> = ({
   // Dynamic Academic Units loaded from Firestore
   const [academicUnits, setAcademicUnits] = useState<AcademicUnitRecord[]>(UDSM_ACADEMIC_UNITS);
   const [, setLoadingUnits] = useState<boolean>(false);
+  const [programmeCourses, setProgrammeCourses] = useState<CourseRecord[]>([]);
+  const [, setLoadingCourses] = useState<boolean>(false);
 
   // Dynamically load audited Academic Units from Firestore on mount
   useEffect(() => {
@@ -99,6 +101,32 @@ export const UniversityHubScreen: React.FC<UniversityHubScreenProps> = ({
     };
   }, []);
 
+  // Dynamically load programme courses from Firestore when a programme is selected
+  useEffect(() => {
+    let isMounted = true;
+    async function loadProgrammeCoursesFromFirestore() {
+      if (!selectedProgId) {
+        setProgrammeCourses([]);
+        return;
+      }
+      try {
+        setLoadingCourses(true);
+        const result = await firestoreCatalogueService.getCoursesByProgramme(selectedProgId, { pageSize: 150 });
+        if (isMounted && result.items && result.items.length > 0) {
+          setProgrammeCourses(result.items);
+        }
+      } catch (err) {
+        console.warn('Failed to load courses from Firestore for programme:', selectedProgId, err);
+      } finally {
+        if (isMounted) setLoadingCourses(false);
+      }
+    }
+    loadProgrammeCoursesFromFirestore();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedProgId]);
+
   // Filter units based on unit type
   const filteredAcademicUnits = academicUnits.filter(
     (u) => selectedUnitType === 'all' || u.type === selectedUnitType
@@ -116,8 +144,12 @@ export const UniversityHubScreen: React.FC<UniversityHubScreenProps> = ({
     return true;
   });
 
-  // Filter courses based on selections
-  const filteredCourses = UDSM_VERIFIED_COURSES.filter((c) => {
+  // Filter courses based on selections (Firestore dynamic courses prioritize over static constants)
+  const baseCourses = selectedProgId && programmeCourses.length > 0
+    ? programmeCourses
+    : UDSM_VERIFIED_COURSES;
+
+  const filteredCourses = baseCourses.filter((c) => {
     // Search query
     if (catalogueSearch.trim()) {
       const q = catalogueSearch.toLowerCase().trim();
@@ -214,10 +246,10 @@ export const UniversityHubScreen: React.FC<UniversityHubScreenProps> = ({
       <div>
         <div className="flex items-center gap-2 mb-1 flex-wrap">
           <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/20 text-sky-400 border border-blue-500/30">
-            {profile?.university || 'University of Dar es Salaam'}
+            {profile?.university || 'Academic Institution'}
           </span>
           <span className="text-xs text-slate-400">
-            {profile?.college ? `${profile.college}` : 'Prospectus 2025/2026 Source of Truth'}
+            {profile?.college ? `${profile.college}` : 'Verified Academic Space'}
           </span>
         </div>
         <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">University Hub</h2>
@@ -260,7 +292,7 @@ export const UniversityHubScreen: React.FC<UniversityHubScreenProps> = ({
           }`}
         >
           <BookOpen className="w-3.5 h-3.5" />
-          <span>UDSM Catalogue</span>
+          <span>{profile?.universityShort || 'Academic'} Catalogue</span>
         </button>
         <button
           id="hub-tab-services"

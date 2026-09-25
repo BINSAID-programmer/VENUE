@@ -55,6 +55,8 @@ export const BrowseMaterialsScreen: React.FC<BrowseMaterialsScreenProps> = ({
   const [loadingProgrammes, setLoadingProgrammes] = useState(false);
 
   const [programmeId, setProgrammeId] = useState<string>('');
+  const [specialisationId, setSpecialisationId] = useState<string>('');
+  const [subStreamSlug, setSubStreamSlug] = useState<string>('');
   const [year, setYear] = useState<number | null>(null);
   const [semester, setSemester] = useState<number | null>(null);
 
@@ -188,14 +190,56 @@ export const BrowseMaterialsScreen: React.FC<BrowseMaterialsScreenProps> = ({
     setLoadingProgrammes(false);
   };
 
+  const loadCourses = async (
+    targetProgId: string,
+    targetYear: number | null,
+    targetSemester: number | null,
+    targetSpecId: string,
+    targetStreamSlug: string
+  ) => {
+    if (!targetYear || !targetSemester || !targetProgId || !universityId) return;
+
+    setLoadingCourses(true);
+    setHasQueriedCourses(true);
+    const loadedCourses = await fetchBrowseCourses({
+      universityId,
+      programmeId: targetProgId,
+      year: targetYear,
+      semester: targetSemester,
+      specialisationId: targetSpecId || undefined,
+      subStreamSlug: targetStreamSlug || undefined,
+    });
+    setCourses(loadedCourses);
+    setLoadingCourses(false);
+  };
+
   // Dependent selection 4: Programme Change
-  // If Programme changes: reset Year, Semester and Course.
+  // If Programme changes: reset Specialisation, Sub-Stream, Year, Semester and Course.
   const handleProgrammeChange = (newProgId: string) => {
     setProgrammeId(newProgId);
+    setSpecialisationId('');
+    setSubStreamSlug('');
     setYear(null);
     setSemester(null);
     setCourses([]);
     setHasQueriedCourses(false);
+  };
+
+  // Dependent selection 4b: Specialisation Change
+  const handleSpecialisationChange = (newSpecId: string) => {
+    setSpecialisationId(newSpecId);
+    setSubStreamSlug('');
+    if (year && semester) {
+      loadCourses(programmeId, year, semester, newSpecId, '');
+    }
+  };
+
+  // Dependent selection 4c: Sub-Stream Change
+  const handleSubStreamChange = (newSlug: string) => {
+    setSubStreamSlug(newSlug);
+    if (year && semester) {
+      loadCourses(programmeId, year, semester, specialisationId, newSlug);
+    }
   };
 
   // Dependent selection 5: Year Change
@@ -208,24 +252,19 @@ export const BrowseMaterialsScreen: React.FC<BrowseMaterialsScreenProps> = ({
   };
 
   // Dependent selection 6: Semester Change
-  // If Semester changes: reload only courses belonging to that programme + year + semester.
+  // If Semester changes: reload only courses belonging to that selection.
   const handleSemesterChange = async (newSemester: number) => {
     setSemester(newSemester);
     if (!year || !programmeId || !universityId) return;
-
-    setLoadingCourses(true);
-    setHasQueriedCourses(true);
-    const loadedCourses = await fetchBrowseCourses({
-      universityId,
-      programmeId,
-      year,
-      semester: newSemester,
-    });
-    setCourses(loadedCourses);
-    setLoadingCourses(false);
+    loadCourses(programmeId, year, newSemester, specialisationId, subStreamSlug);
   };
 
   const selectedProgrammeObj = programmes.find((p) => p.id === programmeId);
+  const availableSpecialisations = selectedProgrammeObj?.specialisations || [];
+  const selectedSpecialisationObj = availableSpecialisations.find(
+    (s) => s.id === specialisationId
+  );
+  const availableSubStreams = selectedSpecialisationObj?.subStreams || [];
   const durationYears = selectedProgrammeObj?.durationYears || 3;
   const yearsList = Array.from({ length: durationYears }, (_, i) => i + 1);
 
@@ -422,6 +461,60 @@ export const BrowseMaterialsScreen: React.FC<BrowseMaterialsScreenProps> = ({
           </div>
         </div>
 
+        {/* 4b. Specialisation & 4c. Sub-Stream / Language Option (if programme has specialisations) */}
+        {availableSpecialisations.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-800/80">
+            {/* 4b. Specialisation */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-blue-400" />
+                <span>Specialisation (Academic Stream)</span>
+              </label>
+              <select
+                id="browse-select-specialisation"
+                value={specialisationId}
+                onChange={(e) => handleSpecialisationChange(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+              >
+                <option value="">-- All Specialisations --</option>
+                {availableSpecialisations.map((spec) => (
+                  <option key={spec.id} value={spec.id}>
+                    {spec.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 4c. Sub-Stream / Language Option */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                <Compass className="w-3.5 h-3.5 text-blue-400" />
+                <span>Sub-Stream / Language Option</span>
+              </label>
+              <select
+                id="browse-select-substream"
+                value={subStreamSlug}
+                disabled={!specialisationId || availableSubStreams.length === 0}
+                onChange={(e) => handleSubStreamChange(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:border-blue-500 transition-colors"
+              >
+                <option value="">
+                  {!specialisationId
+                    ? '-- Select Specialisation First --'
+                    : availableSubStreams.length === 0
+                    ? '-- No Sub-Streams Available --'
+                    : '-- All Sub-Streams / Options --'}
+                </option>
+                {availableSubStreams.map((sub) => (
+                  <option key={sub.slug} value={sub.slug}>
+                    {sub.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
         {/* 5. Year and 6. Semester Selectors */}
         <div className="pt-2 border-t border-slate-800/80 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -548,6 +641,11 @@ export const BrowseMaterialsScreen: React.FC<BrowseMaterialsScreenProps> = ({
                         {course.code}
                       </span>
                       <div className="flex items-center gap-1.5 flex-wrap">
+                        {course.subStream && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/20">
+                            {course.subStream}
+                          </span>
+                        )}
                         {course.type && (
                           <span
                             className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
@@ -562,6 +660,11 @@ export const BrowseMaterialsScreen: React.FC<BrowseMaterialsScreenProps> = ({
                         <span className="text-[10px] text-slate-400 font-medium">
                           {course.credits} Credits
                         </span>
+                        {course.electiveRule && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                            {course.electiveRule}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -571,6 +674,12 @@ export const BrowseMaterialsScreen: React.FC<BrowseMaterialsScreenProps> = ({
                     <p className="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">
                       {course.overview}
                     </p>
+                    {course.note && (
+                      <p className="text-[10px] text-amber-400/90 italic mt-1.5 flex items-center gap-1">
+                        <Info className="w-3 h-3 shrink-0" />
+                        <span>Note: {course.note}</span>
+                      </p>
+                    )}
                     <p className="text-[11px] text-slate-500 mt-1.5">
                       {course.instructor?.name} • {course.department}
                     </p>

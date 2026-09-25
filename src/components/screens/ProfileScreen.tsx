@@ -175,6 +175,17 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ profile, onUpdateP
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+          {/* 0. Country */}
+          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-850">
+            <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
+              <School className="w-3 h-3 text-sky-400" />
+              Country / Region:
+            </span>
+            <p className="font-semibold text-slate-100 mt-1">
+              {profile.country || <span className="text-slate-500 font-normal italic">International</span>}
+            </p>
+          </div>
+
           {/* 1. Registration Number */}
           <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-850">
             <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
@@ -296,7 +307,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ profile, onUpdateP
         <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-850 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <div>
             <span className="text-[10px] text-slate-500 font-medium">Verified Student Email</span>
-            <p className="font-semibold text-slate-200 mt-0.5">{profile.email || 'student@udsm.ac.tz'}</p>
+            <p className="font-semibold text-slate-200 mt-0.5">{profile.email || 'student@university.edu'}</p>
           </div>
           {profile.uid && (
             <div className="text-left sm:text-right">

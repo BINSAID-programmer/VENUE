@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-09-22T08:07:00Z",
+  "department": "Department of Mathematics",
+  "academicUnit": "College of Natural and Applied Sciences (CoNAS)",
+  "canonicalCoursesCount": 1848,
+  "canonicalCoursesDeleted": 0,
+  "canonicalCoursesCreated": 0,
+  "programmes": {
+    "Bachelor of Science with Education": {
+      "id": "bsc-ed",
+      "year1": {
+        "semester1": { "expected": 2, "final": 2, "status": "PASS" },
+        "semester2": { "expected": 4, "final": 4, "status": "PASS" }
+      },
+      "year2": {
+        "semester1": { "expected": 4, "final": 4, "status": "PASS" },
+        "semester2": { "expected": 3, "final": 3, "status": "PASS" }
+      },
+      "year3": {
+        "semester1": { "expected": 4, "final": 4, "status": "PASS" },
+        "semester2": { "expected": 2, "final": 2, "status": "PASS" }
+      },
+      "totalCourses": 19,
+      "status": "PASS"
+    },
+    "Bachelor of Science in Mathematics and Statistics": {
+      "id": "math-stats",
+      "year1": {
+        "semester1": { "expected": 7, "final": 7, "status": "PASS" },
+        "semester2": { "expected": 7, "final": 7, "status": "PASS" }
+      },
+      "year2": {
+        "semester1": { "expected": 7, "final": 7, "status": "PASS" },
+        "semester2": { "expected": 6, "final": 6, "status": "PASS" }
+      },
+      "year3": {
+        "semester1": { "expected": 6, "final": 6, "status": "PASS" },
+        "semester2": { "expected": 8, "final": 8, "status": "PASS" }
+      },
+      "totalCourses": 41,
+      "status": "PASS"
+    },
+    "Bachelor of Science in Actuarial Sciences": {
+      "id": "bsc-actuarial",
+      "year1": {
+        "semester1": { "expected": 5, "final": 5, "status": "PASS" },
+        "semester2": { "expected": 8, "final": 8, "status": "PASS" }
+      },
+      "year2": {
+        "semester1": { "expected": 5, "final": 5, "status": "PASS" },
+        "semester2": { "expected": 9, "final": 9, "status": "PASS" }
+      },
+      "year3": {
+        "semester1": { "expected": 8, "final": 8, "status": "PASS" },
+        "semester2": { "expected": 7, "final": 7, "status": "PASS" }
+      },
+      "totalCourses": 42,
+      "status": "PASS"
+    }
+  },
+  "duplicateRelationshipsRemoved": [
+    "math-stats Year 1 Semester 1: MT 100, MT 114, ST 113, DS 112 (udsm_math-stats_* duplicate relationship records)",
+    "math-stats Year 1 Semester 2: MT 120, ST 114 (udsm_math-stats_* duplicate relationship records)",
+    "math-stats Year 2 Semester 1: MT 200, ST 210, ST 212 (udsm_math-stats_* duplicate relationship records)",
+    "math-stats Year 2 Semester 2: MT 278 (udsm_math-stats_* duplicate relationship records)",
+    "math-stats Year 3 Semester 1: MT 310, MT 357, ST 310 (udsm_math-stats_* duplicate relationship records)",
+    "math-stats Year 3 Semester 2: ST 316, ST 321 (udsm_math-stats_* duplicate relationship records)"
+  ],
+  "incorrectSemesterRelationshipsRemoved": [
+    "math-stats: MT 127 found in Year 1 Semester 2 (authoritative is Year 1 Semester 1)",
+    "math-stats: ST 211 found in Year 2 Semester 1 (authoritative is Year 2 Semester 2)",
+    "math-stats: ST 218 found in Year 2 Semester 2 (authoritative is Year 2 Semester 1)",
+    "math-stats: ST 220 found in Year 2 Semester 2 (authoritative is Year 2 Semester 1)",
+    "math-stats: MT 378 found in Year 3 Semester 2 (authoritative is Year 3 Semester 1)",
+    "math-stats: ST 312 found in Year 3 Semester 1 (authoritative is Year 3 Semester 2)"
+  ],
+  "incorrectProgrammeRelationshipsRemoved": [
+    "math-stats: CS 174 removed from Year 1 Semester 1 (belongs to BSc Computer Science, not BSc Math & Stats)",
+    "math-stats: CL 106 removed from Year 1 Semester 2 (belongs to other programmes, not BSc Math & Stats)",
+    "math-stats: ST 121 removed from Year 1 Semester 2 (belongs to Actuarial Sciences, not BSc Math & Stats)",
+    "math-stats: MT 233 removed from Year 2 Semester 1 (belongs to Actuarial Sciences, not BSc Math & Stats)",
+    "math-stats: MT 227 removed from Year 2 Semester 2 (belongs to BSc Education, not BSc Math & Stats)",
+    "math-stats: ST 215 removed from Year 2 Semester 2 (belongs to Actuarial Sciences, not BSc Math & Stats)",
+    "math-stats: ST 314 removed from Year 3 Semester 1 (unrelated/stale course assignment)",
+    "math-stats: MT 399 removed from Year 3 Semester 2 (legacy research code, replaced by MT 398 and MT 389)",
+    "math-stats: ST 317 removed from Year 3 Semester 2 (unrelated/stale course assignment)",
+    "bsc-ed: 34 non-mathematics courses removed from Department of Mathematics curriculum view"
+  ],
+  "missingRelationshipsRestored": [
+    "math-stats Year 1 Semester 1: CL 107 (Communication Skills for Science Students)",
+    "math-stats Year 1 Semester 2: ST 118 (Time Series and Index Numbers)",
+    "math-stats Year 3 Semester 2: MT 398 (Practical Training) and MT 389 (Mathematics Project)"
+  ],
+  "unresolvedSourceConflicts": []
+}

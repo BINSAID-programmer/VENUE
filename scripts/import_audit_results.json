@@ -1,0 +1,102 @@
+{
+  "timestamp": "2026-09-20T17:41:35.532Z",
+  "programmeId": "ba-language-studies",
+  "specialisationId": "french",
+  "relationshipsCreated": 32,
+  "relationshipsUpdated": 109,
+  "totalWritten": 141,
+  "newCanonicalCreated": [],
+  "canonicalReusedCount": 74,
+  "conflicts": [
+    {
+      "code": "DS 112",
+      "suppliedTitle": "Development Perspectives I",
+      "existingTitle": "Development Perspectives I",
+      "suppliedCredits": 12,
+      "existingCredits": 8,
+      "sourceLocation": "First Year — Semester I, English Sub-Stream",
+      "actionTaken": "Canonical DS 112 preserved (8 credits); conflicting relationship skipped per data policy; logged for manual review."
+    },
+    {
+      "code": "DS 112",
+      "suppliedTitle": "Development Perspectives I",
+      "existingTitle": "Development Perspectives I",
+      "suppliedCredits": 12,
+      "existingCredits": 8,
+      "sourceLocation": "First Year — Semester I, Linguistics Sub-Stream",
+      "actionTaken": "Canonical DS 112 preserved (8 credits); conflicting relationship skipped per data policy; logged for manual review."
+    },
+    {
+      "code": "DS 112",
+      "suppliedTitle": "Development Perspectives I",
+      "existingTitle": "Development Perspectives I",
+      "suppliedCredits": 12,
+      "existingCredits": 8,
+      "sourceLocation": "First Year — Semester I, Kiswahili Language Option",
+      "actionTaken": "Canonical DS 112 preserved (8 credits); conflicting relationship skipped per data policy; logged for manual review."
+    },
+    {
+      "code": "KF 102",
+      "suppliedTitle": "Utangulizi wa Fasihi ya Kiswahili (Simulizi na Andishi)",
+      "existingTitle": "Fasihi Simulizi ya Kiswahili",
+      "suppliedCredits": 12,
+      "existingCredits": 12,
+      "sourceLocation": "First Year — Semester I, Kiswahili Language Option",
+      "actionTaken": "Canonical KF 102 preserved ('Fasihi Simulizi ya Kiswahili'); conflicting title skipped per data policy; logged for manual review."
+    },
+    {
+      "code": "LL 282",
+      "suppliedTitle": "French Communicative Competencies III",
+      "existingTitle": "Oral Interactions",
+      "suppliedCredits": 12,
+      "existingCredits": 12,
+      "sourceLocation": "Second Year — Semester I, English Sub-Stream Electives",
+      "actionTaken": "Preserved existing canonical LL 282 title ('Oral Interactions'); relationship imported using canonical course and flagged."
+    },
+    {
+      "code": "LL 281",
+      "suppliedTitle": "French Communicative Competencies II",
+      "existingTitle": "French Communicative Competency IV",
+      "suppliedCredits": 12,
+      "existingCredits": 12,
+      "sourceLocation": "Second Year — Semester II, English Sub-Stream",
+      "actionTaken": "Preserved existing canonical LL 281 title ('French Communicative Competency IV'); relationship imported using canonical course; title variation noted."
+    },
+    {
+      "code": "LL 281",
+      "suppliedTitle": "French Communicative Competencies II",
+      "existingTitle": "French Communicative Competency IV",
+      "suppliedCredits": 12,
+      "existingCredits": 12,
+      "sourceLocation": "Second Year — Semester II, Linguistics Sub-Stream",
+      "actionTaken": "Preserved existing canonical LL 281 title ('French Communicative Competency IV'); relationship imported using canonical course; title variation noted."
+    },
+    {
+      "code": "LL 281",
+      "suppliedTitle": "French Communicative Competencies II",
+      "existingTitle": "French Communicative Competency IV",
+      "suppliedCredits": 12,
+      "existingCredits": 12,
+      "sourceLocation": "Second Year — Semester II, Kiswahili Language Option",
+      "actionTaken": "Preserved existing canonical LL 281 title ('French Communicative Competency IV'); relationship imported using canonical course; title variation noted."
+    },
+    {
+      "code": "LL 317",
+      "suppliedTitle": "Introduction English Pragmatics",
+      "existingTitle": "Introduction to English Pragmatics",
+      "suppliedCredits": 12,
+      "existingCredits": 12,
+      "sourceLocation": "Third Year — Semester I, English Sub-Stream",
+      "actionTaken": "Preserved existing canonical LL 317 title ('Introduction to English Pragmatics'); relationship imported using canonical course; slight wording variation noted."
+    },
+    {
+      "code": "CA 208",
+      "suppliedTitle": "Screenplay Writing",
+      "existingTitle": "Screenplay Writing",
+      "suppliedCredits": 31,
+      "existingCredits": 12,
+      "sourceLocation": "Additional Electives for Students Taking Linguistics",
+      "actionTaken": "Preserved existing canonical CA 208 (12 credits); recorded 31-credit anomaly; skipped 31-credit relationship to prevent curriculum corruption; logged for manual review."
+    }
+  ]
+}

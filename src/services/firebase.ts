@@ -17,29 +17,45 @@ import {
   signInWithRedirect,
   getRedirectResult,
 } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 // Initialize Firebase App singleton
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
-export const db =
-  (firebaseConfig as any).firestoreDatabaseId && (firebaseConfig as any).firestoreDatabaseId !== '(default)'
-    ? getFirestore(app, (firebaseConfig as any).firestoreDatabaseId)
-    : getFirestore(app);
-export { firebaseConfig };
 
-// Test connection to Firestore on initial boot
-async function testFirestoreConnection() {
+// Initialize Firestore with explicit databaseId and forced long polling for reliable web connectivity in browser iframe environments
+export const db = (() => {
+  const dbId = (firebaseConfig as { firestoreDatabaseId?: string }).firestoreDatabaseId;
+  const firestoreSettings = {
+    experimentalForceLongPolling: true,
+    useFetchStreams: false,
+  };
   try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error('Please check your Firebase configuration.');
+    return initializeFirestore(app, firestoreSettings, dbId);
+  } catch {
+    return dbId ? getFirestore(app, dbId) : getFirestore(app);
+  }
+})();
+
+// Validate Connection to Firestore on app startup safely without blocking
+async function testConnection() {
+  try {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return;
     }
+    await getDocFromServer(doc(db, 'test', 'connection'));
+  } catch {
+    // Firestore operates in offline mode with cached data when backend token or network is not ready
   }
 }
-testFirestoreConnection();
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    testConnection().catch(() => {});
+  }, 2000);
+}
+
+export { firebaseConfig };
 
 export enum OperationType {
   CREATE = 'create',

@@ -616,6 +616,34 @@ export class FirestoreCatalogueService {
   }
 
   /**
+   * Fetches all courses for a specific Programme directly from Firestore
+   */
+  async getCoursesByProgramme(
+    programmeId: string,
+    options?: { pageSize?: number }
+  ): Promise<PaginatedResult<CourseRecord>> {
+    if (!programmeId) return { items: [], lastDoc: null, hasMore: false };
+    const cleanProgId = programmeId.toLowerCase().trim();
+    const pageSize = options?.pageSize || 100;
+
+    try {
+      const colRef = collection(db, FIRESTORE_COLLECTIONS.COURSES);
+      const q = query(colRef, where('programmeId', '==', cleanProgId), limit(pageSize));
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        const items = snapshot.docs.map((d) => d.data() as CourseRecord);
+        return { items, lastDoc: null, hasMore: false, total: items.length };
+      }
+    } catch (err) {
+      console.warn('Firestore getCoursesByProgramme fallback note:', err);
+    }
+
+    const localItems = UDSM_VERIFIED_COURSES.filter((c) => c.programmeId === cleanProgId);
+    return { items: localItems, lastDoc: null, hasMore: false, total: localItems.length };
+  }
+
+  /**
    * Fetch single course by ID
    */
   async getCourseById(courseId: string): Promise<CourseRecord | null> {

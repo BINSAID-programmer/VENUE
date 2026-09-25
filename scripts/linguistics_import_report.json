@@ -1,0 +1,157 @@
+{
+  "timestamp": "2026-09-20T18:16:07.741Z",
+  "academicUnit": {
+    "id": "cohu",
+    "name": "College of Humanities",
+    "status": "reused"
+  },
+  "department": {
+    "id": "dept-foreign-languages",
+    "name": "Department of Foreign Languages and Linguistics",
+    "status": "reused"
+  },
+  "programme": {
+    "id": "ba-language-studies",
+    "name": "Bachelor of Arts in Language Studies",
+    "status": "reused"
+  },
+  "specialisation": {
+    "id": "linguistics",
+    "name": "Specialisation III: Linguistics",
+    "status": "reused and augmented with sub-streams",
+    "subStreams": [
+      {
+        "id": "french",
+        "name": "French Sub-Stream",
+        "relationships": 45
+      },
+      {
+        "id": "english",
+        "name": "English Sub-Stream",
+        "relationships": 48
+      },
+      {
+        "id": "kiswahili",
+        "name": "Kiswahili Language Option/Sub-Stream",
+        "relationships": 43
+      }
+    ]
+  },
+  "relationshipsCreated": 136,
+  "canonicalCoursesReused": 71,
+  "newCanonicalCreated": [
+    {
+      "code": "KI 117",
+      "title": "Utangulizi wa Misingi ya Uandishi wa Kiswahili",
+      "credits": 12,
+      "id": "ki_117"
+    },
+    {
+      "code": "KF 223",
+      "title": "Ushairi wa Kiswahili",
+      "credits": 12,
+      "id": "kf_223"
+    }
+  ],
+  "conflicts": [
+    {
+      "code": "DS 112",
+      "existingTitle": "Development Perspectives I",
+      "suppliedTitle": "Development Perspectives I",
+      "existingCredits": 8,
+      "suppliedCredits": 12,
+      "discrepancyType": "credits",
+      "actionTaken": "Preserved existing canonical credits (8); relationship configured with 12 credits as specifically prescribed for this curriculum."
+    },
+    {
+      "code": "LL 182",
+      "existingTitle": "Oral Proficiency and Phonetics",
+      "suppliedTitle": "Oral Proficiency Phonetics",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "discrepancyType": "title",
+      "actionTaken": "Preserved existing canonical title ('Oral Proficiency and Phonetics'); relationship imported using canonical course reference while logging supplied variation ('Oral Proficiency Phonetics')."
+    },
+    {
+      "code": "KF 102",
+      "existingTitle": "Fasihi Simulizi ya Kiswahili",
+      "suppliedTitle": "Utangulizi wa Fasihi ya Kiswahili (Simulizi na Andishi)",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "discrepancyType": "title",
+      "actionTaken": "Preserved existing canonical title ('Fasihi Simulizi ya Kiswahili'); relationship imported using canonical course reference while logging supplied variation ('Utangulizi wa Fasihi ya Kiswahili (Simulizi na Andishi)')."
+    },
+    {
+      "code": "KI 117",
+      "existingTitle": "None (KI 108 exists with identical title 'Utangulizi wa Misingi ya Uandishi wa Kiswahili')",
+      "suppliedTitle": "Utangulizi wa Misingi ya Uandishi wa Kiswahili",
+      "existingCredits": 0,
+      "suppliedCredits": 12,
+      "discrepancyType": "title",
+      "actionTaken": "Created new canonical course 'KI 117' as specified in curriculum; cross-referenced against KI 108."
+    },
+    {
+      "code": "KF 223",
+      "existingTitle": "None (KF 200 & KS 223 exist with identical title 'Ushairi wa Kiswahili')",
+      "suppliedTitle": "Ushairi wa Kiswahili",
+      "existingCredits": 0,
+      "suppliedCredits": 12,
+      "discrepancyType": "title",
+      "actionTaken": "Created new canonical course 'KF 223' as specified in curriculum; cross-referenced against KF 200 and KS 223."
+    },
+    {
+      "code": "LL 281",
+      "existingTitle": "French Communicative Competency IV",
+      "suppliedTitle": "French Communicative Competency II",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "discrepancyType": "title",
+      "actionTaken": "Preserved existing canonical title ('French Communicative Competency IV'); relationship imported using canonical course reference while logging supplied variation ('French Communicative Competency II')."
+    },
+    {
+      "code": "LL 276",
+      "existingTitle": "Functional French II",
+      "suppliedTitle": "Functional French I",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "discrepancyType": "title",
+      "actionTaken": "Preserved existing canonical title ('Functional French II'); relationship imported using canonical course reference while logging supplied variation ('Functional French I')."
+    },
+    {
+      "code": "KI 209",
+      "existingTitle": "Morfolojia ya Kiswahili",
+      "suppliedTitle": "Mofolojia ya Kiswahili",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "discrepancyType": "title",
+      "actionTaken": "Preserved existing canonical title ('Morfolojia ya Kiswahili'); relationship imported using canonical course reference while logging supplied variation ('Mofolojia ya Kiswahili')."
+    },
+    {
+      "code": "AS 299",
+      "existingTitle": "Practical Training (done during the long vacation)",
+      "suppliedTitle": "Practical Training",
+      "existingCredits": 0,
+      "suppliedCredits": 12,
+      "discrepancyType": "title_and_credits",
+      "actionTaken": "Preserved existing canonical title ('Practical Training (done during the long vacation)') and canonical credits (0); relationship imported with curriculum credits (12) and supplied title preserved in relationship metadata."
+    },
+    {
+      "code": "LL 317",
+      "existingTitle": "Introduction to English Pragmatics",
+      "suppliedTitle": "Introduction English Pragmatics",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "discrepancyType": "title",
+      "actionTaken": "Preserved existing canonical title ('Introduction to English Pragmatics'); relationship imported using canonical course reference while logging supplied variation ('Introduction English Pragmatics')."
+    },
+    {
+      "code": "LL 390",
+      "existingTitle": "Project (By invitation only)",
+      "suppliedTitle": "Project (by invitation only)",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "discrepancyType": "title",
+      "actionTaken": "Preserved existing canonical title ('Project (By invitation only)'); relationship imported using canonical course reference while logging supplied variation ('Project (by invitation only)')."
+    }
+  ]
+}

@@ -14,6 +14,12 @@ service cloud.firestore {
       return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
+    // Public Academic Catalogue: Countries
+    match /countries/{countryId} {
+      allow read: if true;
+      allow write: if isValidId(countryId);
+    }
+
     // Public Academic Catalogue: Universities
     match /universities/{universityId} {
       allow read: if true;
@@ -60,6 +66,33 @@ service cloud.firestore {
     match /programme_courses/{relId} {
       allow read: if true;
       allow write: if isValidId(relId);
+    }
+
+    // Public Academic Catalogue: Service Courses
+    match /service_courses/{courseId} {
+      allow read: if true;
+      allow write: if isValidId(courseId);
+    }
+
+    // User Profiles (Private to individual user)
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) && isValidId(userId);
+
+      // User Results
+      match /results/{resultId} {
+        allow read, write: if isOwner(userId) && isValidId(resultId);
+      }
+
+      // User AI Tutor Chats & Conversation History
+      match /chats/{chatId} {
+        allow get, list: if isOwner(userId);
+        allow write: if isOwner(userId) && isValidId(chatId);
+
+        match /messages/{messageId} {
+          allow get, list: if isOwner(userId);
+          allow write: if isOwner(userId) && isValidId(messageId);
+        }
+      }
     }
 
     // Student Profiles (Isolated and private to the individual student)

@@ -1,0 +1,290 @@
+{
+  "college": {
+    "id": "conas",
+    "name": "College of Natural and Applied Sciences",
+    "status": "reused"
+  },
+  "departments": [
+    {
+      "id": "dept-botany",
+      "name": "Department of Botany",
+      "status": "reused"
+    },
+    {
+      "id": "dept-chem",
+      "name": "Chemistry Department",
+      "status": "reused"
+    }
+  ],
+  "programmes": [
+    {
+      "id": "bsc-ed",
+      "name": "Bachelor of Science with Education",
+      "status": "reused (joint programme for Botany, Chemistry & Math)",
+      "coursesCount": 34
+    },
+    {
+      "id": "bsc-botany",
+      "name": "Bachelor of Science in Botanical Sciences",
+      "status": "reused",
+      "coursesCount": 49
+    },
+    {
+      "id": "bsc-chem",
+      "name": "Bachelor of Science in Chemistry",
+      "status": "reused",
+      "coursesCount": 39
+    },
+    {
+      "id": "bsc-pet-chem",
+      "name": "Bachelor of Science in Petroleum Chemistry",
+      "status": "reused",
+      "coursesCount": 44
+    },
+    {
+      "id": "bsc-chem-phys",
+      "name": "Bachelor of Science in Chemistry and Physics",
+      "status": "created",
+      "coursesCount": 58
+    }
+  ],
+  "canonicalCoursesReused": 56,
+  "canonicalCoursesCreated": 121,
+  "curriculumRelationshipsCreated": 224,
+  "conflictsDetected": [
+    {
+      "courseCode": "DS 112",
+      "existingTitle": "Development Perspectives I",
+      "suppliedTitle": "Perspectives of Development",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-botany",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "BL 111",
+      "existingTitle": "Introductory Cell Biology and Genetics",
+      "suppliedTitle": "Introduction to Cell Biology and Genetics",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-botany",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "MC 100",
+      "existingTitle": "General Microbiology",
+      "suppliedTitle": "Fundamentals of Microbiology",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-botany",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CL 107",
+      "existingTitle": "Communication Skills for Science Students",
+      "suppliedTitle": "Communication Skills for Science",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-botany",
+      "affectedYearSemester": "Y1S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "GE 352",
+      "existingTitle": "Advanced GIS and Spatial Analysis",
+      "suppliedTitle": "Natural Resource Management",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-botany",
+      "affectedYearSemester": "Y3S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CH 118",
+      "existingTitle": "General Chemistry I",
+      "suppliedTitle": "Basic Analytical and Physical Chemistry",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-ed",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CH 117",
+      "existingTitle": "Organic Chemistry",
+      "suppliedTitle": "Organic Chemistry I",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-ed",
+      "affectedYearSemester": "Y1S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CH 201",
+      "existingTitle": "Intermediate Bachelor of Science in Chemistry Theory I",
+      "suppliedTitle": "Chemical Thermodynamics",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-ed",
+      "affectedYearSemester": "Y2S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CH 201",
+      "existingTitle": "Intermediate Bachelor of Science in Chemistry Theory I",
+      "suppliedTitle": "Chemical Thermodynamics",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-ed",
+      "affectedYearSemester": "Y3S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CH 118",
+      "existingTitle": "General Chemistry I",
+      "suppliedTitle": "Basic Analytical and Physical Chemistry",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-chem",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CH 117",
+      "existingTitle": "Organic Chemistry",
+      "suppliedTitle": "Organic Chemistry I",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-chem",
+      "affectedYearSemester": "Y1S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CH 201",
+      "existingTitle": "Intermediate Bachelor of Science in Chemistry Theory I",
+      "suppliedTitle": "Chemical Thermodynamics",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-chem",
+      "affectedYearSemester": "Y2S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CH 399",
+      "existingTitle": "Final Year Undergraduate Project in Bachelor of Science in Chemistry",
+      "suppliedTitle": "Practical Training",
+      "suppliedCredits": 8,
+      "affectedProgramme": "bsc-chem",
+      "affectedYearSemester": "Y3S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CH 118",
+      "existingTitle": "General Chemistry I",
+      "suppliedTitle": "Basic Analytical and Physical Chemistry",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-pet-chem",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "GY 100",
+      "existingTitle": "Introduction to Geology and Earth Systems",
+      "suppliedTitle": "Introduction to Geology and Geological Processes",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-pet-chem",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CH 117",
+      "existingTitle": "Organic Chemistry",
+      "suppliedTitle": "Organic Chemistry I",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-pet-chem",
+      "affectedYearSemester": "Y1S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "IS 131",
+      "existingTitle": "Introduction to Informatics and Microcomputers",
+      "suppliedTitle": "Introduction to Informatics & Microcomputers",
+      "suppliedCredits": 8,
+      "affectedProgramme": "bsc-pet-chem",
+      "affectedYearSemester": "Y1S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "GY 120",
+      "existingTitle": "Crystallography and Mineralogy",
+      "suppliedTitle": "Earth Materials (Rocks and Minerals)",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-pet-chem",
+      "affectedYearSemester": "Y1S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CH 201",
+      "existingTitle": "Intermediate Bachelor of Science in Chemistry Theory I",
+      "suppliedTitle": "Chemical Thermodynamics",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-pet-chem",
+      "affectedYearSemester": "Y2S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "GM 100",
+      "existingTitle": "Principles of Management",
+      "suppliedTitle": "Principles and Practice of Management",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-pet-chem",
+      "affectedYearSemester": "Y3S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CH 399",
+      "existingTitle": "Final Year Undergraduate Project in Bachelor of Science in Chemistry",
+      "suppliedTitle": "Practical Training",
+      "suppliedCredits": 8,
+      "affectedProgramme": "bsc-pet-chem",
+      "affectedYearSemester": "Y3S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CH 118",
+      "existingTitle": "General Chemistry I",
+      "suppliedTitle": "Basic Analytical and Physical Chemistry",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-chem-phys",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CH 117",
+      "existingTitle": "Organic Chemistry",
+      "suppliedTitle": "Organic Chemistry I",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-chem-phys",
+      "affectedYearSemester": "Y1S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "PH 204",
+      "existingTitle": "Special Topics in Bachelor of Science in Physics",
+      "suppliedTitle": "Mathematical Methods for Physics",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-chem-phys",
+      "affectedYearSemester": "Y2S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CH 201",
+      "existingTitle": "Intermediate Bachelor of Science in Chemistry Theory I",
+      "suppliedTitle": "Chemical Thermodynamics",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-chem-phys",
+      "affectedYearSemester": "Y3S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CH 399",
+      "existingTitle": "Final Year Undergraduate Project in Bachelor of Science in Chemistry",
+      "suppliedTitle": "Chemistry Practical Training II",
+      "suppliedCredits": 8,
+      "affectedProgramme": "bsc-chem-phys",
+      "affectedYearSemester": "Y3S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    }
+  ]
+}

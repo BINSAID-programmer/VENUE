@@ -27,7 +27,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onContinue }) => {
       <div className="pt-6 flex justify-center">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/25 text-blue-400 text-xs font-medium backdrop-blur-md">
           <Sparkles className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
-          <span>University of Dar es Salaam Edition</span>
+          <span>Your Academic Space</span>
         </div>
       </div>
 

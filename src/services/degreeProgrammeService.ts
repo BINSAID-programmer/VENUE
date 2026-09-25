@@ -35,6 +35,7 @@ import {
   ProgrammeYearCurriculum,
   ProgrammeSemesterCurriculum,
   CourseRecord,
+  CourseStatus,
   DepartmentRecord,
   AcademicUnitRecord,
 } from '../types';
@@ -124,6 +125,25 @@ class DegreeProgrammeService {
   }
 
   /**
+   * Register additional programmes across any university or international institution
+   */
+  public registerProgrammes(programmes: (Partial<ProgrammeRecord> | ProgrammeRecord)[]) {
+    for (const raw of programmes) {
+      const prog = normalizeProgrammeRecord(raw);
+      this.programmeByIdCache.set(prog.id.toLowerCase(), prog);
+      const deptKey = prog.departmentId.toLowerCase();
+      const existing = this.programmesByDeptCache.get(deptKey) || [];
+      if (!existing.some((p) => p.id.toLowerCase() === prog.id.toLowerCase())) {
+        existing.push(prog);
+        this.programmesByDeptCache.set(deptKey, existing);
+      }
+      if (!this.allProgrammesInMemory.some((p) => p.id.toLowerCase() === prog.id.toLowerCase())) {
+        this.allProgrammesInMemory.push(prog);
+      }
+    }
+  }
+
+  /**
    * 1. Get Programmes by Department
    * Dependent query: Fetches ONLY programmes that belong strictly to the given departmentId.
    * Uses indexed Firestore query, falling back to memory store and server API.
@@ -192,24 +212,24 @@ class DegreeProgrammeService {
       // Server endpoint not reachable or offline; proceed to verified in-memory fallback
     }
 
-    // Verified In-Memory Fallback
-    let fallback = this.allProgrammesInMemory.filter(
+    // Verified In-Memory Fallback strictly by departmentId
+    const fallback = this.allProgrammesInMemory.filter(
       (p) => p.departmentId.toLowerCase() === cleanDeptId
     );
-
-    // If no direct matches and academicUnitId was provided, check if any belong to that unit
-    if (fallback.length === 0 && academicUnitId) {
-      const cleanUnitId = academicUnitId.toLowerCase().trim();
-      fallback = this.allProgrammesInMemory.filter(
-        (p) => p.academicUnitId.toLowerCase() === cleanUnitId
-      );
-    }
 
     fallback.sort((a, b) => a.name.localeCompare(b.name));
     this.programmesByDeptCache.set(cleanDeptId, fallback);
     fallback.forEach((p) => this.programmeByIdCache.set(p.id.toLowerCase(), p));
 
     return fallback;
+  }
+
+  /**
+   * Clears in-memory caches to prevent stale data between user logins or profile edits
+   */
+  clearCache(): void {
+    this.programmesByDeptCache.clear();
+    this.programmeByIdCache.clear();
   }
 
   /**
@@ -261,10 +281,39 @@ class DegreeProgrammeService {
     const cleanProgId = prog.id.toLowerCase();
     const duration = prog.durationYears || 3;
 
-    // Filter available audited courses for this programme
-    const relevantCourses = AUDITED_COURSE_RECORDS.filter(
-      (c) => (c.programmeId || '').toLowerCase() === cleanProgId
-    );
+    // First fetch verified courses from Firestore catalogue_courses
+    let relevantCourses: CourseRecord[] = [];
+    try {
+      const q = query(
+        collection(db, 'catalogue_courses'),
+        where('programmeId', '==', cleanProgId)
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        relevantCourses = snap.docs.map((d) => {
+          const data = d.data() as CourseRecord;
+          const status: CourseStatus = (data.status === 'Elective' || data.courseType === 'Elective') ? 'Elective' : 'Core';
+          return {
+            ...data,
+            id: d.id,
+            credits: Number(data.credits) || 12,
+            yearOfStudy: Number(data.yearOfStudy || (data as any).year || 1),
+            semester: Number(data.semester || 1),
+            status,
+            active: data.active !== false,
+          };
+        });
+      }
+    } catch (err) {
+      console.warn(`degreeProgrammeService: Error fetching courses for ${cleanProgId} from Firestore:`, err);
+    }
+
+    // Fallback to in-memory catalogue records if Firestore is empty
+    if (relevantCourses.length === 0) {
+      relevantCourses = AUDITED_COURSE_RECORDS.filter(
+        (c) => (c.programmeId || '').toLowerCase() === cleanProgId
+      );
+    }
 
     const years: ProgrammeYearCurriculum[] = [];
     let totalCoursesCount = 0;

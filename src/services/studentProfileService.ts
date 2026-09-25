@@ -76,9 +76,20 @@ export async function loadStudentProfile(uid: string, email?: string): Promise<S
   if (!targetUid && !email) return null;
 
   try {
-    // 1. Try Firestore direct document read if authenticated
+    // 1. Try Firestore direct document read if authenticated (check 'users' then 'students')
     if (auth.currentUser && auth.currentUser.uid === targetUid) {
       try {
+        const userDoc = await getDoc(doc(db, 'users', targetUid));
+        if (userDoc.exists()) {
+          const fsData = userDoc.data() as StudentProfile;
+          try {
+            localStorage.setItem(`venue_profile_${targetUid}`, JSON.stringify(fsData));
+          } catch {
+            // ignore
+          }
+          return fsData;
+        }
+
         const studentDoc = await getDoc(doc(db, 'students', targetUid));
         if (studentDoc.exists()) {
           const fsData = studentDoc.data() as StudentProfile;
@@ -160,12 +171,35 @@ export async function loadStudentProfile(uid: string, email?: string): Promise<S
 
 /**
  * Saves a student profile persistently to backend server storage and Firestore.
- * Canonical academic fields (IDs and names) are strictly preserved.
+ * Academic fields are completely university-agnostic and dynamically preserved.
  */
 export async function saveStudentProfile(profile: StudentProfile): Promise<StudentProfile> {
   // Use authenticated Firebase user UID whenever available for strict security & authorization
   const uid = auth.currentUser?.uid || profile.uid || getStudentUid(profile.email);
   const now = new Date().toISOString();
+
+  // Split name into first, middle, last if not explicitly set
+  let firstName = (profile.firstName || '').trim();
+  let middleName = (profile.middleName || '').trim();
+  let lastName = (profile.lastName || '').trim();
+
+  if (!firstName && (profile.name || profile.fullName)) {
+    const rawParts = (profile.name || profile.fullName || '').trim().split(/\s+/);
+    if (rawParts.length === 1) {
+      firstName = rawParts[0];
+    } else if (rawParts.length === 2) {
+      firstName = rawParts[0];
+      lastName = rawParts[1];
+    } else if (rawParts.length >= 3) {
+      firstName = rawParts[0];
+      middleName = rawParts.slice(1, -1).join(' ');
+      lastName = rawParts[rawParts.length - 1];
+    }
+  }
+
+  const constructedFullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
+  const fullName = constructedFullName || (profile.fullName || profile.name || '').trim();
+  const displayName = firstName ? [firstName, lastName].filter(Boolean).join(' ') : (fullName || 'Student');
 
   const isComplete = Boolean(
     profile.isProfileComplete ||
@@ -179,22 +213,30 @@ export async function saveStudentProfile(profile: StudentProfile): Promise<Stude
   const enrichedProfile: StudentProfile = {
     ...profile,
     uid,
-    fullName: (profile.fullName || profile.name || '').trim(),
-    name: (profile.name || profile.fullName || 'Student').trim(),
+    firstName,
+    middleName,
+    lastName,
+    fullName,
+    name: displayName,
     email: (profile.email || '').trim(),
+    phoneNumber: (profile.phoneNumber || '').trim(),
+    country: (profile.country || profile.countryName || '').trim(),
+    countryId: (profile.countryId || '').trim(),
+    countryName: (profile.countryName || profile.country || '').trim(),
     photoURL: profile.photoURL || profile.profilePhoto || profile.avatar || '',
     profilePhoto: profile.profilePhoto || profile.photoURL || profile.avatar || '',
     avatar: profile.avatar || profile.photoURL || profile.profilePhoto || '',
     registrationNumber: (profile.registrationNumber || '').toUpperCase().trim(),
-    universityId: profile.universityId || 'udsm',
-    universityName: profile.universityName || profile.university || 'University of Dar es Salaam',
-    university: profile.university || profile.universityName || 'University of Dar es Salaam',
+    universityId: profile.universityId || '',
+    universityName: profile.universityName || profile.university || '',
+    university: profile.university || profile.universityName || '',
     universityShort: profile.universityShort || '',
     institutionId: profile.institutionId || profile.academicUnitId || profile.collegeId || '',
-    institutionName: profile.institutionName || profile.college || '',
-    college: profile.college || profile.institutionName || '',
+    institutionName: profile.institutionName || profile.academicUnitName || profile.college || '',
+    college: profile.college || profile.institutionName || profile.academicUnitName || '',
     collegeId: profile.collegeId || profile.institutionId || profile.academicUnitId || '',
     academicUnitId: profile.academicUnitId || profile.institutionId || profile.collegeId || '',
+    academicUnitName: profile.academicUnitName || profile.institutionName || profile.college || '',
     academicUnitType: profile.academicUnitType || 'College',
     departmentId: profile.departmentId || '',
     departmentName: profile.departmentName || profile.department || '',
@@ -203,9 +245,9 @@ export async function saveStudentProfile(profile: StudentProfile): Promise<Stude
     programmeName: profile.programmeName || profile.programme || '',
     programme: profile.programme || profile.programmeName || '',
     programmeShort: profile.programmeShort || '',
-    yearOfStudy: profile.yearOfStudy || 'Year 1',
-    semester: profile.semester || 'Semester 1',
-    academicYear: profile.academicYear || '2025/2026',
+    yearOfStudy: profile.yearOfStudy || '',
+    semester: profile.semester || '',
+    academicYear: profile.academicYear || '',
     isProfileComplete: isComplete,
     createdAt: profile.createdAt || now,
     updatedAt: now,
@@ -238,11 +280,11 @@ export async function saveStudentProfile(profile: StudentProfile): Promise<Stude
     if (res.ok) {
       const data = await res.json();
       if (data.success && data.profile) {
-        // Also non-blocking Firestore sync if authenticated in Firebase
+        // Also sync to Firestore users and students collections
         if (auth.currentUser && auth.currentUser.uid === uid) {
           try {
-            const studentRef = doc(db, 'students', uid);
-            await setDoc(studentRef, data.profile, { merge: true });
+            await setDoc(doc(db, 'users', uid), data.profile, { merge: true });
+            await setDoc(doc(db, 'students', uid), data.profile, { merge: true });
           } catch (fsErr) {
             console.warn('Firestore sync note:', fsErr);
           }
@@ -257,8 +299,8 @@ export async function saveStudentProfile(profile: StudentProfile): Promise<Stude
   // Direct Firestore sync if authenticated in Firebase
   if (auth.currentUser && auth.currentUser.uid === uid) {
     try {
-      const studentRef = doc(db, 'students', uid);
-      await setDoc(studentRef, enrichedProfile, { merge: true });
+      await setDoc(doc(db, 'users', uid), enrichedProfile, { merge: true });
+      await setDoc(doc(db, 'students', uid), enrichedProfile, { merge: true });
     } catch (fsErr) {
       console.warn('Firestore direct sync note:', fsErr);
     }

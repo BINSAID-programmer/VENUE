@@ -1,0 +1,794 @@
+{
+  "timestamp": "2026-09-20T18:28:41.922Z",
+  "academicUnit": {
+    "id": "cohu",
+    "name": "College of Humanities",
+    "status": "reused"
+  },
+  "department": {
+    "id": "dept-history",
+    "name": "Department of History",
+    "status": "reused"
+  },
+  "programmes": [
+    {
+      "id": "ba-history",
+      "name": "Bachelor of Arts in History",
+      "shortName": "B.A. (History)",
+      "relationships": 44
+    },
+    {
+      "id": "ba-diplomatic-military-history",
+      "name": "Bachelor of Arts in Diplomatic and Military History",
+      "shortName": "B.A. (Diplomatic and Military History)",
+      "relationships": 48
+    },
+    {
+      "id": "ba-history-cultural-heritage-tourism",
+      "name": "Bachelor of Arts in History, Cultural Heritage Management and Tourism",
+      "shortName": "B.A. (History, Cultural Heritage & Tourism)",
+      "relationships": 46
+    },
+    {
+      "id": "ba-history-political-science",
+      "name": "Bachelor of Arts in History and Political Science",
+      "shortName": "B.A. (History & Political Science)",
+      "relationships": 0
+    }
+  ],
+  "totalRelationshipsCreated": 138,
+  "canonicalCoursesReused": 12,
+  "newCanonicalCreated": [
+    {
+      "code": "HI 103",
+      "title": "Capitalism and Imperialism in World History",
+      "credits": 12,
+      "id": "hi_103",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 104",
+      "title": "Themes in African History",
+      "credits": 12,
+      "id": "hi_104",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "FP 100",
+      "title": "Art and Society",
+      "credits": 12,
+      "id": "fp_100",
+      "departmentId": "dept-creative-arts"
+    },
+    {
+      "code": "HI 101",
+      "title": "Basic Concepts and Perspectives in History",
+      "credits": 12,
+      "id": "hi_101",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 102",
+      "title": "Survey of World History to ca. 1500 A.D.",
+      "credits": 12,
+      "id": "hi_102",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 261",
+      "title": "History of Tanzania",
+      "credits": 12,
+      "id": "hi_261",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "SO 115",
+      "title": "Introduction to Culture and Society",
+      "credits": 12,
+      "id": "so_115",
+      "departmentId": "dept-sociology"
+    },
+    {
+      "code": "HI 260",
+      "title": "Philosophies and Methodologies of History",
+      "credits": 12,
+      "id": "hi_260",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 262",
+      "title": "History of East Africa",
+      "credits": 12,
+      "id": "hi_262",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 270",
+      "title": "Health, Disease and Healing in 19th and 20th Century Africa",
+      "credits": 12,
+      "id": "hi_270",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 269",
+      "title": "Survey World History of Globalization",
+      "credits": 12,
+      "id": "hi_269",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 267",
+      "title": "Survey World History of Science and Technology: Ancient to Medieval Times",
+      "credits": 12,
+      "id": "hi_267",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "DS 201",
+      "title": "Rural and Urban Development",
+      "credits": 12,
+      "id": "ds_201",
+      "departmentId": "dept-dev-studies"
+    },
+    {
+      "code": "HI 271",
+      "title": "History of West Africa",
+      "credits": 12,
+      "id": "hi_271",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 265",
+      "title": "Neo-Colonialism and Revolutionary Movements",
+      "credits": 12,
+      "id": "hi_265",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 266",
+      "title": "War and Warfare in World History",
+      "credits": 12,
+      "id": "hi_266",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 263",
+      "title": "History of Central Africa",
+      "credits": 12,
+      "id": "hi_263",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 362",
+      "title": "History of South Africa",
+      "credits": 12,
+      "id": "hi_362",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 268",
+      "title": "Survey World History of Science and Technology: Modern Societies",
+      "credits": 12,
+      "id": "hi_268",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "AS 229",
+      "title": "Practical Training (done during the long vacation)",
+      "credits": 0,
+      "id": "as_229",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 360",
+      "title": "Economic History of Tanzania",
+      "credits": 12,
+      "id": "hi_360",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 363",
+      "title": "History of North Africa",
+      "credits": 12,
+      "id": "hi_363",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 365",
+      "title": "Political Economy of the U.S.A.",
+      "credits": 12,
+      "id": "hi_365",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 366",
+      "title": "Topics in African Environmental History",
+      "credits": 12,
+      "id": "hi_366",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 368",
+      "title": "Oral Histories in Tanzania: Theory",
+      "credits": 12,
+      "id": "hi_368",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 264",
+      "title": "Africa and World Religions",
+      "credits": 12,
+      "id": "hi_264",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 364",
+      "title": "Industrialisation and the Rise of the Working Class in Britain",
+      "credits": 12,
+      "id": "hi_364",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 367",
+      "title": "Population and Urban History of Tanzania",
+      "credits": 12,
+      "id": "hi_367",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "AY 304",
+      "title": "Basics in Archaeology",
+      "credits": 12,
+      "id": "ay_304",
+      "departmentId": "dept-archaeology"
+    },
+    {
+      "code": "HI 380",
+      "title": "Ethnic Identities in Tanzania",
+      "credits": 12,
+      "id": "hi_380",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 369",
+      "title": "Economic History of Tanzania: Practical (By invitation only)",
+      "credits": 12,
+      "id": "hi_369",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 379",
+      "title": "Oral Histories in Tanzania: Practical (By invitation only)",
+      "credits": 12,
+      "id": "hi_379",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 399",
+      "title": "Dissertation (By invitation only)",
+      "credits": 24,
+      "id": "hi_399",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "PS 347",
+      "title": "Peace Making and Conflict Resolution",
+      "credits": 12,
+      "id": "ps_347",
+      "departmentId": "dept-pspa"
+    },
+    {
+      "code": "SO 371",
+      "title": "Contemporary Social Change and Culture",
+      "credits": 12,
+      "id": "so_371",
+      "departmentId": "dept-sociology"
+    },
+    {
+      "code": "HI 120",
+      "title": "Introduction to the History of Diplomacy",
+      "credits": 12,
+      "id": "hi_120",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 121",
+      "title": "Introduction to the History of War and Strategy",
+      "credits": 12,
+      "id": "hi_121",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 122",
+      "title": "National Interests and Statecraft in History I",
+      "credits": 12,
+      "id": "hi_122",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 123",
+      "title": "Diplomatic and Consular Practices in Historical Perspective",
+      "credits": 12,
+      "id": "hi_123",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 124",
+      "title": "Introduction to Peace and Security Diplomacy",
+      "credits": 12,
+      "id": "hi_124",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 125",
+      "title": "Introduction to Tanzania's Strategic Neighbourhood",
+      "credits": 12,
+      "id": "hi_125",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 221",
+      "title": "National Security Strategies in World History",
+      "credits": 12,
+      "id": "hi_221",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 222",
+      "title": "War, Patriotism and Nationalism",
+      "credits": 12,
+      "id": "hi_222",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 223",
+      "title": "National Interests and International Negotiations Diplomacy",
+      "credits": 12,
+      "id": "hi_223",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 224",
+      "title": "Tanzania and the History of Liberation Struggles",
+      "credits": 12,
+      "id": "hi_224",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 227",
+      "title": "Globalization and National Interests",
+      "credits": 12,
+      "id": "hi_227",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 234",
+      "title": "War in Tanzanian History",
+      "credits": 12,
+      "id": "hi_234",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 228",
+      "title": "Defence and National Development",
+      "credits": 12,
+      "id": "hi_228",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 229",
+      "title": "Etiquette, Protocol and Decorum",
+      "credits": 12,
+      "id": "hi_229",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 230",
+      "title": "The Art of War: Theory and History",
+      "credits": 12,
+      "id": "hi_230",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "PS 223",
+      "title": "International Relations II",
+      "credits": 12,
+      "id": "ps_223",
+      "departmentId": "dept-pspa"
+    },
+    {
+      "code": "PS 229",
+      "title": "Basic Concepts in International Law",
+      "credits": 12,
+      "id": "ps_229",
+      "departmentId": "dept-pspa"
+    },
+    {
+      "code": "HI 232",
+      "title": "Colloquium on Military Strategy and Doctrines",
+      "credits": 12,
+      "id": "hi_232",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 233",
+      "title": "National Interests and Statecraft in History II",
+      "credits": 12,
+      "id": "hi_233",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 235",
+      "title": "Conference Diplomacy and International Organization",
+      "credits": 12,
+      "id": "hi_235",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 299",
+      "title": "Practical Training in Diplomatic and Military History",
+      "credits": 0,
+      "id": "hi_299",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 330",
+      "title": "Ethics of War and Peace in Contemporary World",
+      "credits": 12,
+      "id": "hi_330",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 308",
+      "title": "Theory and Practice in Archival Research",
+      "credits": 12,
+      "id": "hi_308",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 333",
+      "title": "Introduction to Civil-Military Relations",
+      "credits": 12,
+      "id": "hi_333",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "PS 350",
+      "title": "African International Relations and Foreign Policy",
+      "credits": 12,
+      "id": "ps_350",
+      "departmentId": "dept-pspa"
+    },
+    {
+      "code": "PS 346",
+      "title": "Issues in International Law",
+      "credits": 12,
+      "id": "ps_346",
+      "departmentId": "dept-pspa"
+    },
+    {
+      "code": "HI 334",
+      "title": "Evolution of Warfare in Contemporary Times",
+      "credits": 12,
+      "id": "hi_334",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 335",
+      "title": "The United Nations System",
+      "credits": 12,
+      "id": "hi_335",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "PS 333",
+      "title": "The Politics of North-South Relations",
+      "credits": 12,
+      "id": "ps_333",
+      "departmentId": "dept-pspa"
+    },
+    {
+      "code": "HI 338",
+      "title": "Conflict Reconstructions and Peace Building in Contemporary History",
+      "credits": 12,
+      "id": "hi_338",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 336",
+      "title": "Regional Economic Integration and Contemporary Diplomacy in Africa",
+      "credits": 12,
+      "id": "hi_336",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 340",
+      "title": "The Indian Ocean Geo-Political Security",
+      "credits": 12,
+      "id": "hi_340",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "LWE 530",
+      "title": "International Humanitarian Law",
+      "credits": 12,
+      "id": "lwe_530",
+      "departmentId": "dept-public-law"
+    },
+    {
+      "code": "HI 341",
+      "title": "Diplomatic and Consular Practices in Historical Perspective II",
+      "credits": 12,
+      "id": "hi_341",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 342",
+      "title": "Wars and Militarism in History",
+      "credits": 12,
+      "id": "hi_342",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 344",
+      "title": "History of Global Capitalism and Competitiveness",
+      "credits": 12,
+      "id": "hi_344",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 339",
+      "title": "Regional Security Dynamics and Area Studies",
+      "credits": 12,
+      "id": "hi_339",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 331",
+      "title": "Foreign and Defense Policy Analysis",
+      "credits": 12,
+      "id": "hi_331",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 112",
+      "title": "Basic Concepts in History, Cultural Heritage Management and Tourism",
+      "credits": 12,
+      "id": "hi_112",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 150",
+      "title": "History of Heritage Conservation",
+      "credits": 12,
+      "id": "hi_150",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 113",
+      "title": "Reconstructing History from Ethnographic Remains",
+      "credits": 12,
+      "id": "hi_113",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 114",
+      "title": "Historiography of Cultural Heritage Management and Tourism",
+      "credits": 12,
+      "id": "hi_114",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 151",
+      "title": "Tourism in African History",
+      "credits": 12,
+      "id": "hi_151",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 205",
+      "title": "African Ethnography and the Politics of Archiving",
+      "credits": 12,
+      "id": "hi_205",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 213",
+      "title": "Historical Interpretation of Cultural Heritage and Tourism",
+      "credits": 12,
+      "id": "hi_213",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "AY 215",
+      "title": "Principles of Cultural Tourism",
+      "credits": 12,
+      "id": "ay_215",
+      "departmentId": "dept-archaeology"
+    },
+    {
+      "code": "HI 211",
+      "title": "Record Keeping and the Politics of Knowledge Creation",
+      "credits": 12,
+      "id": "hi_211",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 206",
+      "title": "States and Institutional Memories",
+      "credits": 12,
+      "id": "hi_206",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "AN 201",
+      "title": "Ethnography as a Research Method",
+      "credits": 12,
+      "id": "an_201",
+      "departmentId": "dept-sociology"
+    },
+    {
+      "code": "AY 221",
+      "title": "Conservation and Curation of Fauna Materials",
+      "credits": 12,
+      "id": "ay_221",
+      "departmentId": "dept-archaeology"
+    },
+    {
+      "code": "AY 224",
+      "title": "Conservation and Curation of Ceramic Materials",
+      "credits": 12,
+      "id": "ay_224",
+      "departmentId": "dept-archaeology"
+    },
+    {
+      "code": "HI 212",
+      "title": "Cultural Tour Guidance",
+      "credits": 12,
+      "id": "hi_212",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 204",
+      "title": "Creation and Maintenance of Public Archives",
+      "credits": 12,
+      "id": "hi_204",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "AY 222",
+      "title": "Conservation and Curation of Metal Materials",
+      "credits": 12,
+      "id": "ay_222",
+      "departmentId": "dept-archaeology"
+    },
+    {
+      "code": "AY 223",
+      "title": "Conservation and Curation of Lithic Materials",
+      "credits": 12,
+      "id": "ay_223",
+      "departmentId": "dept-archaeology"
+    },
+    {
+      "code": "AY 301",
+      "title": "Cultural Heritage Management",
+      "credits": 12,
+      "id": "ay_301",
+      "departmentId": "dept-archaeology"
+    },
+    {
+      "code": "AY 321",
+      "title": "Heritage Laws",
+      "credits": 12,
+      "id": "ay_321",
+      "departmentId": "dept-archaeology"
+    },
+    {
+      "code": "HI 302",
+      "title": "Government and Business Records Management",
+      "credits": 12,
+      "id": "hi_302",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 301",
+      "title": "Collection, Conservation and Security of Archival Materials",
+      "credits": 12,
+      "id": "hi_301",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "HI 311",
+      "title": "The History of Wildlife Conservation, Tourism and Leisure in Tanzania",
+      "credits": 12,
+      "id": "hi_311",
+      "departmentId": "dept-history"
+    },
+    {
+      "code": "AY 322",
+      "title": "Ethics in Cultural Tourism",
+      "credits": 12,
+      "id": "ay_322",
+      "departmentId": "dept-archaeology"
+    },
+    {
+      "code": "AY 323",
+      "title": "Intangible Heritage Resources in Tanzania",
+      "credits": 12,
+      "id": "ay_323",
+      "departmentId": "dept-archaeology"
+    },
+    {
+      "code": "HI 307",
+      "title": "Introduction to Vital Registers",
+      "credits": 12,
+      "id": "hi_307",
+      "departmentId": "dept-history"
+    }
+  ],
+  "conflicts": [
+    {
+      "code": "AS 102",
+      "existingTitle": "Law of Contract I",
+      "suppliedTitle": "Introduction to Social Science Research Methods I",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "discrepancyType": "title",
+      "actionTaken": "Cross-college code shared with Law School (Law of Contract I). Canonical record preserved; History curriculum relationship uses 'Introduction to Social Science Research Methods I' (12cr)."
+    },
+    {
+      "code": "DS 115",
+      "existingTitle": "Development Perspectives II",
+      "suppliedTitle": "Development Perspectives II",
+      "existingCredits": 8,
+      "suppliedCredits": 12,
+      "discrepancyType": "credits",
+      "actionTaken": "Canonical record (Development Perspectives II, 8cr) preserved; curriculum relationship configured with supplied title ('Development Perspectives II') and credits (12cr)."
+    },
+    {
+      "code": "AS 103",
+      "existingTitle": "Constitutional Law I",
+      "suppliedTitle": "Introduction to Social Science Methods II",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "discrepancyType": "title",
+      "actionTaken": "Cross-college code shared with Law School (Constitutional Law I). Canonical record preserved; History curriculum relationship uses 'Introduction to Social Science Methods II' (12cr)."
+    },
+    {
+      "code": "AY 302",
+      "existingTitle": "Public Archaeology and Cultural Tourism",
+      "suppliedTitle": "Archaeology of Tanzania",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "discrepancyType": "title",
+      "actionTaken": "Archaeology department title variation (Public Archaeology and Cultural Tourism vs Archaeology of Tanzania). Canonical record preserved; History curriculum relationship uses 'Archaeology of Tanzania' (12cr)."
+    },
+    {
+      "code": "CL 106",
+      "existingTitle": "Communication Skills",
+      "suppliedTitle": "Communication Skills for Arts and Social Sciences",
+      "existingCredits": 8,
+      "suppliedCredits": 12,
+      "discrepancyType": "title_and_credits",
+      "actionTaken": "Canonical record (Communication Skills, 8cr) preserved; curriculum relationship configured with supplied title ('Communication Skills for Arts and Social Sciences') and credits (12cr)."
+    },
+    {
+      "code": "PS 222",
+      "existingTitle": "International Relations Theory",
+      "suppliedTitle": "International Relations I*",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "discrepancyType": "title",
+      "actionTaken": "Political Science department title variation (International Relations Theory vs International Relations I*). Canonical record preserved; History curriculum relationship uses 'International Relations I*' (12cr)."
+    },
+    {
+      "code": "AY 303",
+      "existingTitle": "Cultural Heritage Management",
+      "suppliedTitle": "Introduction to Museum Studies",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "discrepancyType": "title",
+      "actionTaken": "Archaeology department title variation (Cultural Heritage Management vs Introduction to Museum Studies). Canonical record preserved; History curriculum relationship uses 'Introduction to Museum Studies' (12cr)."
+    }
+  ]
+}

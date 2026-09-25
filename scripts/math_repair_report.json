@@ -1,0 +1,107 @@
+{
+  "canonicalCoursesCheck": {
+    "initialCount": 1848,
+    "finalCountNamed": 1848,
+    "finalCountDefault": 1848,
+    "zeroDeletionsConfirmed": true
+  },
+  "bscWithEducation": {
+    "expectedCourses": 19,
+    "coursesBeforeRepair": 53,
+    "duplicateRelationshipsRemoved": 0,
+    "extraRelationshipsRemoved": 34,
+    "missingRelationshipsRestored": 0,
+    "finalCourseCountPC": 19,
+    "finalCourseCountCC": 19,
+    "missing": 0,
+    "extra": 0,
+    "duplicates": 0
+  },
+  "bscMathAndStatistics": {
+    "expectedCourses": 41,
+    "coursesBeforeRepair": 71,
+    "duplicateRelationshipsRemoved": 30,
+    "extraRelationshipsRemoved": 0,
+    "missingRelationshipsRestored": 0,
+    "finalCourseCountPC": 41,
+    "finalCourseCountCC": 41,
+    "oldCourseCoordinatorAssignmentsRemoved": 30,
+    "missing": 0,
+    "extra": 0,
+    "duplicates": 0
+  },
+  "bscActuarialSciences": {
+    "expectedCourses": 42,
+    "coursesBeforeRepair": 42,
+    "duplicateRelationshipsRemoved": 0,
+    "extraRelationshipsRemoved": 0,
+    "missingRelationshipsRestored": 0,
+    "finalCourseCountPC": 42,
+    "finalCourseCountCC": 42,
+    "missing": 0,
+    "extra": 0,
+    "duplicates": 0
+  },
+  "sourceConflicts": [
+    {
+      "courseCode": "MT 100",
+      "conflict": "Canonical course title in older records was 'Basic Mathematics' (0 credits); authoritative Mathematics prospectus title is 'Foundations of Analysis' (12 credits).",
+      "resolution": "Preserved canonical record safely; programme-course relationships accurately record 'Foundations of Analysis' (12 credits, Core)."
+    },
+    {
+      "courseCode": "MT 114",
+      "conflict": "Canonical course title in older records was 'Linear Algebra I'; authoritative prospectus title is 'Computer Programming' (12 credits).",
+      "resolution": "Preserved canonical record safely; programme-course relationships record 'Computer Programming' (12 credits, Core)."
+    },
+    {
+      "courseCode": "MT 120",
+      "conflict": "Canonical course title was 'Calculus'; authoritative prospectus title is 'Analysis 1: Functions of a Single Variable' (12 credits).",
+      "resolution": "Preserved canonical record safely; programme-course relationships record 'Analysis 1: Functions of a Single Variable' (12 credits)."
+    },
+    {
+      "courseCode": "MT 127",
+      "conflict": "Canonical course title was 'Linear Algebra II'; authoritative prospectus title is 'Linear Algebra I' (12 credits).",
+      "resolution": "Preserved canonical record safely; programme-course relationships record 'Linear Algebra I' (12 credits, Core)."
+    },
+    {
+      "courseCode": "MT 200",
+      "conflict": "Canonical course title was 'Advanced Calculus'; authoritative prospectus title is 'Analysis 2: Functions of Several Variables' (12 credits).",
+      "resolution": "Preserved canonical record safely; programme-course relationships record 'Analysis 2: Functions of Several Variables' (12 credits)."
+    },
+    {
+      "courseCode": "MT 225 / MT 226",
+      "conflict": "Both refer to Partial Differential Equations (MT 225 for BSc Ed [8 credits, Elective] & BSc Math & Stats [12 credits, Core]; MT 226 for BSc Actuarial [8 credits, Core]).",
+      "resolution": "Distinct course codes and credits preserved at canonical and programme-relationship levels."
+    },
+    {
+      "courseCode": "MT 227",
+      "conflict": "Canonical course title was 'Ordinary Differential Equations'; authoritative prospectus title is 'Linear Algebra II' (12 credits, Elective in BSc Ed Y2S2).",
+      "resolution": "Preserved canonical record safely; programme-course relationships record 'Linear Algebra II' (12 credits)."
+    },
+    {
+      "courseCode": "MT 274",
+      "conflict": "Credit variation: 8 credits in BSc Ed; 12 credits in BSc Math & Stats.",
+      "resolution": "Credits differentiated at the programme-course relationship level (8 for BSc Ed, 12 for BSc Math & Stats)."
+    },
+    {
+      "courseCode": "MT 265",
+      "conflict": "Credit variation: 8 credits (Core, Y3S1) in BSc Ed; 12 credits (Elective, Y2S1) in BSc Math & Stats.",
+      "resolution": "Relationships preserve respective year, semester, credits, and Core/Elective status."
+    },
+    {
+      "courseCode": "MT 357",
+      "conflict": "Canonical course title was 'Numerical Analysis I'; authoritative prospectus title is 'Abstract Algebra' (12 credits).",
+      "resolution": "Preserved canonical record safely; programme-course relationships record 'Abstract Algebra' (12 credits)."
+    },
+    {
+      "courseCode": "MT 378",
+      "conflict": "Canonical course title was 'Applied Optimisation'; authoritative prospectus title is 'Queuing Theory and Inventory Models' (12 credits, Elective).",
+      "resolution": "Preserved canonical record safely; programme-course relationships record 'Queuing Theory and Inventory Models' (12 credits)."
+    },
+    {
+      "courseCode": "ST 220",
+      "conflict": "Canonical course title was 'Statistical Computing I'; authoritative prospectus title is 'Basic Demographic Methods' (12 credits).",
+      "resolution": "Preserved canonical record safely; programme-course relationships record 'Basic Demographic Methods' (12 credits)."
+    }
+  ]
+}

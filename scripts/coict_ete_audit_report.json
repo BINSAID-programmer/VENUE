@@ -1,0 +1,573 @@
+{
+  "college": {
+    "id": "coict",
+    "name": "College of Information and Communication Technologies",
+    "status": "reused"
+  },
+  "department": {
+    "id": "dept-ete",
+    "name": "Department of Electronics and Telecommunications Engineering",
+    "status": "reused"
+  },
+  "programmes": [
+    {
+      "id": "bsc-esc",
+      "name": "Bachelor of Science in Electronic Science and Communication",
+      "status": "reused",
+      "coursesCount": 68
+    },
+    {
+      "id": "bsc-telecom",
+      "name": "Bachelor of Science in Telecommunications Engineering",
+      "status": "reused",
+      "coursesCount": 71
+    },
+    {
+      "id": "bsc-elec",
+      "name": "Bachelor of Science in Electronics Engineering",
+      "status": "created",
+      "coursesCount": 78
+    }
+  ],
+  "tracksAndStreams": [
+    "B.Sc. ESC: Electronics Stream",
+    "B.Sc. ESC: Communication Stream",
+    "B.Sc. ELE: Embedded Electronics Track",
+    "B.Sc. ELE: Electronics Science Track",
+    "B.Sc. ELE: Shared (Both Tracks)"
+  ],
+  "canonicalCoursesReused": 67,
+  "canonicalCoursesCreated": 78,
+  "curriculumRelationshipsCreated": 217,
+  "conflictsDetected": [
+    {
+      "courseCode": "ES 102",
+      "existingTitle": "Quantitative Methods for Bachelor of Science in Metallurgy and Mineral Processing Engineering",
+      "suppliedTitle": "Practicals in Electronics",
+      "suppliedCredits": 8,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "MT 100",
+      "existingTitle": "Basic Mathematics",
+      "suppliedTitle": "Foundation of Analysis",
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "MT 127",
+      "existingTitle": "Linear Algebra II",
+      "suppliedTitle": "Linear Algebra I",
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "SC 215",
+      "existingTitle": "Scientific Methods",
+      "suppliedTitle": "Science Methods",
+      "suppliedCredits": 8,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "ES 101",
+      "existingTitle": "Foundation of Bachelor of Science in Metallurgy and Mineral Processing Engineering I",
+      "suppliedTitle": "Technical Drawing, Laboratory and Workshop Administration",
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y1S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "MT 120",
+      "existingTitle": "Calculus",
+      "suppliedTitle": "Analysis I: Functions of a Single Variable",
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y1S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CL 107",
+      "existingTitle": "Communication Skills for Science Students",
+      "suppliedTitle": "Communication Skills for Scientist",
+      "suppliedCredits": 8,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y1S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "EV 200",
+      "existingTitle": "Environmental Science I",
+      "suppliedTitle": "Environmental Sciences",
+      "suppliedCredits": 8,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y2S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "PH 201",
+      "existingTitle": "Intermediate Bachelor of Science in Physics Theory I",
+      "suppliedTitle": "Mathematical Methods I",
+      "suppliedCredits": 8,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y2S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "MT 233",
+      "existingTitle": "Mathematical Analysis",
+      "suppliedTitle": "Mathematical Statistics I",
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y2S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "IS 245",
+      "existingTitle": "Software Engineering I",
+      "suppliedTitle": "Operating Systems I",
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y2S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "IS 263",
+      "existingTitle": "Database Systems II",
+      "suppliedTitle": "Database Concepts",
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y2S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "ES 202",
+      "existingTitle": "Research Methods in Bachelor of Science in Metallurgy and Mineral Processing Engineering",
+      "suppliedTitle": "Quantum Electronics",
+      "suppliedCredits": 8,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y2S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "ES 222",
+      "existingTitle": "None (new canonical course)",
+      "suppliedTitle": "Digital Electronics Practicals / Digital Electronics Practical",
+      "existingCredits": "None",
+      "suppliedCredits": "8",
+      "affectedProgramme": "Department of Electronics and Telecommunications Engineering",
+      "affectedYearSemester": "Y2S2, Y2S2, Y2S2",
+      "actionTaken": "Canonical course created with primary prospectus title 'Digital Electronics Practicals' (8 credits); curriculum relationships preserve variant titles and credits."
+    },
+    {
+      "courseCode": "PH 202",
+      "existingTitle": "Research Methods in Bachelor of Science in Physics",
+      "suppliedTitle": "Mathematical Methods II",
+      "suppliedCredits": 8,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y2S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "MT 227",
+      "existingTitle": "Ordinary Differential Equations",
+      "suppliedTitle": "Linear Algebra II",
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y2S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "ES 399",
+      "existingTitle": "Final Year Undergraduate Project in Bachelor of Science in Metallurgy and Mineral Processing Engineering",
+      "suppliedTitle": "Projects in Electronics I",
+      "suppliedCredits": 8,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y3S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "ES 399",
+      "existingTitle": "Final Year Undergraduate Project in Bachelor of Science in Metallurgy and Mineral Processing Engineering",
+      "suppliedTitle": "Projects in Electronics II",
+      "suppliedCredits": 8,
+      "affectedProgramme": "Cross-reference",
+      "affectedYearSemester": "Y3S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "ES 311",
+      "existingTitle": "None (new canonical course)",
+      "suppliedTitle": "Electronics Instrumentation II / Electronics Measurements and Instrumentation II",
+      "existingCredits": "None",
+      "suppliedCredits": "8",
+      "affectedProgramme": "Department of Electronics and Telecommunications Engineering",
+      "affectedYearSemester": "Y3S2, Y3S2",
+      "actionTaken": "Canonical course created with primary prospectus title 'Electronics Instrumentation II' (8 credits); curriculum relationships preserve variant titles and credits."
+    },
+    {
+      "courseCode": "TE 411",
+      "existingTitle": "None (new canonical course)",
+      "suppliedTitle": "Microwave Communications / Microwave Communication",
+      "existingCredits": "None",
+      "suppliedCredits": "16 / 12",
+      "affectedProgramme": "Department of Electronics and Telecommunications Engineering",
+      "affectedYearSemester": "Y3S1, Y4S1, Y4S1",
+      "actionTaken": "Canonical course created with primary prospectus title 'Microwave Communications' (16 credits); curriculum relationships preserve variant titles and credits."
+    },
+    {
+      "courseCode": "ES 314",
+      "existingTitle": "None (new canonical course)",
+      "suppliedTitle": "Microprocessor Theory and Practices / Quantum Electronics",
+      "existingCredits": "None",
+      "suppliedCredits": "8",
+      "affectedProgramme": "Department of Electronics and Telecommunications Engineering",
+      "affectedYearSemester": "Y3S1, Y3S2",
+      "actionTaken": "Canonical course created with primary prospectus title 'Microprocessor Theory and Practices' (8 credits); curriculum relationships preserve variant titles and credits."
+    },
+    {
+      "courseCode": "TE 412",
+      "existingTitle": "None (new canonical course)",
+      "suppliedTitle": "Introduction to Wireless Communications / Introduction to Wireless Communication / Mobile Communication",
+      "existingCredits": "None",
+      "suppliedCredits": "12 / 8",
+      "affectedProgramme": "Department of Electronics and Telecommunications Engineering",
+      "affectedYearSemester": "Y3S2, Y4S2, Y4S2",
+      "actionTaken": "Canonical course created with primary prospectus title 'Introduction to Wireless Communications' (12 credits); curriculum relationships preserve variant titles and credits."
+    },
+    {
+      "courseCode": "ES 319",
+      "existingTitle": "None (new canonical course)",
+      "suppliedTitle": "Communication Systems Design / Hardware Interfacing Techniques",
+      "existingCredits": "None",
+      "suppliedCredits": "8",
+      "affectedProgramme": "Department of Electronics and Telecommunications Engineering",
+      "affectedYearSemester": "Y3S2, Y3S2",
+      "actionTaken": "Canonical course created with primary prospectus title 'Communication Systems Design' (8 credits); curriculum relationships preserve variant titles and credits."
+    },
+    {
+      "courseCode": "CL 111",
+      "existingTitle": "Communication Skills for Engineers I",
+      "suppliedTitle": "Communication Skills for Engineers",
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CL 111",
+      "existingTitle": "Communication Skills for Engineers I",
+      "suppliedTitle": "Communication Skills for Engineers",
+      "suppliedCredits": 12,
+      "affectedProgramme": "Cross-reference",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "ES 171",
+      "existingTitle": "Computer Aided Drafting and Design",
+      "suppliedTitle": "Computer Aided Drafting and Design (CADD)",
+      "existingCredits": 8,
+      "suppliedCredits": 8,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "ES 171",
+      "existingTitle": "Computer Aided Drafting and Design",
+      "suppliedTitle": "Computer Aided Drafting and Design (CADD)",
+      "existingCredits": 8,
+      "suppliedCredits": 8,
+      "affectedProgramme": "Cross-reference",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "ME 101",
+      "existingTitle": "Engineering Mechanics (Statics)",
+      "suppliedTitle": "Engineering Drawing",
+      "suppliedCredits": 8,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "ME 101",
+      "existingTitle": "Engineering Mechanics (Statics)",
+      "suppliedTitle": "Engineering Drawing",
+      "suppliedCredits": 8,
+      "affectedProgramme": "Cross-reference",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "MT 161",
+      "existingTitle": "Matrices and Basic Calculus for Non-Majors",
+      "suppliedTitle": "Matrices and Basic Calculus for Non Major",
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "MT 161",
+      "existingTitle": "Matrices and Basic Calculus for Non-Majors",
+      "suppliedTitle": "Matrices and Basic Calculus for Non-Major",
+      "suppliedCredits": 12,
+      "affectedProgramme": "Cross-reference",
+      "affectedYearSemester": "Y1S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CS 175",
+      "existingTitle": "Object-Oriented Programming in Java",
+      "suppliedTitle": "Programming in Java",
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y1S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CS 175",
+      "existingTitle": "Object-Oriented Programming in Java",
+      "suppliedTitle": "Programming in Java",
+      "suppliedCredits": 12,
+      "affectedProgramme": "Cross-reference",
+      "affectedYearSemester": "Y1S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "MT 171",
+      "existingTitle": "One Variable Calculus and Differential Equations for Non-Majors",
+      "suppliedTitle": "One Variable Calculus & Diff. Eq. for Non Major",
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y1S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "MT 171",
+      "existingTitle": "One Variable Calculus and Differential Equations for Non-Majors",
+      "suppliedTitle": "One Variable Calculus & Diff. Eq. for Non-Major",
+      "suppliedCredits": 12,
+      "affectedProgramme": "Cross-reference",
+      "affectedYearSemester": "Y1S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "ES 213",
+      "existingTitle": "None (new canonical course)",
+      "suppliedTitle": "Electronics Measurements and Instrumentation I / Analogue Electronics III",
+      "existingCredits": "None",
+      "suppliedCredits": "8 / 12",
+      "affectedProgramme": "Department of Electronics and Telecommunications Engineering",
+      "affectedYearSemester": "Y2S1, Y2S1, Y3S1",
+      "actionTaken": "Canonical course created with primary prospectus title 'Electronics Measurements and Instrumentation I' (8 credits); curriculum relationships preserve variant titles and credits."
+    },
+    {
+      "courseCode": "IS 158",
+      "existingTitle": "Database Systems I",
+      "suppliedTitle": "Computer Hardware and System Maintenance",
+      "suppliedCredits": 8,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y2S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "IS 158",
+      "existingTitle": "Database Systems I",
+      "suppliedTitle": "Computer Hardware and System Maintenance",
+      "suppliedCredits": 8,
+      "affectedProgramme": "Cross-reference",
+      "affectedYearSemester": "Y2S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CS 243",
+      "existingTitle": "Operating Systems",
+      "suppliedTitle": "Computer Network Design and Administration",
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y2S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CS 243",
+      "existingTitle": "Operating Systems",
+      "suppliedTitle": "Computer Network Design and Administration",
+      "suppliedCredits": 12,
+      "affectedProgramme": "Cross-reference",
+      "affectedYearSemester": "Y2S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CS 234",
+      "existingTitle": "Data Structures and Algorithms",
+      "suppliedTitle": "Object Oriented Programming in Java",
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y2S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CS 234",
+      "existingTitle": "Data Structures and Algorithms",
+      "suppliedTitle": "Object Oriented Programming in Java",
+      "suppliedCredits": 12,
+      "affectedProgramme": "Cross-reference",
+      "affectedYearSemester": "Y2S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "MT 271",
+      "existingTitle": "Statistics for Mathematics Non-Majors",
+      "suppliedTitle": "Statistics for Non-majors",
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y2S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "MT 271",
+      "existingTitle": "Statistics for Mathematics Non-Majors",
+      "suppliedTitle": "Statistics for Non-majors",
+      "suppliedCredits": 12,
+      "affectedProgramme": "Cross-reference",
+      "affectedYearSemester": "Y2S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CS 353",
+      "existingTitle": "Distributed Systems",
+      "suppliedTitle": "Micro Computer Systems I",
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y3S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CS 353",
+      "existingTitle": "Distributed Systems",
+      "suppliedTitle": "Micro Computer Systems I",
+      "suppliedCredits": 12,
+      "affectedProgramme": "Cross-reference",
+      "affectedYearSemester": "Y3S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CS 441",
+      "existingTitle": "Wide Area Networking",
+      "suppliedTitle": "High Speed Network Technologies",
+      "existingCredits": 8,
+      "suppliedCredits": 8,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y3S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CS 441",
+      "existingTitle": "Wide Area Networking",
+      "suppliedTitle": "Wide Area Networks",
+      "existingCredits": 8,
+      "suppliedCredits": 8,
+      "affectedProgramme": "Cross-reference",
+      "affectedYearSemester": "Y4S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CS 441",
+      "existingTitle": "Wide Area Networking",
+      "suppliedTitle": "High Speed Network Technologies",
+      "existingCredits": 8,
+      "suppliedCredits": 8,
+      "affectedProgramme": "Cross-reference",
+      "affectedYearSemester": "Y4S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "IS 238",
+      "existingTitle": "Mobile Application Development",
+      "suppliedTitle": "Mobile Applications Development",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y3S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "TE 338",
+      "existingTitle": "None (new canonical course)",
+      "suppliedTitle": "Mobile Web Communication Services",
+      "existingCredits": "None",
+      "suppliedCredits": "12 / 8",
+      "affectedProgramme": "Department of Electronics and Telecommunications Engineering",
+      "affectedYearSemester": "Y3S2, Y3S2",
+      "actionTaken": "Canonical course created with primary prospectus title 'Mobile Web Communication Services' (12 credits); curriculum relationships preserve variant titles and credits."
+    },
+    {
+      "courseCode": "CS 421",
+      "existingTitle": "None (new canonical course)",
+      "suppliedTitle": "Control Systems Engineering III / Modern Control Systems Engineering",
+      "existingCredits": "None",
+      "suppliedCredits": "8",
+      "affectedProgramme": "Department of Electronics and Telecommunications Engineering",
+      "affectedYearSemester": "Y4S1, Y4S1",
+      "actionTaken": "Canonical course created with primary prospectus title 'Control Systems Engineering III' (8 credits); curriculum relationships preserve variant titles and credits."
+    },
+    {
+      "courseCode": "MG 441",
+      "existingTitle": "Human Resource and Management",
+      "suppliedTitle": "Human Resources Management",
+      "suppliedCredits": 8,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y4S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "IS 264",
+      "existingTitle": "Principles of Database Systems",
+      "suppliedTitle": "Principals of Database Systems",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y3S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "ES 499",
+      "existingTitle": "Capstone Research Project in Bachelor of Science in Metallurgy and Mineral Processing Engineering",
+      "suppliedTitle": "Final Project",
+      "suppliedCredits": 24,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y4S2",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "CS 354",
+      "existingTitle": "Microcomputer Systems II",
+      "suppliedTitle": "Micro Computer Systems II",
+      "suppliedCredits": 8,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y4S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    },
+    {
+      "courseCode": "IE 441",
+      "existingTitle": "Human Resource Management for Engineers",
+      "suppliedTitle": "Human Resources Management",
+      "suppliedCredits": 8,
+      "affectedProgramme": "CoICT Programme",
+      "affectedYearSemester": "Y4S1",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title and credits."
+    }
+  ]
+}

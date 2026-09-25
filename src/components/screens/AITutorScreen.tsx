@@ -113,14 +113,14 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({
     id: 'msg-init',
     sender: 'assistant',
     role: 'assistant',
-    text: `Habari${studentName ? ` ${studentName}` : ''}! I am your VENUE AI Tutor.\n\nYou can ask me university mathematics, statistics, economics, and programming problems in **English**, **Kiswahili**, or mixed language. You can also photograph or upload handwritten solutions, equations, and diagrams.`,
+    text: `Welcome${studentName ? `, ${studentName}` : ''}! I am your VENUE AI Academic Tutor.\n\nYou can ask me questions across any of your university courses, concepts, problem sets, and assignments. You can also photograph or upload handwritten notes, equations, diagrams, and past papers.`,
     timestamp: 'Just now',
     suggestions: [
-      'Solve (a+b)/c when a=5, b=7, c=3 step by step',
-      'Explain Bayes\' Theorem with formula and proof',
-      'Plot quadratic curve y = x^2 - 4x + 3 with roots',
-      'Eleza kwa Kiswahili: Normal Distribution',
-      'Derive OLS estimators for linear regression',
+      'Explain key concepts from my coursework step by step',
+      'Summarize this lecture topic with practical examples',
+      'Solve this problem step by step with clear explanations',
+      'Help me structure an outline for my upcoming assignment',
+      'Give me 3 practice questions with step-by-step solutions',
     ],
   };
 

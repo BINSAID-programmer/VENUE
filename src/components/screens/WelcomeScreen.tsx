@@ -90,8 +90,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             },
             {
               icon: Sparkles,
-              title: 'AI Math & Academic Tutor',
-              desc: 'Instant step-by-step theorem derivations & quantitative analysis.',
+              title: 'AI Academic Tutor',
+              desc: 'Instant step-by-step problem explanations, derivations & conceptual clarity.',
             },
             {
               icon: Clock,

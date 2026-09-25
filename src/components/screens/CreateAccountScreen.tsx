@@ -89,7 +89,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
     }
 
     if (!validateEmailFormat(cleanEmail)) {
-      setErrorMsg('Please enter a valid email address (e.g. student@udsm.ac.tz).');
+      setErrorMsg('Please enter a valid email address (e.g. student@university.ac or student@institution.edu).');
       return;
     }
 
@@ -239,7 +239,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                   setEmail(e.target.value);
                   if (errorMsg) setErrorMsg('');
                 }}
-                placeholder="e.g. student@udsm.ac.tz"
+                placeholder="e.g. student@institution.edu or student@university.ac"
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-all"
                 disabled={isLoading}
                 required

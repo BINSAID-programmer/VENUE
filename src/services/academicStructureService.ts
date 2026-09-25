@@ -29,9 +29,9 @@ import {
   AUDITED_PROGRAMMES,
   OFFICIAL_UDSM_UNIVERSITY,
 } from '../data/udsmAuditedCatalogue2025';
-import { ProgrammeRecord, DegreeLevel } from '../types';
+import { ProgrammeRecord, DegreeLevel, CountryRecord } from '../types';
 import { degreeProgrammeService, normalizeProgrammeRecord } from './degreeProgrammeService';
-export type { ProgrammeRecord, DegreeLevel };
+export type { ProgrammeRecord, DegreeLevel, CountryRecord };
 
 export type AcademicUnitType =
   | 'College'
@@ -46,6 +46,8 @@ export interface UniversityRecord {
   name: string;
   shortName: string;
   country: string;
+  countryId?: string;
+  flag?: string;
   status: 'active' | 'coming_soon';
   campus?: string;
   established?: string;
@@ -78,13 +80,119 @@ export interface DepartmentRecord {
   source?: string;
 }
 
-// Default Universities List
+// Global Supported Countries
+export const GLOBAL_COUNTRIES: CountryRecord[] = [
+  {
+    id: 'tz',
+    code: 'TZ',
+    name: 'Tanzania',
+    flag: '🇹🇿',
+    dialCode: '+255',
+    currency: 'TZS',
+    status: 'active',
+  },
+  {
+    id: 'ke',
+    code: 'KE',
+    name: 'Kenya',
+    flag: '🇰🇪',
+    dialCode: '+254',
+    currency: 'KES',
+    status: 'active',
+  },
+  {
+    id: 'ug',
+    code: 'UG',
+    name: 'Uganda',
+    flag: '🇺🇬',
+    dialCode: '+256',
+    currency: 'UGX',
+    status: 'active',
+  },
+  {
+    id: 'rw',
+    code: 'RW',
+    name: 'Rwanda',
+    flag: '🇷🇼',
+    dialCode: '+250',
+    currency: 'RWF',
+    status: 'active',
+  },
+  {
+    id: 'ng',
+    code: 'NG',
+    name: 'Nigeria',
+    flag: '🇳🇬',
+    dialCode: '+234',
+    currency: 'NGN',
+    status: 'active',
+  },
+  {
+    id: 'gh',
+    code: 'GH',
+    name: 'Ghana',
+    flag: '🇬🇭',
+    dialCode: '+233',
+    currency: 'GHS',
+    status: 'active',
+  },
+  {
+    id: 'za',
+    code: 'ZA',
+    name: 'South Africa',
+    flag: '🇿🇦',
+    dialCode: '+27',
+    currency: 'ZAR',
+    status: 'active',
+  },
+  {
+    id: 'gb',
+    code: 'GB',
+    name: 'United Kingdom',
+    flag: '🇬🇧',
+    dialCode: '+44',
+    currency: 'GBP',
+    status: 'active',
+  },
+  {
+    id: 'us',
+    code: 'US',
+    name: 'United States',
+    flag: '🇺🇸',
+    dialCode: '+1',
+    currency: 'USD',
+    status: 'active',
+  },
+  {
+    id: 'ca',
+    code: 'CA',
+    name: 'Canada',
+    flag: '🇨🇦',
+    dialCode: '+1',
+    currency: 'CAD',
+    status: 'active',
+  },
+  {
+    id: 'other',
+    code: 'OTHER',
+    name: 'Other International',
+    flag: '🌐',
+    dialCode: '+',
+    currency: 'USD',
+    status: 'active',
+  },
+];
+
+// Default Universities List (Global University-Agnostic Catalogue)
 export const DEFAULT_UNIVERSITIES: UniversityRecord[] = [
+  // Tanzania
   {
     id: 'udsm',
     name: 'University of Dar es Salaam',
     shortName: 'UDSM',
     country: 'Tanzania',
+    countryId: 'tz',
+    flag: '🇹🇿',
     status: 'active',
     campus: 'Mlimani Main Campus',
     established: '1961',
@@ -96,6 +204,8 @@ export const DEFAULT_UNIVERSITIES: UniversityRecord[] = [
     name: 'University of Dodoma',
     shortName: 'UDOM',
     country: 'Tanzania',
+    countryId: 'tz',
+    flag: '🇹🇿',
     status: 'active',
     campus: 'Dodoma Campus',
     established: '2007',
@@ -107,6 +217,8 @@ export const DEFAULT_UNIVERSITIES: UniversityRecord[] = [
     name: 'Sokoine University of Agriculture',
     shortName: 'SUA',
     country: 'Tanzania',
+    countryId: 'tz',
+    flag: '🇹🇿',
     status: 'active',
     campus: 'Morogoro Main Campus',
     established: '1984',
@@ -118,6 +230,8 @@ export const DEFAULT_UNIVERSITIES: UniversityRecord[] = [
     name: 'Mbeya University of Science & Tech',
     shortName: 'MUST',
     country: 'Tanzania',
+    countryId: 'tz',
+    flag: '🇹🇿',
     status: 'active',
     campus: 'Mbeya Campus',
     established: '2012',
@@ -129,6 +243,8 @@ export const DEFAULT_UNIVERSITIES: UniversityRecord[] = [
     name: 'Ardhi University',
     shortName: 'ARU',
     country: 'Tanzania',
+    countryId: 'tz',
+    flag: '🇹🇿',
     status: 'active',
     campus: 'Observation Hill, Dar es Salaam',
     established: '2007',
@@ -140,6 +256,8 @@ export const DEFAULT_UNIVERSITIES: UniversityRecord[] = [
     name: 'State University of Zanzibar',
     shortName: 'SUZA',
     country: 'Tanzania',
+    countryId: 'tz',
+    flag: '🇹🇿',
     status: 'active',
     campus: 'Tunguu Campus, Zanzibar',
     established: '2001',
@@ -151,9 +269,294 @@ export const DEFAULT_UNIVERSITIES: UniversityRecord[] = [
     name: 'Muhimbili University of Health & Allied Sciences',
     shortName: 'MUHAS',
     country: 'Tanzania',
+    countryId: 'tz',
+    flag: '🇹🇿',
     status: 'active',
     campus: 'Upanga, Dar es Salaam',
     established: '2007',
+    badge: 'Available',
+    verified: true,
+  },
+  // Kenya
+  {
+    id: 'uon',
+    name: 'University of Nairobi',
+    shortName: 'UoN',
+    country: 'Kenya',
+    countryId: 'ke',
+    flag: '🇰🇪',
+    status: 'active',
+    campus: 'Main Campus, Nairobi',
+    established: '1970',
+    badge: 'Available',
+    verified: true,
+  },
+  {
+    id: 'ku',
+    name: 'Kenyatta University',
+    shortName: 'KU',
+    country: 'Kenya',
+    countryId: 'ke',
+    flag: '🇰🇪',
+    status: 'active',
+    campus: 'Main Campus, Kahawa',
+    established: '1985',
+    badge: 'Available',
+    verified: true,
+  },
+  {
+    id: 'strath',
+    name: 'Strathmore University',
+    shortName: 'Strathmore',
+    country: 'Kenya',
+    countryId: 'ke',
+    flag: '🇰🇪',
+    status: 'active',
+    campus: 'Madaraka Estate, Nairobi',
+    established: '1961',
+    badge: 'Available',
+    verified: true,
+  },
+  {
+    id: 'jkuat',
+    name: 'Jomo Kenyatta University of Agriculture and Technology',
+    shortName: 'JKUAT',
+    country: 'Kenya',
+    countryId: 'ke',
+    flag: '🇰🇪',
+    status: 'active',
+    campus: 'Juja Main Campus',
+    established: '1994',
+    badge: 'Available',
+    verified: true,
+  },
+  // Uganda
+  {
+    id: 'mak',
+    name: 'Makerere University',
+    shortName: 'MAK',
+    country: 'Uganda',
+    countryId: 'ug',
+    flag: '🇺🇬',
+    status: 'active',
+    campus: 'Makerere Hill, Kampala',
+    established: '1922',
+    badge: 'Available',
+    verified: true,
+  },
+  {
+    id: 'kyu',
+    name: 'Kyambogo University',
+    shortName: 'KYU',
+    country: 'Uganda',
+    countryId: 'ug',
+    flag: '🇺🇬',
+    status: 'active',
+    campus: 'Kyambogo Hill, Kampala',
+    established: '2003',
+    badge: 'Available',
+    verified: true,
+  },
+  // Rwanda
+  {
+    id: 'ur',
+    name: 'University of Rwanda',
+    shortName: 'UR',
+    country: 'Rwanda',
+    countryId: 'rw',
+    flag: '🇷🇼',
+    status: 'active',
+    campus: 'Gikondo Campus, Kigali',
+    established: '2013',
+    badge: 'Available',
+    verified: true,
+  },
+  // Nigeria
+  {
+    id: 'unilag',
+    name: 'University of Lagos',
+    shortName: 'UNILAG',
+    country: 'Nigeria',
+    countryId: 'ng',
+    flag: '🇳🇬',
+    status: 'active',
+    campus: 'Akoka, Lagos',
+    established: '1962',
+    badge: 'Available',
+    verified: true,
+  },
+  {
+    id: 'ui',
+    name: 'University of Ibadan',
+    shortName: 'UI',
+    country: 'Nigeria',
+    countryId: 'ng',
+    flag: '🇳🇬',
+    status: 'active',
+    campus: 'Ibadan Main Campus',
+    established: '1948',
+    badge: 'Available',
+    verified: true,
+  },
+  // Ghana
+  {
+    id: 'ug-gh',
+    name: 'University of Ghana',
+    shortName: 'UG',
+    country: 'Ghana',
+    countryId: 'gh',
+    flag: '🇬🇭',
+    status: 'active',
+    campus: 'Legon Campus, Accra',
+    established: '1948',
+    badge: 'Available',
+    verified: true,
+  },
+  // South Africa
+  {
+    id: 'uct',
+    name: 'University of Cape Town',
+    shortName: 'UCT',
+    country: 'South Africa',
+    countryId: 'za',
+    flag: '🇿🇦',
+    status: 'active',
+    campus: 'Rondebosch, Cape Town',
+    established: '1829',
+    badge: 'Available',
+    verified: true,
+  },
+  {
+    id: 'wits',
+    name: 'University of the Witwatersrand',
+    shortName: 'Wits',
+    country: 'South Africa',
+    countryId: 'za',
+    flag: '🇿🇦',
+    status: 'active',
+    campus: 'Braamfontein, Johannesburg',
+    established: '1922',
+    badge: 'Available',
+    verified: true,
+  },
+  // United Kingdom
+  {
+    id: 'oxford',
+    name: 'University of Oxford',
+    shortName: 'Oxford',
+    country: 'United Kingdom',
+    countryId: 'gb',
+    flag: '🇬🇧',
+    status: 'active',
+    campus: 'Oxford, England',
+    established: '1096',
+    badge: 'Available',
+    verified: true,
+  },
+  {
+    id: 'cambridge',
+    name: 'University of Cambridge',
+    shortName: 'Cambridge',
+    country: 'United Kingdom',
+    countryId: 'gb',
+    flag: '🇬🇧',
+    status: 'active',
+    campus: 'Cambridge, England',
+    established: '1209',
+    badge: 'Available',
+    verified: true,
+  },
+  {
+    id: 'imperial',
+    name: 'Imperial College London',
+    shortName: 'Imperial',
+    country: 'United Kingdom',
+    countryId: 'gb',
+    flag: '🇬🇧',
+    status: 'active',
+    campus: 'South Kensington, London',
+    established: '1907',
+    badge: 'Available',
+    verified: true,
+  },
+  // United States
+  {
+    id: 'harvard',
+    name: 'Harvard University',
+    shortName: 'Harvard',
+    country: 'United States',
+    countryId: 'us',
+    flag: '🇺🇸',
+    status: 'active',
+    campus: 'Cambridge, Massachusetts',
+    established: '1636',
+    badge: 'Available',
+    verified: true,
+  },
+  {
+    id: 'mit',
+    name: 'Massachusetts Institute of Technology',
+    shortName: 'MIT',
+    country: 'United States',
+    countryId: 'us',
+    flag: '🇺🇸',
+    status: 'active',
+    campus: 'Cambridge, Massachusetts',
+    established: '1861',
+    badge: 'Available',
+    verified: true,
+  },
+  {
+    id: 'stanford',
+    name: 'Stanford University',
+    shortName: 'Stanford',
+    country: 'United States',
+    countryId: 'us',
+    flag: '🇺🇸',
+    status: 'active',
+    campus: 'Stanford, California',
+    established: '1885',
+    badge: 'Available',
+    verified: true,
+  },
+  // Canada
+  {
+    id: 'utoronto',
+    name: 'University of Toronto',
+    shortName: 'U of T',
+    country: 'Canada',
+    countryId: 'ca',
+    flag: '🇨🇦',
+    status: 'active',
+    campus: 'Toronto, Ontario',
+    established: '1827',
+    badge: 'Available',
+    verified: true,
+  },
+  {
+    id: 'ubc',
+    name: 'University of British Columbia',
+    shortName: 'UBC',
+    country: 'Canada',
+    countryId: 'ca',
+    flag: '🇨🇦',
+    status: 'active',
+    campus: 'Vancouver, British Columbia',
+    established: '1908',
+    badge: 'Available',
+    verified: true,
+  },
+  // Other International
+  {
+    id: 'other-uni',
+    name: 'Other Academic Institution',
+    shortName: 'Other',
+    country: 'Other International',
+    countryId: 'other',
+    flag: '🌐',
+    status: 'active',
+    campus: 'General Campus',
+    established: 'Global',
     badge: 'Available',
     verified: true,
   },
@@ -355,6 +758,148 @@ const OTHER_UNIVERSITIES_UNITS: AcademicUnitRecord[] = [
     status: 'active',
     verified: true,
   },
+  // UoN (Kenya)
+  {
+    id: 'uon-fst',
+    universityId: 'uon',
+    name: 'Faculty of Science and Technology',
+    shortName: 'FST',
+    abbreviation: 'FST',
+    type: 'School',
+    campus: 'Chiromo Campus, Nairobi',
+    status: 'active',
+    verified: true,
+  },
+  {
+    id: 'uon-fbms',
+    universityId: 'uon',
+    name: 'Faculty of Business and Management Sciences',
+    shortName: 'FBMS',
+    abbreviation: 'FBMS',
+    type: 'School',
+    campus: 'Lower Kabete Campus, Nairobi',
+    status: 'active',
+    verified: true,
+  },
+  // KU (Kenya)
+  {
+    id: 'ku-spas',
+    universityId: 'ku',
+    name: 'School of Pure and Applied Sciences',
+    shortName: 'SPAS',
+    abbreviation: 'SPAS',
+    type: 'School',
+    campus: 'Main Campus, Kahawa',
+    status: 'active',
+    verified: true,
+  },
+  // Strathmore (Kenya)
+  {
+    id: 'strath-scit',
+    universityId: 'strath',
+    name: 'School of Computing and Informatics',
+    shortName: 'SCIT',
+    abbreviation: 'SCIT',
+    type: 'School',
+    campus: 'Madaraka Estate, Nairobi',
+    status: 'active',
+    verified: true,
+  },
+  // Makerere (Uganda)
+  {
+    id: 'mak-cocis',
+    universityId: 'mak',
+    name: 'College of Computing and Information Sciences',
+    shortName: 'CoCIS',
+    abbreviation: 'CoCIS',
+    type: 'College',
+    campus: 'Makerere Main Campus, Kampala',
+    status: 'active',
+    verified: true,
+  },
+  {
+    id: 'mak-cobams',
+    universityId: 'mak',
+    name: 'College of Business and Management Sciences',
+    shortName: 'CoBAMS',
+    abbreviation: 'CoBAMS',
+    type: 'College',
+    campus: 'Makerere Main Campus, Kampala',
+    status: 'active',
+    verified: true,
+  },
+  // University of Rwanda (Rwanda)
+  {
+    id: 'ur-cst',
+    universityId: 'ur',
+    name: 'College of Science and Technology',
+    shortName: 'CST',
+    abbreviation: 'CST',
+    type: 'College',
+    campus: 'Nyarugenge Campus, Kigali',
+    status: 'active',
+    verified: true,
+  },
+  // University of Lagos (Nigeria)
+  {
+    id: 'unilag-science',
+    universityId: 'unilag',
+    name: 'Faculty of Science',
+    shortName: 'Science',
+    abbreviation: 'Science',
+    type: 'School',
+    campus: 'Akoka Campus, Lagos',
+    status: 'active',
+    verified: true,
+  },
+  // University of Cape Town (South Africa)
+  {
+    id: 'uct-science',
+    universityId: 'uct',
+    name: 'Faculty of Science',
+    shortName: 'Science',
+    abbreviation: 'Science',
+    type: 'School',
+    campus: 'Upper Campus, Cape Town',
+    status: 'active',
+    verified: true,
+  },
+  // University of Oxford (UK)
+  {
+    id: 'oxford-mpls',
+    universityId: 'oxford',
+    name: 'Mathematical, Physical and Life Sciences Division',
+    shortName: 'MPLS',
+    abbreviation: 'MPLS',
+    type: 'School',
+    campus: 'Oxford City Campus',
+    status: 'active',
+    verified: true,
+  },
+  // Harvard University (US)
+  {
+    id: 'harvard-seas',
+    universityId: 'harvard',
+    name: 'John A. Paulson School of Engineering and Applied Sciences',
+    shortName: 'SEAS',
+    abbreviation: 'SEAS',
+    type: 'School',
+    campus: 'Cambridge, Massachusetts',
+    status: 'active',
+    verified: true,
+  },
+  // Other International
+  {
+    id: 'other-general-unit',
+    universityId: 'other-uni',
+    name: 'General Faculty of Arts & Sciences',
+    shortName: 'FAS',
+    abbreviation: 'FAS',
+    type: 'School',
+    campus: 'Global Campus',
+    status: 'active',
+    verified: true,
+  },
 ];
 
 const OTHER_UNIVERSITIES_DEPTS: DepartmentRecord[] = [
@@ -545,6 +1090,109 @@ const OTHER_UNIVERSITIES_DEPTS: DepartmentRecord[] = [
     academicUnitId: 'muhas-som',
     universityId: 'muhas',
     name: 'Department of Surgery',
+    verified: true,
+  },
+  // UoN FST
+  {
+    id: 'uon-dept-cs',
+    academicUnitId: 'uon-fst',
+    universityId: 'uon',
+    name: 'Department of Computing & Informatics',
+    verified: true,
+  },
+  {
+    id: 'uon-dept-math',
+    academicUnitId: 'uon-fst',
+    universityId: 'uon',
+    name: 'Department of Mathematics',
+    verified: true,
+  },
+  // UoN FBMS
+  {
+    id: 'uon-dept-finance',
+    academicUnitId: 'uon-fbms',
+    universityId: 'uon',
+    name: 'Department of Finance and Accounting',
+    verified: true,
+  },
+  // KU SPAS
+  {
+    id: 'ku-dept-cs',
+    academicUnitId: 'ku-spas',
+    universityId: 'ku',
+    name: 'Department of Computing and Information Technology',
+    verified: true,
+  },
+  // Strathmore SCIT
+  {
+    id: 'strath-dept-is',
+    academicUnitId: 'strath-scit',
+    universityId: 'strath',
+    name: 'Department of Information Systems & Technology',
+    verified: true,
+  },
+  // Makerere CoCIS
+  {
+    id: 'mak-dept-cs',
+    academicUnitId: 'mak-cocis',
+    universityId: 'mak',
+    name: 'Department of Computer Science',
+    verified: true,
+  },
+  // Makerere CoBAMS
+  {
+    id: 'mak-dept-econ',
+    academicUnitId: 'mak-cobams',
+    universityId: 'mak',
+    name: 'Department of Economic Theory & Policy',
+    verified: true,
+  },
+  // UR CST
+  {
+    id: 'ur-dept-cs',
+    academicUnitId: 'ur-cst',
+    universityId: 'ur',
+    name: 'Department of Computer Science',
+    verified: true,
+  },
+  // UNILAG Science
+  {
+    id: 'unilag-dept-cs',
+    academicUnitId: 'unilag-science',
+    universityId: 'unilag',
+    name: 'Department of Computer Sciences',
+    verified: true,
+  },
+  // UCT Science
+  {
+    id: 'uct-dept-cs',
+    academicUnitId: 'uct-science',
+    universityId: 'uct',
+    name: 'Department of Computer Science',
+    verified: true,
+  },
+  // Oxford MPLS
+  {
+    id: 'oxford-dept-cs',
+    academicUnitId: 'oxford-mpls',
+    universityId: 'oxford',
+    name: 'Department of Computer Science',
+    verified: true,
+  },
+  // Harvard SEAS
+  {
+    id: 'harvard-dept-cs',
+    academicUnitId: 'harvard-seas',
+    universityId: 'harvard',
+    name: 'Computer Science Area',
+    verified: true,
+  },
+  // Other International
+  {
+    id: 'other-dept-general',
+    academicUnitId: 'other-general-unit',
+    universityId: 'other-uni',
+    name: 'General Academic Department',
     verified: true,
   },
 ];
@@ -778,6 +1426,166 @@ const OTHER_UNIVERSITIES_PROGRAMMES: ProgrammeRecord[] = [
     durationYears: 5,
     verified: true,
   },
+  // UoN
+  {
+    id: 'uon-bsc-cs',
+    departmentId: 'uon-dept-cs',
+    academicUnitId: 'uon-fst',
+    universityId: 'uon',
+    name: 'Bachelor of Science in Computer Science',
+    shortName: 'BSc CS',
+    durationYears: 4,
+    verified: true,
+  },
+  {
+    id: 'uon-bsc-actuarial',
+    departmentId: 'uon-dept-math',
+    academicUnitId: 'uon-fst',
+    universityId: 'uon',
+    name: 'Bachelor of Science in Actuarial Science',
+    shortName: 'BSc Actuarial',
+    durationYears: 4,
+    verified: true,
+  },
+  {
+    id: 'uon-bcom',
+    departmentId: 'uon-dept-finance',
+    academicUnitId: 'uon-fbms',
+    universityId: 'uon',
+    name: 'Bachelor of Commerce',
+    shortName: 'BCom',
+    durationYears: 4,
+    verified: true,
+  },
+  // KU
+  {
+    id: 'ku-bsc-it',
+    departmentId: 'ku-dept-cs',
+    academicUnitId: 'ku-spas',
+    universityId: 'ku',
+    name: 'Bachelor of Science in Information Technology',
+    shortName: 'BSc IT',
+    durationYears: 4,
+    verified: true,
+  },
+  // Strathmore
+  {
+    id: 'strath-bbit',
+    departmentId: 'strath-dept-is',
+    academicUnitId: 'strath-scit',
+    universityId: 'strath',
+    name: 'Bachelor of Business Information Technology',
+    shortName: 'BBIT',
+    durationYears: 4,
+    verified: true,
+  },
+  // Makerere
+  {
+    id: 'mak-bsc-cs',
+    departmentId: 'mak-dept-cs',
+    academicUnitId: 'mak-cocis',
+    universityId: 'mak',
+    name: 'Bachelor of Science in Computer Science',
+    shortName: 'BSc CS',
+    durationYears: 3,
+    verified: true,
+  },
+  {
+    id: 'mak-bcom',
+    departmentId: 'mak-dept-econ',
+    academicUnitId: 'mak-cobams',
+    universityId: 'mak',
+    name: 'Bachelor of Commerce',
+    shortName: 'BCom',
+    durationYears: 3,
+    verified: true,
+  },
+  // UR
+  {
+    id: 'ur-bsc-cs',
+    departmentId: 'ur-dept-cs',
+    academicUnitId: 'ur-cst',
+    universityId: 'ur',
+    name: 'Bachelor of Science in Computer Science',
+    shortName: 'BSc CS',
+    durationYears: 4,
+    verified: true,
+  },
+  // UNILAG
+  {
+    id: 'unilag-bsc-cs',
+    departmentId: 'unilag-dept-cs',
+    academicUnitId: 'unilag-science',
+    universityId: 'unilag',
+    name: 'Bachelor of Science in Computer Science',
+    shortName: 'BSc CS',
+    durationYears: 4,
+    verified: true,
+  },
+  // UCT
+  {
+    id: 'uct-bsc-cs',
+    departmentId: 'uct-dept-cs',
+    academicUnitId: 'uct-science',
+    universityId: 'uct',
+    name: 'Bachelor of Science in Computer Science',
+    shortName: 'BSc CS',
+    durationYears: 3,
+    verified: true,
+  },
+  // Oxford
+  {
+    id: 'oxford-ba-cs',
+    departmentId: 'oxford-dept-cs',
+    academicUnitId: 'oxford-mpls',
+    universityId: 'oxford',
+    name: 'Bachelor of Arts in Computer Science',
+    shortName: 'BA CS',
+    durationYears: 3,
+    verified: true,
+  },
+  // Harvard
+  {
+    id: 'harvard-ab-cs',
+    departmentId: 'harvard-dept-cs',
+    academicUnitId: 'harvard-seas',
+    universityId: 'harvard',
+    name: 'Bachelor of Arts in Computer Science',
+    shortName: 'AB CS',
+    durationYears: 4,
+    verified: true,
+  },
+  // Other International
+  {
+    id: 'other-bsc-cs',
+    departmentId: 'other-dept-general',
+    academicUnitId: 'other-general-unit',
+    universityId: 'other-uni',
+    name: 'Bachelor of Science in Computer Science',
+    shortName: 'BSc CS',
+    durationYears: 3,
+    verified: true,
+  },
+  {
+    id: 'other-bba',
+    departmentId: 'other-dept-general',
+    academicUnitId: 'other-general-unit',
+    universityId: 'other-uni',
+    name: 'Bachelor of Business Administration',
+    shortName: 'BBA',
+    durationYears: 3,
+    verified: true,
+  },
+  {
+    id: 'other-ba-general',
+    departmentId: 'other-dept-general',
+    academicUnitId: 'other-general-unit',
+    universityId: 'other-uni',
+    name: 'Bachelor of Arts',
+    shortName: 'BA',
+    durationYears: 3,
+    verified: true,
+  },
 ];
 
 class AcademicStructureService {
@@ -811,37 +1619,74 @@ class AcademicStructureService {
       ...AUDITED_PROGRAMMES,
       ...OTHER_UNIVERSITIES_PROGRAMMES,
     ].map(normalizeProgrammeRecord);
+
+    // Register all global programmes with degreeProgrammeService
+    degreeProgrammeService.registerProgrammes(this.allProgrammesInMemory);
   }
 
   /**
-   * 1. Get all supported Universities
-   * Returns list with UDSM as verified primary
+   * 0. Get all supported Countries
    */
-  async getUniversities(): Promise<UniversityRecord[]> {
-    if (this.universitiesCache && this.universitiesCache.length > 0) {
-      return this.universitiesCache;
-    }
-
+  async getCountries(): Promise<CountryRecord[]> {
     try {
-      const snap = await getDocs(collection(db, 'universities'));
+      const snap = await getDocs(collection(db, 'countries'));
       if (!snap.empty) {
-        const fetched: UniversityRecord[] = [];
+        const fetched: CountryRecord[] = [];
         snap.forEach((docSnap) => {
-          fetched.push(docSnap.data() as UniversityRecord);
+          fetched.push(docSnap.data() as CountryRecord);
         });
         if (fetched.length > 0) {
-          // Ensure UDSM is first
-          fetched.sort((a, b) => (a.id === 'udsm' ? -1 : b.id === 'udsm' ? 1 : a.name.localeCompare(b.name)));
-          this.universitiesCache = fetched;
           return fetched;
         }
       }
     } catch (err) {
-      console.warn('AcademicStructureService: Firestore universities read note (using verified defaults):', err);
+      // offline fallback
+    }
+    return GLOBAL_COUNTRIES;
+  }
+
+  /**
+   * 1. Get all supported Universities
+   * Returns list and supports optional filtering by country ID or name
+   */
+  async getUniversities(countryFilter?: string): Promise<UniversityRecord[]> {
+    let list: UniversityRecord[] = [];
+
+    if (this.universitiesCache && this.universitiesCache.length > 0) {
+      list = this.universitiesCache;
+    } else {
+      try {
+        const snap = await getDocs(collection(db, 'universities'));
+        if (!snap.empty) {
+          const fetched: UniversityRecord[] = [];
+          snap.forEach((docSnap) => {
+            fetched.push(docSnap.data() as UniversityRecord);
+          });
+          if (fetched.length > 0) {
+            this.universitiesCache = fetched;
+            list = fetched;
+          }
+        }
+      } catch (err) {
+        console.warn('AcademicStructureService: Firestore universities read note (using verified defaults):', err);
+      }
+
+      if (list.length === 0) {
+        this.universitiesCache = DEFAULT_UNIVERSITIES;
+        list = DEFAULT_UNIVERSITIES;
+      }
     }
 
-    this.universitiesCache = DEFAULT_UNIVERSITIES;
-    return DEFAULT_UNIVERSITIES;
+    if (countryFilter && countryFilter.trim()) {
+      const cleanFilter = countryFilter.toLowerCase().trim();
+      return list.filter((u) => {
+        const cId = (u.countryId || '').toLowerCase().trim();
+        const cName = (u.country || '').toLowerCase().trim();
+        return cId === cleanFilter || cName === cleanFilter || cName.includes(cleanFilter);
+      });
+    }
+
+    return list;
   }
 
   /**
@@ -849,7 +1694,8 @@ class AcademicStructureService {
    * Queries Firestore with index: universityId == id
    */
   async getInstitutions(universityId: string): Promise<AcademicUnitRecord[]> {
-    const cleanId = (universityId || 'udsm').toLowerCase().trim();
+    const cleanId = (universityId || '').toLowerCase().trim();
+    if (!cleanId) return [];
 
     if (this.unitsByUniversityCache.has(cleanId)) {
       return this.unitsByUniversityCache.get(cleanId)!;
@@ -921,7 +1767,7 @@ class AcademicStructureService {
    * 3. Get Departments under a specific Academic Unit
    * Queries Firestore with index: academicUnitId == id
    */
-  async getDepartments(academicUnitId: string, universityId = 'udsm'): Promise<DepartmentRecord[]> {
+  async getDepartments(academicUnitId: string, universityId?: string): Promise<DepartmentRecord[]> {
     const cleanUnitId = (academicUnitId || '').toLowerCase().trim();
 
     if (!cleanUnitId) return [];
@@ -969,9 +1815,11 @@ class AcademicStructureService {
   async getProgrammes(
     departmentId: string,
     academicUnitId?: string,
-    universityId = 'udsm'
+    universityId?: string
   ): Promise<ProgrammeRecord[]> {
-    return degreeProgrammeService.getProgrammesByDepartment(departmentId, academicUnitId, universityId);
+    const cleanDeptId = (departmentId || '').toLowerCase().trim();
+    if (!cleanDeptId) return [];
+    return degreeProgrammeService.getProgrammesByDepartment(cleanDeptId, academicUnitId, universityId);
   }
 
   /**
@@ -1000,7 +1848,9 @@ class AcademicStructureService {
    */
   resolveProfileContext(profile: {
     university?: string;
+    universityId?: string;
     college?: string;
+    institutionId?: string;
     department?: string;
     departmentId?: string;
     programme?: string;
@@ -1014,29 +1864,39 @@ class AcademicStructureService {
     programmeId?: string;
     durationYears: number;
   } {
-    // 1. Resolve University
-    let uniId = 'udsm';
-    const rawUni = (profile.university || '').toLowerCase();
-    if (rawUni.includes('dodoma') || rawUni === 'udom') uniId = 'udom';
-    else if (rawUni.includes('sokoine') || rawUni === 'sua') uniId = 'sua';
-    else if (rawUni.includes('mbeya') || rawUni === 'must') uniId = 'must';
-    else if (rawUni.includes('ardhi') || rawUni === 'aru') uniId = 'aru';
-    else if (rawUni.includes('zanzibar') || rawUni === 'suza') uniId = 'suza';
-    else if (rawUni.includes('muhimbili') || rawUni === 'muhas') uniId = 'muhas';
+    // 1. Resolve University dynamically
+    let uniId = (profile.universityId || '').toLowerCase().trim();
+    if (!uniId && profile.university) {
+      const rawUni = (profile.university || '').toLowerCase().trim();
+      const matchedUni = DEFAULT_UNIVERSITIES.find((u) => {
+        const uId = u.id.toLowerCase();
+        const uShort = u.shortName.toLowerCase();
+        const uName = u.name.toLowerCase();
+        return rawUni === uId || rawUni === uShort || rawUni.includes(uShort) || rawUni.includes(uName) || uName.includes(rawUni);
+      });
+      if (matchedUni) {
+        uniId = matchedUni.id;
+      } else {
+        uniId = rawUni.replace(/\s+/g, '-');
+      }
+    }
+    if (!uniId) {
+      uniId = 'udsm';
+    }
 
     // 2. Resolve Academic Unit
-    let unitId: string | undefined;
+    let unitId: string | undefined = profile.institutionId;
     const rawCollege = (profile.college || '').toLowerCase();
     const matchedUnit = this.allUnitsInMemory.find((u) => {
       if (u.universityId !== uniId) return false;
       const uName = u.name.toLowerCase();
-      const uShort = u.shortName.toLowerCase();
+      const uShort = (u.shortName || '').toLowerCase();
       const uAbbr = (u.abbreviation || '').toLowerCase();
       return (
         rawCollege === u.id ||
         rawCollege.includes(u.id) ||
-        rawCollege.includes(uShort) ||
-        rawCollege.includes(uAbbr) ||
+        (uShort && rawCollege.includes(uShort)) ||
+        (uAbbr && rawCollege.includes(uAbbr)) ||
         uName.includes(rawCollege) ||
         rawCollege.includes(uName)
       );
@@ -1064,27 +1924,89 @@ class AcademicStructureService {
     let durationYears = 3;
     const rawProg = (profile.programme || '').toLowerCase();
 
-    const matchedProg = this.allProgrammesInMemory.find((p) => {
-      if (unitId && p.academicUnitId !== unitId) return false;
-      const pName = p.name.toLowerCase();
-      const pShort = (p.shortName || '').toLowerCase();
-      return (
-        rawProg === p.id ||
-        rawProg.includes(p.id) ||
-        (pShort && rawProg.includes(pShort)) ||
-        pName.includes(rawProg) ||
-        rawProg.includes(pName)
+    // If programmeId is already provided, verify and resolve directly by ID
+    if (programmeId) {
+      const cleanProgId = programmeId.toLowerCase().trim();
+      const foundById = this.allProgrammesInMemory.find(
+        (p) => p.id.toLowerCase() === cleanProgId
       );
-    });
-
-    if (matchedProg) {
-      programmeId = matchedProg.id;
-      durationYears = matchedProg.durationYears || 3;
-      if (!departmentId) {
-        departmentId = matchedProg.departmentId;
+      if (foundById) {
+        programmeId = foundById.id;
+        durationYears = foundById.durationYears || 3;
+        if (!departmentId) departmentId = foundById.departmentId;
+        if (!unitId) unitId = foundById.academicUnitId;
+        return {
+          universityId: uniId,
+          unitId,
+          departmentId,
+          programmeId,
+          durationYears,
+        };
       }
-      if (!unitId) {
-        unitId = matchedProg.academicUnitId;
+    }
+
+    // Resolve by Department first to prevent cross-department contamination
+    if (rawProg) {
+      let matchedProg: ProgrammeRecord | undefined;
+
+      // 1st Priority: Match strictly WITHIN the user's specific department
+      if (departmentId) {
+        const cleanDept = departmentId.toLowerCase().trim();
+        matchedProg = this.allProgrammesInMemory.find((p) => {
+          if (p.departmentId.toLowerCase() !== cleanDept) return false;
+          const pName = p.name.toLowerCase();
+          const pShort = (p.shortName || '').toLowerCase();
+          return (
+            rawProg === p.id.toLowerCase() ||
+            rawProg === pName ||
+            (pShort && rawProg === pShort) ||
+            pName.includes(rawProg) ||
+            rawProg.includes(pName)
+          );
+        });
+      }
+
+      // 2nd Priority: If no department filter provided, match within unit
+      if (!matchedProg && !departmentId && unitId) {
+        const cleanUnit = unitId.toLowerCase().trim();
+        matchedProg = this.allProgrammesInMemory.find((p) => {
+          if (p.academicUnitId.toLowerCase() !== cleanUnit) return false;
+          const pName = p.name.toLowerCase();
+          const pShort = (p.shortName || '').toLowerCase();
+          return (
+            rawProg === p.id.toLowerCase() ||
+            rawProg === pName ||
+            (pShort && rawProg === pShort) ||
+            pName.includes(rawProg) ||
+            rawProg.includes(pName)
+          );
+        });
+      }
+
+      // 3rd Priority: Only if no department and no unit, search global list
+      if (!matchedProg && !departmentId && !unitId) {
+        matchedProg = this.allProgrammesInMemory.find((p) => {
+          const pName = p.name.toLowerCase();
+          const pShort = (p.shortName || '').toLowerCase();
+          return (
+            rawProg === p.id.toLowerCase() ||
+            rawProg === pName ||
+            (pShort && rawProg === pShort) ||
+            pName.includes(rawProg) ||
+            rawProg.includes(pName)
+          );
+        });
+      }
+
+      if (matchedProg) {
+        programmeId = matchedProg.id;
+        durationYears = matchedProg.durationYears || 3;
+        if (!departmentId) {
+          departmentId = matchedProg.departmentId;
+        }
+        if (!unitId) {
+          unitId = matchedProg.academicUnitId;
+        }
       }
     }
 
@@ -1233,6 +2155,15 @@ class AcademicStructureService {
     let unitsCount = 0;
     let departmentsCount = 0;
     let programmesCount = 0;
+
+    // 0. Sync Countries
+    for (const country of GLOBAL_COUNTRIES) {
+      try {
+        await setDoc(doc(db, 'countries', country.id), country, { merge: true });
+      } catch (err) {
+        console.error(`Failed to sync country ${country.id}:`, err);
+      }
+    }
 
     // 1. Sync Universities
     for (const uni of DEFAULT_UNIVERSITIES) {

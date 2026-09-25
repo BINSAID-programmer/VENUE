@@ -202,8 +202,9 @@ PROGRAMMES = [
 
     # CoNAS
     {"id": "math-stats", "academicUnitId": "conas", "departmentId": "dept-math", "name": "Bachelor of Science in Mathematics and Statistics", "shortName": "BSc Math & Stats", "awardLevel": "Bachelor Degree", "durationYears": 3},
+    {"id": "bsc-ed", "academicUnitId": "conas", "departmentId": "dept-math", "name": "Bachelor of Science with Education", "shortName": "BSc Ed", "awardLevel": "Bachelor Degree", "durationYears": 3},
     {"id": "bsc-math", "academicUnitId": "conas", "departmentId": "dept-math", "name": "Bachelor of Science in Mathematics", "shortName": "BSc Math", "awardLevel": "Bachelor Degree", "durationYears": 3},
-    {"id": "bsc-actuarial", "academicUnitId": "conas", "departmentId": "dept-math", "name": "Bachelor of Science in Actuarial Sciences", "shortName": "BSc Actuarial", "awardLevel": "Bachelor Degree", "durationYears": 3},
+    {"id": "bsc-actuarial", "academicUnitId": "conas", "departmentId": "dept-math", "name": "Bachelor of Science in Actuarial Science", "shortName": "BSc Actuarial", "awardLevel": "Bachelor Degree", "durationYears": 3},
     {"id": "bsc-chem", "academicUnitId": "conas", "departmentId": "dept-chem", "name": "Bachelor of Science in Chemistry", "shortName": "BSc Chem", "awardLevel": "Bachelor Degree", "durationYears": 3},
     {"id": "bsc-pet-chem", "academicUnitId": "conas", "departmentId": "dept-chem", "name": "Bachelor of Science in Petroleum Chemistry", "shortName": "BSc Pet Chem", "awardLevel": "Bachelor Degree", "durationYears": 3},
     {"id": "bsc-app-micr-chem", "academicUnitId": "conas", "departmentId": "dept-chem", "name": "Bachelor of Science in Applied Microbiology and Chemistry", "shortName": "BSc App Micr & Chem", "awardLevel": "Bachelor Degree", "durationYears": 3},
@@ -245,7 +246,7 @@ PROGRAMMES = [
     {"id": "ba-law-enforcement", "academicUnitId": "udsol", "departmentId": "dept-public-law", "name": "Bachelor of Arts in Law Enforcement", "shortName": "BA Law Enf", "awardLevel": "Bachelor Degree", "durationYears": 3},
 
     # CoAF
-    {"id": "bsc-aneb", "academicUnitId": "coaf", "departmentId": "dept-coaf-aeb", "name": "Bachelor of Science in Agricultural and Natural Resources Economics and Business", "shortName": "BSc Ag Econ & Bus", "awardLevel": "Bachelor Degree", "durationYears": 3},
+    {"id": "bsc-aneb", "academicUnitId": "coaf", "departmentId": "dept-coaf-aeb", "name": "Bachelor of Science in Agricultural and Natural Resources Economics and Business", "shortName": "BSc ANEB", "awardLevel": "Bachelor Degree", "durationYears": 3},
     {"id": "bsc-aem", "academicUnitId": "coaf", "departmentId": "dept-coaf-ae", "name": "Bachelor of Science in Agricultural Engineering and Mechanization", "shortName": "BSc Ag Eng", "awardLevel": "Bachelor Degree", "durationYears": 4},
     {"id": "bsc-bst", "academicUnitId": "coaf", "departmentId": "dept-coaf-csbt", "name": "Bachelor of Science in Beekeeping Science and Technology", "shortName": "BSc Beekeeping", "awardLevel": "Bachelor Degree", "durationYears": 3},
     {"id": "bsc-cst", "academicUnitId": "coaf", "departmentId": "dept-coaf-csbt", "name": "Bachelor of Science in Crop Science and Technology", "shortName": "BSc Crop Sci", "awardLevel": "Bachelor Degree", "durationYears": 3},
@@ -640,6 +641,52 @@ ADDITIONAL_CURRICULA = {
         {"code": "MN 301", "title": "Rock Mechanics and Ground Control", "credits": 10, "year": 3, "sem": 1, "status": "Core"},
         {"code": "MN 302", "title": "Mine Equipment and Materials Handling", "credits": 10, "year": 3, "sem": 1, "status": "Core"},
         {"code": "MN 399", "title": "Technician Mining Practical Project", "credits": 12, "year": 3, "sem": 2, "status": "Core"},
+    ],
+    # CoAF Agricultural Economics and Business (bsc-aneb) - UDSM Undergraduate Prospectus 2025/2026 Page 87
+    "bsc-aneb": [
+        # First Year - Semester 1
+        {"code": "EC 116", "title": "Introductory Microeconomics I", "credits": 12, "year": 1, "sem": 1, "status": "Core"},
+        {"code": "EC 117", "title": "Introductory Macroeconomics I", "credits": 12, "year": 1, "sem": 1, "status": "Core"},
+        {"code": "AC 100", "title": "Principles of Accounting I", "credits": 12, "year": 1, "sem": 1, "status": "Core"},
+        {"code": "EB 100", "title": "Agricultural Economics", "credits": 12, "year": 1, "sem": 1, "status": "Core"},
+        {"code": "DS 112", "title": "Development Perspectives I", "credits": 12, "year": 1, "sem": 1, "status": "Core"},
+        {"code": "EB 101", "title": "Natural Resources Economics I", "credits": 12, "year": 1, "sem": 1, "status": "Core"},
+        # First Year - Semester 2
+        {"code": "EC 126", "title": "Introductory Microeconomics II", "credits": 12, "year": 1, "sem": 2, "status": "Core"},
+        {"code": "EC 127", "title": "Introductory Macroeconomics II", "credits": 12, "year": 1, "sem": 2, "status": "Core"},
+        {"code": "AC 101", "title": "Principles of Accounting II", "credits": 12, "year": 1, "sem": 2, "status": "Core"},
+        {"code": "EB 103", "title": "Entrepreneurship and Innovation I", "credits": 12, "year": 1, "sem": 2, "status": "Core"},
+        {"code": "DS 113", "title": "Development Perspectives II", "credits": 12, "year": 1, "sem": 2, "status": "Core"},
+        {"code": "EB 102", "title": "Natural Resources Economics II", "credits": 12, "year": 1, "sem": 2, "status": "Core"},
+        # Second Year - Semester 1
+        {"code": "EC 216", "title": "Intermediate Microeconomics I", "credits": 12, "year": 2, "sem": 1, "status": "Core"},
+        {"code": "EC 217", "title": "Intermediate Macroeconomics I", "credits": 12, "year": 2, "sem": 1, "status": "Core"},
+        {"code": "EB 201", "title": "Agricultural Products Marketing I", "credits": 12, "year": 2, "sem": 1, "status": "Core"},
+        {"code": "EC 218", "title": "Quantitative Methods I", "credits": 12, "year": 2, "sem": 1, "status": "Core"},
+        {"code": "EC 219", "title": "Econometrics I", "credits": 12, "year": 2, "sem": 1, "status": "Core"},
+        {"code": "EB 200", "title": "Agribusiness Management", "credits": 12, "year": 2, "sem": 1, "status": "Core"},
+        # Second Year - Semester 2
+        {"code": "EC 220", "title": "Development Economics", "credits": 12, "year": 2, "sem": 2, "status": "Core"},
+        {"code": "EC 228", "title": "Quantitative Methods II", "credits": 12, "year": 2, "sem": 2, "status": "Core"},
+        {"code": "EC 229", "title": "Econometrics II", "credits": 12, "year": 2, "sem": 2, "status": "Core"},
+        {"code": "EB 202", "title": "Agricultural Products Marketing II", "credits": 12, "year": 2, "sem": 2, "status": "Core"},
+        {"code": "EB 204", "title": "Business Planning", "credits": 12, "year": 2, "sem": 2, "status": "Core"},
+        {"code": "EB 203", "title": "Fishery Economics and Management", "credits": 12, "year": 2, "sem": 2, "status": "Core"},
+        {"code": "EB 310", "title": "Practical Training", "credits": 12, "year": 2, "sem": 2, "status": "Core"},
+        # Third Year - Semester 1
+        {"code": "EB 303", "title": "Entrepreneurship and Innovation II", "credits": 12, "year": 3, "sem": 1, "status": "Core"},
+        {"code": "EB 304", "title": "Economics of Agricultural Marketing I", "credits": 12, "year": 3, "sem": 1, "status": "Core"},
+        {"code": "EB 300", "title": "Economic Management and Policy Analysis", "credits": 12, "year": 3, "sem": 1, "status": "Core"},
+        {"code": "EB 301", "title": "Natural Resource Accounting", "credits": 12, "year": 3, "sem": 1, "status": "Core"},
+        {"code": "EB 302", "title": "Applied Econometrics", "credits": 12, "year": 3, "sem": 1, "status": "Core"},
+        {"code": "EC 372", "title": "Public Sector Economics I", "credits": 12, "year": 3, "sem": 1, "status": "Core"},
+        # Third Year - Semester 2
+        {"code": "EB 308", "title": "Management Information Systems", "credits": 12, "year": 3, "sem": 2, "status": "Core"},
+        {"code": "EB 306", "title": "Project Appraisal and Techniques", "credits": 12, "year": 3, "sem": 2, "status": "Core"},
+        {"code": "EB 305", "title": "Economics of Agricultural Marketing II", "credits": 12, "year": 3, "sem": 2, "status": "Core"},
+        {"code": "EC 377", "title": "Industrial Economics", "credits": 12, "year": 3, "sem": 2, "status": "Core"},
+        {"code": "EB 309", "title": "Environmental Economics", "credits": 12, "year": 3, "sem": 2, "status": "Core"},
+        {"code": "EC 382", "title": "Public Sector Economics II", "credits": 12, "year": 3, "sem": 2, "status": "Core"},
     ]
 }
 

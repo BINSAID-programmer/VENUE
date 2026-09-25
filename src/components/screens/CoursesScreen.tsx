@@ -17,6 +17,7 @@ import {
   X,
   RefreshCw,
   ExternalLink,
+  AlertCircle,
 } from 'lucide-react';
 import { Course, CourseRecord, StudentProfile } from '../../types';
 import { courseCurriculumService, ProgrammeCurriculumSummary } from '../../services/courseCurriculumService';
@@ -58,14 +59,17 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
   // Course Detail Modal state (Requirement 10: Clean basic course info without fake data)
   const [inspectingCourse, setInspectingCourse] = useState<CourseRecord | null>(null);
 
-  // Resolve programme ID and metadata
+  // Resolve programme ID and metadata - NEVER default to math-stats!
   const currentProgrammeId = useMemo(() => {
     return (
       profile?.programmeId ||
       profile?.programmeShort?.toLowerCase() ||
-      'math-stats'
+      ''
     );
   }, [profile?.programmeId, profile?.programmeShort]);
+
+  const [missingCurriculum, setMissingCurriculum] = useState(false);
+  const [curriculumStatusMessage, setCurriculumStatusMessage] = useState<string | null>(null);
 
   // Resolve dynamic programme duration (e.g. 3, 4, 5 years)
   const durationYears = useMemo(() => {
@@ -81,6 +85,11 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
 
   // Load complete programme curriculum roadmap on initial mount or programme change
   useEffect(() => {
+    if (!currentProgrammeId) {
+      setCurriculumRoadmap(null);
+      return;
+    }
+
     let isMounted = true;
     const loadRoadmap = async () => {
       try {
@@ -101,8 +110,10 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
 
   // Load term courses whenever selectedYear and selectedSemester are set
   useEffect(() => {
-    if (selectedYear === null || selectedSemester === null) {
+    if (selectedYear === null || selectedSemester === null || !currentProgrammeId) {
       setTermCourses([]);
+      setMissingCurriculum(false);
+      setCurriculumStatusMessage(null);
       return;
     }
 
@@ -112,6 +123,8 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
       try {
         const result = await courseCurriculumService.getCoursesByProgrammeAndTerm({
           programmeId: currentProgrammeId,
+          departmentId: profile?.departmentId,
+          academicUnitId: profile?.academicUnitId || profile?.institutionId,
           yearOfStudy: selectedYear,
           semester: selectedSemester,
           universityId: profile?.universityId,
@@ -120,6 +133,8 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
         if (isMounted) {
           setTermCourses(result.courses);
           setDataSource(result.source);
+          setMissingCurriculum(Boolean(result.missingCurriculum));
+          setCurriculumStatusMessage(result.statusMessage || null);
         }
       } catch (err) {
         console.warn('CoursesScreen: Error fetching term courses:', err);
@@ -134,7 +149,15 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [currentProgrammeId, selectedYear, selectedSemester, profile?.universityId]);
+  }, [
+    currentProgrammeId,
+    selectedYear,
+    selectedSemester,
+    profile?.departmentId,
+    profile?.academicUnitId,
+    profile?.institutionId,
+    profile?.universityId,
+  ]);
 
   // Navigation helpers
   const handleBackToYears = () => {
@@ -158,6 +181,31 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
     );
     onSelectCourse(uiCourse);
   };
+
+  // Guard: If student has not configured a programme, show an informative completion state
+  if (!currentProgrammeId) {
+    return (
+      <div className="p-4 sm:p-6 space-y-6 pb-28">
+        <div className="text-center py-16 px-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-4 max-w-lg mx-auto">
+          <GraduationCap className="w-12 h-12 mx-auto text-sky-400" />
+          <div className="space-y-1.5">
+            <h2 className="text-lg font-bold text-white">Degree Programme Required</h2>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              VENUE enforces strict academic isolation based on your official university, department, and degree programme.
+              Please update your academic profile with your specific degree programme to view your verified curriculum.
+            </p>
+          </div>
+          <button
+            onClick={() => onBackToHome?.()}
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold cursor-pointer transition-all inline-flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Return to Dashboard</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // -------------------------------------------------------------
   // VIEW MODE: Full Degree Curriculum Roadmap (Requirement 9)
@@ -760,11 +808,23 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
                       <span className="text-[11px] text-slate-400 font-semibold">
                         {credits} Credits
                       </span>
+
+                      {course.choiceConstraint && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                          <span>⚡ Either/Or Choice</span>
+                        </span>
+                      )}
                     </div>
 
                     <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-sky-300 transition-colors">
                       {title}
                     </h3>
+
+                    {course.choiceConstraint && (
+                      <p className="text-xs text-amber-300/90 font-medium bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-1 mt-1">
+                        Requirement: {course.choiceConstraint}
+                      </p>
+                    )}
 
                     <p className="text-xs text-slate-400 flex items-center gap-1.5">
                       <Building className="w-3.5 h-3.5 text-slate-500" />
@@ -809,16 +869,19 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
             </div>
           )}
 
-          {/* Empty State: Programme or Term has no courses yet (Requirement 15) */}
+          {/* Empty State: Missing Curriculum or Term has no courses yet */}
           {termCourses.length === 0 && (
-            <div className="text-center py-12 px-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 space-y-3">
-              <BookOpen className="w-10 h-10 mx-auto text-slate-600" />
-              <div className="space-y-1">
-                <h3 className="text-sm font-bold text-slate-200">
-                  No Courses Indexed for Year {selectedYear} Semester {selectedSemester}
+            <div className="text-center py-12 px-6 rounded-2xl bg-slate-900/40 border border-amber-500/25 space-y-3">
+              <BookOpen className="w-10 h-10 mx-auto text-amber-400" />
+              <div className="space-y-1.5">
+                <span className="inline-block text-[11px] font-bold px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 uppercase tracking-wider">
+                  {curriculumStatusMessage || 'CURRICULUM DATA MISSING — DO NOT INFER'}
+                </span>
+                <h3 className="text-sm sm:text-base font-bold text-slate-100 mt-2">
+                  No Verified Curriculum Indexed for Year {selectedYear} Semester {selectedSemester}
                 </h3>
-                <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
-                  The official course catalogue for this specific semester is currently being verified against the university prospectus. You can still record your grades and manage custom courses directly in the GPA screen.
+                <p className="text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
+                  Official prospectus curriculum data for this department's degree programme has not yet been published in the academic catalogue. Courses from other departments (such as Mathematics &amp; Statistics) are strictly isolated and never inferred.
                 </p>
               </div>
 
@@ -935,6 +998,19 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
               </span>
             </div>
           </div>
+
+          {/* Choice Constraint / Special Curriculum Requirement */}
+          {(course.choiceConstraint || course.note) && (
+            <div className="p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs text-amber-200 flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-amber-300">Curriculum Choice Constraint</p>
+                <p className="text-[11px] text-amber-100/90 mt-0.5 leading-relaxed font-medium">
+                  {course.choiceConstraint || course.note}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Source & Verification Note */}
           <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-sky-300 flex items-start gap-2">

@@ -1328,7 +1328,7 @@ export const SAMPLE_COURSES: Course[] = [
     department: 'Department of Mathematics',
     instructor: {
       name: 'Dr. J. M. Mshana',
-      title: 'Industrial Coordinator',
+      title: 'Senior Lecturer',
       office: 'Math Block Room 204',
     },
     progress: 0,
@@ -1360,7 +1360,7 @@ export const SAMPLE_COURSES: Course[] = [
     department: 'Department of Mathematics',
     instructor: {
       name: 'Dr. C. N. Kagashe',
-      title: 'Undergraduate Project Coordinator',
+      title: 'Senior Lecturer',
       office: 'Math Building 1st Floor',
     },
     progress: 0,

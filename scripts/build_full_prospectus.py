@@ -197,8 +197,9 @@ PROGRAMMES = [
 
     # CoNAS
     {"id": "math-stats", "academicUnitId": "conas", "departmentId": "dept-math", "name": "Bachelor of Science in Mathematics and Statistics", "shortName": "BSc Math & Stats", "awardLevel": "Bachelor Degree", "durationYears": 3},
+    {"id": "bsc-ed", "academicUnitId": "conas", "departmentId": "dept-math", "name": "Bachelor of Science with Education", "shortName": "BSc Ed", "awardLevel": "Bachelor Degree", "durationYears": 3},
     {"id": "bsc-math", "academicUnitId": "conas", "departmentId": "dept-math", "name": "Bachelor of Science in Mathematics", "shortName": "BSc Math", "awardLevel": "Bachelor Degree", "durationYears": 3},
-    {"id": "bsc-actuarial", "academicUnitId": "conas", "departmentId": "dept-math", "name": "Bachelor of Science in Actuarial Sciences", "shortName": "BSc Actuarial", "awardLevel": "Bachelor Degree", "durationYears": 3},
+    {"id": "bsc-actuarial", "academicUnitId": "conas", "departmentId": "dept-math", "name": "Bachelor of Science in Actuarial Science", "shortName": "BSc Actuarial", "awardLevel": "Bachelor Degree", "durationYears": 3},
     {"id": "bsc-chem", "academicUnitId": "conas", "departmentId": "dept-chem", "name": "Bachelor of Science in Chemistry", "shortName": "BSc Chem", "awardLevel": "Bachelor Degree", "durationYears": 3},
     {"id": "bsc-pet-chem", "academicUnitId": "conas", "departmentId": "dept-chem", "name": "Bachelor of Science in Petroleum Chemistry", "shortName": "BSc Pet Chem", "awardLevel": "Bachelor Degree", "durationYears": 3},
     {"id": "bsc-app-micr-chem", "academicUnitId": "conas", "departmentId": "dept-chem", "name": "Bachelor of Science in Applied Microbiology and Chemistry", "shortName": "BSc App Micr & Chem", "awardLevel": "Bachelor Degree", "durationYears": 3},

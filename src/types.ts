@@ -30,10 +30,28 @@ export type ScreenId =
   | 'gpa'
   | 'more';
 
+export interface CountryRecord {
+  id: string;
+  name: string;
+  code: string;
+  flag: string;
+  dialCode: string;
+  phoneFormatPlaceholder?: string;
+  institutionCount?: number;
+  currency?: string;
+  region?: string;
+  status?: 'active' | 'coming_soon';
+  verified?: boolean;
+}
+
 export interface StudentProfile {
   uid?: string;
   name: string;
   fullName?: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  phoneNumber?: string;
   creatorTag: string;
   email: string;
   emailVerified?: boolean;
@@ -41,6 +59,8 @@ export interface StudentProfile {
   profilePhoto?: string;
   photoURL?: string;
   country: string;
+  countryId?: string;
+  countryName?: string;
   university: string;
   universityName?: string;
   universityShort: string;
@@ -50,6 +70,7 @@ export interface StudentProfile {
   institutionId?: string;
   institutionName?: string;
   academicUnitId?: string;
+  academicUnitName?: string;
   academicUnitType?: string;
   department?: string;
   departmentName?: string;
@@ -77,6 +98,7 @@ export interface StudentProfile {
   isProfileComplete?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  preferences?: Record<string, any>;
 }
 
 export interface Achievement {
@@ -115,6 +137,8 @@ export interface UniversityRecord {
   name: string;
   shortName: string;
   country: string;
+  countryId?: string;
+  flag?: string;
   status?: 'active' | 'inactive' | 'coming_soon';
   campus?: string;
   established?: string;
@@ -273,11 +297,16 @@ export interface ProgrammeCourseRecord {
   status: CourseStatus;
   academicUnitId?: string;
   departmentId?: string;
+  offeringDepartmentId?: string;
+  offeringDepartmentName?: string;
   universityId: string;
   verified: boolean;
   source: string;
   sourceType?: string;
   academicYear?: string;
+  electiveRule?: string;
+  choiceConstraint?: string;
+  note?: string;
 }
 
 export interface CourseRecord {
@@ -290,6 +319,8 @@ export interface CourseRecord {
   institutionId?: string; // College/School/Institute identifier
   academicUnitId?: string;
   departmentId?: string;
+  offeringDepartmentId?: string;
+  offeringDepartmentName?: string;
   programmeId: string;
   canonicalCourseId?: string;
   code: string; // Official course code
@@ -306,6 +337,10 @@ export interface CourseRecord {
   verified: boolean;
   source: string;
   sourceType?: string;
+  electiveRule?: string;
+  choiceConstraint?: string;
+  note?: string;
+  notes?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -441,6 +476,14 @@ export interface Course {
   }[];
   active?: boolean;
   verified?: boolean;
+  specialisation?: string;
+  specialisationId?: string;
+  subStream?: string;
+  subStreamSlug?: string;
+  electiveRule?: string;
+  choiceConstraint?: string;
+  note?: string;
+  notes?: string;
   source?: string;
   sourceType?: string;
   createdAt?: string;

@@ -1,0 +1,409 @@
+{
+  "timestamp": "2026-09-21T10:02:10.192Z",
+  "academicUnits": [
+    {
+      "id": "cohu",
+      "name": "College of Humanities",
+      "status": "reused"
+    },
+    {
+      "id": "ci",
+      "name": "Confucius Institute (CI-UDSM)",
+      "status": "reused"
+    }
+  ],
+  "departments": [
+    {
+      "id": "dept-literature",
+      "name": "Department of Literature",
+      "status": "reused",
+      "unitId": "cohu"
+    },
+    {
+      "id": "dept-philosophy",
+      "name": "Department of Philosophy and Religious Studies",
+      "status": "reused",
+      "unitId": "cohu"
+    },
+    {
+      "id": "dept-ci",
+      "name": "Confucius Institute (CI-UDSM)",
+      "status": "reused",
+      "unitId": "ci"
+    }
+  ],
+  "programmes": [
+    {
+      "id": "ba-literature",
+      "name": "Bachelor of Arts in Literature",
+      "shortName": "B.A. (Literature)",
+      "status": "reused",
+      "relationships": 41
+    },
+    {
+      "id": "ba-philosophy",
+      "name": "Bachelor of Arts in Philosophy and Ethics",
+      "shortName": "B.A. (Philosophy and Ethics)",
+      "status": "reused",
+      "relationships": 38
+    },
+    {
+      "id": "ba-ed-chinese",
+      "name": "Bachelor of Arts with Education (Chinese and English)",
+      "shortName": "B.A. Education (Chinese and English Language)",
+      "status": "reused",
+      "relationships": 45
+    }
+  ],
+  "totalRelationshipsCreated": 124,
+  "relationshipsReused": 0,
+  "canonicalCoursesReused": 125,
+  "newCanonicalCreated": 0,
+  "newCanonicalCourses": [],
+  "serviceCoursesCreated": 20,
+  "conflictsDetected": 22,
+  "conflictsDetail": [
+    {
+      "courseCode": "DS 114",
+      "programmeId": "ba-literature",
+      "existingTitle": "Development Perspectives I",
+      "suppliedTitle": "Development Perspective I",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "DS 114",
+      "programmeId": "ba-ed-chinese",
+      "existingTitle": "Development Perspectives I",
+      "suppliedTitle": "Development Perspective I",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "AS 102",
+      "programmeId": "ba-literature",
+      "existingTitle": "Law of Contract I",
+      "suppliedTitle": "Introduction to Social Science Research I",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "AS 102",
+      "programmeId": "ba-philosophy",
+      "existingTitle": "Law of Contract I",
+      "suppliedTitle": "Introduction to Social Science Research Methods I",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "DS 115",
+      "programmeId": "ba-literature",
+      "existingTitle": "Development Perspectives II",
+      "suppliedTitle": "Development Perspectives II",
+      "existingCredits": 8,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "DS 115",
+      "programmeId": "ba-philosophy",
+      "existingTitle": "Development Perspectives II",
+      "suppliedTitle": "Development Perspectives II",
+      "existingCredits": 8,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "DS 115",
+      "programmeId": "ba-ed-chinese",
+      "existingTitle": "Development Perspectives II",
+      "suppliedTitle": "Development Perspective II",
+      "existingCredits": 8,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "AS 103",
+      "programmeId": "ba-literature",
+      "existingTitle": "Constitutional Law I",
+      "suppliedTitle": "Introduction to Social Science Research Method II",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "AS 103",
+      "programmeId": "ba-philosophy",
+      "existingTitle": "Constitutional Law I",
+      "suppliedTitle": "Introduction to Social Science Research Methods II",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "AS 299",
+      "programmeId": "ba-literature",
+      "existingTitle": "Practical Training (done during the long vacation)",
+      "suppliedTitle": "Practical Training",
+      "existingCredits": 0,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "LT 326",
+      "programmeId": "ba-literature",
+      "existingTitle": "Methodology and Practice of Oral Literature Research",
+      "suppliedTitle": "Methodology and Practice in Oral Literature Research",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CL 106",
+      "programmeId": "ba-philosophy",
+      "existingTitle": "Communication Skills",
+      "suppliedTitle": "Communication Skills for Arts and Social Sciences",
+      "existingCredits": 8,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CL 106",
+      "programmeId": "ba-ed-chinese",
+      "existingTitle": "Communication Skills",
+      "suppliedTitle": "Communication Skills for Arts and Social Sciences",
+      "existingCredits": 8,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "PL 112",
+      "programmeId": "service-philosophy",
+      "existingTitle": "Formal Logic",
+      "suppliedTitle": "Introduction to Formal Logic",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "PL 211",
+      "programmeId": "service-philosophy",
+      "existingTitle": "Methods of Philosophy",
+      "suppliedTitle": "Theories of Social and Moral Philosophy",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "SO 116",
+      "programmeId": "ba-philosophy",
+      "existingTitle": "Classical Sociological Theories",
+      "suppliedTitle": "Introduction to Sociology",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "PL 212",
+      "programmeId": "service-philosophy",
+      "existingTitle": "Contemporary Political Philosophy",
+      "suppliedTitle": "Applied Philosophy and Development Ethics",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "PL 312",
+      "programmeId": "ba-philosophy",
+      "existingTitle": "African Philosophy",
+      "suppliedTitle": "Philosophy of Science",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CT 100",
+      "programmeId": "ba-ed-chinese",
+      "existingTitle": "Introduction to Curriculum Studies",
+      "suppliedTitle": "Introduction to Teaching",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "EP 101",
+      "programmeId": "ba-ed-chinese",
+      "existingTitle": "Educational Psychology",
+      "suppliedTitle": "Introduction to Education Psychology",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "CT 200",
+      "programmeId": "ba-ed-chinese",
+      "existingTitle": "Pedagogy and Science Teaching Methods",
+      "suppliedTitle": "Principles of Curriculum Development & Teaching",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    },
+    {
+      "courseCode": "LL 318",
+      "programmeId": "ba-ed-chinese",
+      "existingTitle": "The Study of Discourse",
+      "suppliedTitle": "Study of Discourse",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "actionTaken": "Preserved existing canonical course record without overwriting; stored programme-specific title and credits in relationship document."
+    }
+  ],
+  "electiveRulesPreserved": {
+    "baLiterature": [
+      "Year 1 Semester I: A student may choose ONLY ONE",
+      "Year 2 Semester I: A student may choose ONE",
+      "Year 2 Semester II: A student may choose ONE",
+      "Year 3 Semester I: Student may take this course",
+      "Year 3 Semester II: By Invitation"
+    ],
+    "baPhilosophy": [
+      "Year 1 Semester I: Student may take this course",
+      "Year 1 Semester II: Student may take this course",
+      "Year 2 Semester I: Student may take TWO to THREE",
+      "Year 2 Semester II: Student may take TWO to THREE",
+      "Year 3 Semester I: Student may take TWO to THREE",
+      "Year 3 Semester II: Student may take TWO to THREE"
+    ],
+    "baEdChinese": [
+      "Year 2 Semester I: Should select AT LEAST ONE",
+      "Year 2 Semester II: Should select AT LEAST ONE",
+      "Year 3 Semester I: Should select AT LEAST ONE",
+      "Year 3 Semester II: Should select AT LEAST ONE"
+    ]
+  },
+  "as299Verified": true,
+  "serviceCoursesVerified": true,
+  "starredCoursesNormalized": true,
+  "cmMandarinVerified": true,
+  "discontinuedPhilLitNotCreated": true,
+  "noDuplicateCanonicalCodes": true,
+  "verification": {
+    "programmes": [
+      {
+        "id": "ba-literature",
+        "name": "Bachelor of Arts in Literature",
+        "totalCourses": 41,
+        "breakdown": {
+          "Y1S1": {
+            "total": 7,
+            "core": 5,
+            "elective": 2
+          },
+          "Y1S2": {
+            "total": 6,
+            "core": 6,
+            "elective": 0
+          },
+          "Y2S1": {
+            "total": 8,
+            "core": 5,
+            "elective": 3
+          },
+          "Y2S2": {
+            "total": 8,
+            "core": 5,
+            "elective": 3
+          },
+          "Y3S1": {
+            "total": 6,
+            "core": 5,
+            "elective": 1
+          },
+          "Y3S2": {
+            "total": 6,
+            "core": 5,
+            "elective": 1
+          }
+        }
+      },
+      {
+        "id": "ba-philosophy",
+        "name": "Bachelor of Arts in Philosophy and Ethics",
+        "totalCourses": 38,
+        "breakdown": {
+          "Y1S1": {
+            "total": 6,
+            "core": 5,
+            "elective": 1
+          },
+          "Y1S2": {
+            "total": 6,
+            "core": 5,
+            "elective": 1
+          },
+          "Y2S1": {
+            "total": 7,
+            "core": 3,
+            "elective": 4
+          },
+          "Y2S2": {
+            "total": 7,
+            "core": 3,
+            "elective": 4
+          },
+          "Y3S1": {
+            "total": 6,
+            "core": 3,
+            "elective": 3
+          },
+          "Y3S2": {
+            "total": 6,
+            "core": 3,
+            "elective": 3
+          }
+        }
+      },
+      {
+        "id": "ba-ed-chinese",
+        "name": "Bachelor of Arts with Education (Chinese and English)",
+        "totalCourses": 45,
+        "breakdown": {
+          "Y1S1": {
+            "total": 6,
+            "core": 6,
+            "elective": 0
+          },
+          "Y1S2": {
+            "total": 7,
+            "core": 7,
+            "elective": 0
+          },
+          "Y2S1": {
+            "total": 7,
+            "core": 5,
+            "elective": 2
+          },
+          "Y2S2": {
+            "total": 8,
+            "core": 6,
+            "elective": 2
+          },
+          "Y3S1": {
+            "total": 9,
+            "core": 5,
+            "elective": 4
+          },
+          "Y3S2": {
+            "total": 8,
+            "core": 4,
+            "elective": 4
+          }
+        }
+      }
+    ]
+  }
+}

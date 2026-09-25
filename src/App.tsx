@@ -30,6 +30,7 @@ import {
 } from './services/firebase';
 import { firestoreCatalogueService } from './services/firestoreCatalogueService';
 import { courseCurriculumService } from './services/courseCurriculumService';
+import { degreeProgrammeService } from './services/degreeProgrammeService';
 
 // Layout Components
 import { DeviceWrapper } from './components/layout/DeviceWrapper';
@@ -74,7 +75,8 @@ export const App: React.FC = () => {
 
   // Application Data State
   const [profile, setProfile] = useState<StudentProfile>(mockStudentProfile);
-  const [courses, setCourses] = useState<Course[]>(mockCourses);
+  // Strictly loaded from authenticated user profile and curriculum; never default to math
+  const [courses, setCourses] = useState<Course[]>([]);
   const [tasks, setTasks] = useState<StudyTask[]>(mockStudyTasks);
   const [weeklyGoals, setWeeklyGoals] = useState(mockWeeklyGoals);
   const [exams, setExams] = useState(mockExams);
@@ -92,6 +94,68 @@ export const App: React.FC = () => {
     sent?: boolean;
     error?: string | null;
   } | null>(null);
+
+  // Dynamically load verified courses strictly for the authenticated student's profile:
+  // UID -> Profile -> institutionId -> academicUnitId -> departmentId -> programmeId -> yearOfStudy -> semester
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadStudentCourses = async () => {
+      const pid = profile?.programmeId;
+      const deptId = profile?.departmentId;
+      const unitId = profile?.academicUnitId || profile?.institutionId;
+
+      const rawYear = profile?.yearOfStudy || '';
+      const rawSem = profile?.semester || '';
+      const yr = rawYear ? parseInt(rawYear.replace(/\D/g, ''), 10) : 0;
+      const sem = rawSem ? parseInt(rawSem.replace(/\D/g, ''), 10) : 0;
+
+      // Absolute rule: Never fallback to math or any other default if profile is incomplete
+      if (!pid || !yr || !sem) {
+        if (isMounted) setCourses([]);
+        return;
+      }
+
+      try {
+        const result = await courseCurriculumService.getCoursesByProgrammeAndTerm({
+          programmeId: pid,
+          departmentId: deptId,
+          academicUnitId: unitId,
+          yearOfStudy: yr,
+          semester: sem,
+          universityId: profile?.universityId,
+          userId: profile?.uid,
+        });
+
+        if (isMounted) {
+          const mapped = result.courses.map((rec) =>
+            courseCurriculumService.mapRecordToCourse(
+              rec,
+              profile?.programmeName || profile?.programme
+            )
+          );
+          setCourses(mapped);
+        }
+      } catch (err) {
+        console.warn('App: Error loading profile-specific courses:', err);
+        if (isMounted) setCourses([]);
+      }
+    };
+
+    loadStudentCourses();
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    profile?.programmeId,
+    profile?.departmentId,
+    profile?.academicUnitId,
+    profile?.institutionId,
+    profile?.yearOfStudy,
+    profile?.semester,
+    profile?.universityId,
+    profile?.uid,
+  ]);
 
   // Restore persistent student profile & sync Firebase Auth session for returning users
   useEffect(() => {
@@ -350,7 +414,9 @@ export const App: React.FC = () => {
 
   const handleResetData = () => {
     setProfile(mockStudentProfile);
-    setCourses(mockCourses);
+    setCourses([]);
+    courseCurriculumService.clearCache();
+    degreeProgrammeService.clearCache();
     setTasks(mockStudyTasks);
     setFinancials(mockFinancials);
     setCommunityPosts(mockCommunityPosts);
@@ -361,7 +427,11 @@ export const App: React.FC = () => {
     try {
       await logoutUser();
       localStorage.removeItem('venue_current_student_uid');
+      localStorage.removeItem('venue_active_user_uid');
       sessionStorage.removeItem('venue_current_email');
+      courseCurriculumService.clearCache();
+      degreeProgrammeService.clearCache();
+      setCourses([]);
       setInitialVerificationStatus(null);
       setProfile(mockStudentProfile);
     } catch (err) {

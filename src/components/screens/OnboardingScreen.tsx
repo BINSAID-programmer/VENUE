@@ -17,6 +17,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { StudentProfile } from '../../types';
 import {
   academicStructureService,
+  GLOBAL_COUNTRIES,
+  CountryRecord,
   UniversityRecord,
   AcademicUnitRecord,
   DepartmentRecord,
@@ -45,9 +47,18 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
 
   // Selections
+  const [countriesList, setCountriesList] = useState<CountryRecord[]>(GLOBAL_COUNTRIES);
+  const [selectedCountryId, setSelectedCountryId] = useState<string>(() => {
+    if (initialProfile.countryId) return initialProfile.countryId;
+    const found = GLOBAL_COUNTRIES.find(
+      (c) => c.name.toLowerCase() === (initialProfile.country || '').toLowerCase()
+    );
+    return found ? found.id : 'tz';
+  });
   const [country, setCountry] = useState(initialProfile.country || 'Tanzania');
-  const [selectedUniId, setSelectedUniId] = useState('udsm');
-  const [university, setUniversity] = useState(initialProfile.university || 'University of Dar es Salaam');
+
+  const [selectedUniId, setSelectedUniId] = useState('');
+  const [university, setUniversity] = useState(initialProfile.university || '');
 
   const [selectedUnitId, setSelectedUnitId] = useState('');
   const [college, setCollege] = useState(initialProfile.college || '');
@@ -71,38 +82,46 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   // Loading state
   const [isLoading, setIsLoading] = useState(false);
 
-  // Static Country Options
-  const countries = [
-    { code: 'TZ', name: 'Tanzania', flag: '🇹🇿', description: 'East Africa • Shilling (TZS)', recommended: true },
-    { code: 'KE', name: 'Kenya', flag: '🇰🇪', description: 'East Africa • Shilling (KES)', comingSoon: true },
-    { code: 'UG', name: 'Uganda', flag: '🇺🇬', description: 'East Africa • Shilling (UGX)', comingSoon: true },
-    { code: 'RW', name: 'Rwanda', flag: '🇷🇼', description: 'East Africa • Franc (RWF)', comingSoon: true },
-  ];
-
-  // 1. Initial Mount: Load Universities & resolve any existing profile context
+  // 1. Initial Mount: Load Countries and Universities for the country
   useEffect(() => {
     let isMounted = true;
     async function init() {
       setIsLoading(true);
       try {
-        const unis = await academicStructureService.getUniversities();
+        const fetchedCountries = await academicStructureService.getCountries();
         if (!isMounted) return;
-        setUniversities(unis);
+        setCountriesList(fetchedCountries);
 
         const ctx = academicStructureService.resolveProfileContext(initialProfile);
-        setSelectedUniId(ctx.universityId);
-        const uniObj = unis.find((u) => u.id === ctx.universityId);
-        if (uniObj) setUniversity(uniObj.name);
-
-        // Preload academic units for the university
-        const units = await academicStructureService.getInstitutions(ctx.universityId);
+        const allUnis = await academicStructureService.getUniversities();
         if (!isMounted) return;
-        setAcademicUnits(units);
 
-        const targetUnit = units.find((u) => u.id === ctx.unitId) || units[0];
-        if (targetUnit) {
-          setSelectedUnitId(targetUnit.id);
-          setCollege(targetUnit.name);
+        const resolvedUni = allUnis.find((u) => u.id === ctx.universityId) || allUnis[0];
+        let cId = selectedCountryId;
+        if (resolvedUni?.countryId) {
+          cId = resolvedUni.countryId;
+          setSelectedCountryId(cId);
+          const cObj = fetchedCountries.find((c) => c.id === cId);
+          if (cObj) setCountry(cObj.name);
+        }
+
+        const countryUnis = allUnis.filter((u) => (u.countryId || '').toLowerCase() === cId.toLowerCase());
+        setUniversities(countryUnis.length > 0 ? countryUnis : allUnis);
+
+        if (resolvedUni) {
+          setSelectedUniId(resolvedUni.id);
+          setUniversity(resolvedUni.name);
+
+          // Preload academic units for the university
+          const units = await academicStructureService.getInstitutions(resolvedUni.id);
+          if (!isMounted) return;
+          setAcademicUnits(units);
+
+          const targetUnit = units.find((u) => u.id === ctx.unitId) || units[0];
+          if (targetUnit) {
+            setSelectedUnitId(targetUnit.id);
+            setCollege(targetUnit.name);
+          }
         }
       } catch (err) {
         console.error('Error loading universities in onboarding:', err);
@@ -115,6 +134,53 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
       isMounted = false;
     };
   }, []);
+
+  // When selected country changes, load its universities and reset cascading selections
+  const handleSelectCountry = async (c: CountryRecord) => {
+    setSelectedCountryId(c.id);
+    setCountry(c.name);
+
+    setIsLoading(true);
+    try {
+      const unis = await academicStructureService.getUniversities(c.id);
+      setUniversities(unis);
+
+      if (unis.length > 0) {
+        const firstUni = unis[0];
+        setSelectedUniId(firstUni.id);
+        setUniversity(firstUni.name);
+
+        const units = await academicStructureService.getInstitutions(firstUni.id);
+        setAcademicUnits(units);
+
+        if (units.length > 0) {
+          setSelectedUnitId(units[0].id);
+          setCollege(units[0].name);
+        } else {
+          setSelectedUnitId('');
+          setCollege('');
+        }
+      } else {
+        setSelectedUniId('');
+        setUniversity('');
+        setAcademicUnits([]);
+        setSelectedUnitId('');
+        setCollege('');
+      }
+
+      // Reset subsequent dependent fields
+      setSelectedDeptId('');
+      setDepartment('');
+      setSelectedProgId('');
+      setProgramme('');
+      setDepartments([]);
+      setProgrammes([]);
+    } catch (err) {
+      console.error('Error filtering universities by country:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // When selected university changes, load its academic units
   // Cascading rule: Reset institution, department, programme, year, and semester
@@ -138,6 +204,10 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
     try {
       const units = await academicStructureService.getInstitutions(u.id);
       setAcademicUnits(units);
+      if (units.length > 0) {
+        setSelectedUnitId(units[0].id);
+        setCollege(units[0].name);
+      }
     } catch (err) {
       console.error('Error fetching academic units:', err);
     } finally {
@@ -227,6 +297,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
 
       onComplete({
         country,
+        countryId: selectedCountryId,
         university: matchedUni?.name || university,
         universityName: matchedUni?.name || university,
         universityShort: matchedUni?.shortName || '',
@@ -393,13 +464,13 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                 exit={{ opacity: 0, y: -8 }}
                 className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1"
               >
-                {countries.map((c) => {
-                  const isSelected = country === c.name;
+                {countriesList.map((c) => {
+                  const isSelected = selectedCountryId === c.id || country === c.name;
                   return (
                     <button
-                      key={c.code}
+                      key={c.id}
                       type="button"
-                      onClick={() => setCountry(c.name)}
+                      onClick={() => handleSelectCountry(c)}
                       className={`w-full p-3.5 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${
                         isSelected
                           ? 'bg-blue-600/15 border-blue-500 shadow-md shadow-blue-500/20'
@@ -411,18 +482,18 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-bold text-white">{c.name}</span>
-                            {c.recommended && (
+                            {c.verified && (
                               <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
                                 Verified
                               </span>
                             )}
-                            {c.comingSoon && (
-                              <span className="text-[10px] text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">
-                                Regional Expansion
+                            {c.status === 'active' && !c.verified && (
+                              <span className="text-[10px] text-sky-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">
+                                Available
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-slate-400 mt-0.5">{c.description}</p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">{c.region}</p>
                         </div>
                       </div>
 
@@ -450,7 +521,12 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                 exit={{ opacity: 0, y: -8 }}
                 className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1"
               >
-                {universities.map((u) => {
+                {universities.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400 text-xs">
+                    No institutions listed for {country}. You can choose another country from Step 1.
+                  </div>
+                ) : (
+                  universities.map((u) => {
                   const isSelected = selectedUniId === u.id;
                   return (
                     <button
@@ -489,9 +565,10 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                       </div>
                     </button>
                   );
-                })}
-              </motion.div>
-            )}
+                })
+              )}
+            </motion.div>
+          )}
 
             {/* STEP 3: Academic Unit (College, School, Institute, Centre, Campus) */}
             {currentStep === 3 && (

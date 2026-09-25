@@ -1,0 +1,437 @@
+{
+  "department": {
+    "id": "dept-math",
+    "name": "Department of Mathematics",
+    "academicUnitId": "conas",
+    "status": "reused without recreation or rename",
+    "oldProgrammesRemoved": [
+      "bsc-math"
+    ],
+    "finalProgrammesCount": 3
+  },
+  "programmes": [
+    {
+      "id": "bsc-actuarial",
+      "name": "Bachelor of Science in Actuarial Sciences",
+      "shortName": "BSc Actuarial",
+      "coursesInBatch": 42
+    },
+    {
+      "id": "bsc-ed",
+      "name": "Bachelor of Science with Education",
+      "shortName": "BSc Ed",
+      "coursesInBatch": 19
+    },
+    {
+      "id": "math-stats",
+      "name": "Bachelor of Science in Mathematics and Statistics",
+      "shortName": "BSc Math & Stats",
+      "coursesInBatch": 41
+    }
+  ],
+  "courseCoordinatorsCleanup": {
+    "oldCoordinatorsRemovedFromCatalogue": true,
+    "coordinatorFieldsRemainingOnMathCourses": 0,
+    "notes": "Removed coordinator assignments from MT 398 and MT 389 in local catalogues; verified 0 coordinator fields in Firestore."
+  },
+  "courses": {
+    "canonicalCoursesReused": 36,
+    "canonicalCoursesCreated": 42,
+    "totalCurriculumRelationshipsCreated": 102
+  },
+  "conflictsDetected": [
+    {
+      "courseCode": "MT 100",
+      "existingTitle": "Basic Mathematics",
+      "suppliedTitle": "Foundations of Analysis",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-ed",
+      "affectedYearSemester": "Y1S1",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "MT 100",
+      "existingTitle": "Basic Mathematics",
+      "suppliedTitle": "Foundations of Analysis",
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y1S1",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "MT 127",
+      "existingTitle": "Linear Algebra II",
+      "suppliedTitle": "Linear Algebra I",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-ed",
+      "affectedYearSemester": "Y1S1",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "MT 127",
+      "existingTitle": "Linear Algebra II",
+      "suppliedTitle": "Linear Algebra I",
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y1S1",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "MT 136",
+      "existingTitle": "Ordinary Differential Equation I",
+      "suppliedTitle": "Ordinary Differential Equations",
+      "existingCredits": 8,
+      "suppliedCredits": 8,
+      "affectedProgramme": "bsc-actuarial",
+      "affectedYearSemester": "Y1S2",
+      "status": "Core",
+      "actionTaken": "Single canonical course created; programme-specific relationships preserve respective titles, credits, semester, and Core/Elective status."
+    },
+    {
+      "courseCode": "MT 120",
+      "existingTitle": "Calculus",
+      "suppliedTitle": "Analysis 1: Functions of a Single Variable",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-ed",
+      "affectedYearSemester": "Y1S2",
+      "status": "Elective",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "MT 120",
+      "existingTitle": "Calculus",
+      "suppliedTitle": "Analysis I: Functions of Single Variable",
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y1S2",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "MT 200",
+      "existingTitle": "Advanced Calculus",
+      "suppliedTitle": "Analysis 2: Functions of Several Variables",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-ed",
+      "affectedYearSemester": "Y2S1",
+      "status": "Elective",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "MT 200",
+      "existingTitle": "Advanced Calculus",
+      "suppliedTitle": "Analysis 2: Functions of Several Variables",
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y2S1",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "MT 225",
+      "existingTitle": "Partial Differential Equations",
+      "suppliedTitle": "Partial Differential Equations",
+      "existingCredits": 8,
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y2S1",
+      "status": "Core",
+      "actionTaken": "Single canonical course created; programme-specific relationships preserve respective titles, credits, semester, and Core/Elective status."
+    },
+    {
+      "courseCode": "MT 227",
+      "existingTitle": "Ordinary Differential Equations",
+      "suppliedTitle": "Linear Algebra II",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-ed",
+      "affectedYearSemester": "Y2S2",
+      "status": "Elective",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "MT 274",
+      "existingTitle": "Numerical Analysis 1",
+      "suppliedTitle": "Numerical Analysis 1",
+      "existingCredits": 8,
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y2S2",
+      "status": "Core",
+      "actionTaken": "Single canonical course created; programme-specific relationships preserve respective titles, credits, semester, and Core/Elective status."
+    },
+    {
+      "courseCode": "MT 265",
+      "existingTitle": "Mathematical Computing",
+      "suppliedTitle": "Mathematical Computing",
+      "existingCredits": 8,
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y2S1",
+      "status": "Elective",
+      "actionTaken": "Single canonical course created; programme-specific relationships preserve respective titles, credits, semester, and Core/Elective status."
+    },
+    {
+      "courseCode": "MT 357",
+      "existingTitle": "Numerical Analysis I",
+      "suppliedTitle": "Abstract Algebra",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-ed",
+      "affectedYearSemester": "Y3S1",
+      "status": "Elective",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "MT 357",
+      "existingTitle": "Numerical Analysis I",
+      "suppliedTitle": "Abstract Algebra",
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y3S1",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "MT 310",
+      "existingTitle": "Complex Analysis",
+      "suppliedTitle": "Analysis 3: Complex Analysis I",
+      "suppliedCredits": 8,
+      "affectedProgramme": "bsc-ed",
+      "affectedYearSemester": "Y3S2",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "FN 100",
+      "existingTitle": "Principles of Finance",
+      "suppliedTitle": "Principles of Microeconomics",
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y1S1",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "MT 114",
+      "existingTitle": "Linear Algebra I",
+      "suppliedTitle": "Computer Programming",
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y1S1",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "MT 114",
+      "existingTitle": "Linear Algebra I",
+      "suppliedTitle": "Computer Programming",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-actuarial",
+      "affectedYearSemester": "Y1S1",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "FN 101",
+      "existingTitle": "Principles of Macroeconomic Analysis",
+      "suppliedTitle": "Principles of Macroeconomics",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y1S2",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "FN 101",
+      "existingTitle": "Principles of Macroeconomic Analysis",
+      "suppliedTitle": "Principles of Macroeconomics",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-actuarial",
+      "affectedYearSemester": "Y1S2",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "ST 118",
+      "existingTitle": "Exploratory Data Analysis",
+      "suppliedTitle": "Time Series and Index Numbers",
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y1S2",
+      "status": "Elective",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "ST 210",
+      "existingTitle": "Probability Theory II",
+      "suppliedTitle": "Probability Distributions I",
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y2S1",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "ST 218",
+      "existingTitle": "Sample Survey Design",
+      "suppliedTitle": "Applied Statistics I",
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y2S1",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "ST 220",
+      "existingTitle": "Statistical Computing I",
+      "suppliedTitle": "Basic Demographics Methods",
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y2S1",
+      "status": "Elective",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "ST 220",
+      "existingTitle": "Statistical Computing I",
+      "suppliedTitle": "Basic Demographic Methods",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-actuarial",
+      "affectedYearSemester": "Y2S1",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "ST 211",
+      "existingTitle": "Mathematical Statistics I",
+      "suppliedTitle": "Probability Distributions II",
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y2S2",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "MT 378",
+      "existingTitle": "Applied Optimisation",
+      "suppliedTitle": "Queuing Theory and Inventory Models",
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y3S1",
+      "status": "Elective",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "MT 378",
+      "existingTitle": "Applied Optimisation",
+      "suppliedTitle": "Queuing Theory and Inventory Models",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-actuarial",
+      "affectedYearSemester": "Y3S1",
+      "status": "Elective",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "ST 318",
+      "existingTitle": "Quality Control and Industrial Statistics",
+      "suppliedTitle": "Sampling Theory and Methodology",
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y3S2",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "ST 316",
+      "existingTitle": "Time Series Analysis",
+      "suppliedTitle": "Statistical Quality Control",
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y3S2",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "ST 321",
+      "existingTitle": "Statistical Computing II (R/Python)",
+      "suppliedTitle": "Regression Analysis",
+      "suppliedCredits": 12,
+      "affectedProgramme": "math-stats",
+      "affectedYearSemester": "Y3S2",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "ST 121",
+      "existingTitle": "Calculus for Statistics",
+      "suppliedTitle": "Analytical Calculus",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-actuarial",
+      "affectedYearSemester": "Y1S1",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "AC 102",
+      "existingTitle": "Fundamentals of Accounting for Non-Business Majors",
+      "suppliedTitle": "Accounting for Non-Business Majors",
+      "existingCredits": 12,
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-actuarial",
+      "affectedYearSemester": "Y1S1",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "ST 122",
+      "existingTitle": "Official Statistics & Demography I",
+      "suppliedTitle": "Linear Algebra with Applications",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-actuarial",
+      "affectedYearSemester": "Y1S2",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "MT 233",
+      "existingTitle": "Mathematical Analysis",
+      "suppliedTitle": "Mathematical Statistics",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-actuarial",
+      "affectedYearSemester": "Y2S1",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "FN 200",
+      "existingTitle": "Corporate Finance",
+      "suppliedTitle": "Principles of Finance",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-actuarial",
+      "affectedYearSemester": "Y2S1",
+      "status": "Core",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    },
+    {
+      "courseCode": "ST 215",
+      "existingTitle": "Regression Analysis",
+      "suppliedTitle": "Differential and Difference Equations",
+      "suppliedCredits": 12,
+      "affectedProgramme": "bsc-actuarial",
+      "affectedYearSemester": "Y2S2",
+      "status": "Elective",
+      "actionTaken": "Existing canonical course preserved untouched without overwriting; curriculum relationship records supplied title, credits, and status."
+    }
+  ],
+  "duplicateCheck": {
+    "duplicateAcademicUnitsCreated": false,
+    "duplicateDepartmentsCreated": false,
+    "duplicateProgrammesCreated": false,
+    "duplicateCanonicalCoursesCreated": false
+  }
+}

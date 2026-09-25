@@ -64,7 +64,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onGoToSignu
     }
 
     if (!validateEmailFormat(cleanEmail)) {
-      setErrorMsg('Please enter a valid email address (e.g. student@udsm.ac.tz).');
+      setErrorMsg('Please enter a valid email address (e.g. name@university.edu).');
       return;
     }
 
@@ -187,7 +187,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onGoToSignu
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              University Email
+              Email Address
             </label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -199,7 +199,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onGoToSignu
                   setEmail(e.target.value);
                   if (errorMsg) setErrorMsg('');
                 }}
-                placeholder="e.g. student@udsm.ac.tz"
+                placeholder="e.g. name@university.edu or student@example.com"
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-all"
                 disabled={isLoading}
                 required

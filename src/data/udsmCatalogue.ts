@@ -1238,7 +1238,7 @@ export const UDSM_BSC_MATH_STATS_COURSES: Course[] = [
     department: 'Department of Mathematics',
     instructor: {
       name: 'Dr. J. M. Mshana',
-      title: 'Industrial Coordinator',
+      title: 'Senior Lecturer',
       office: 'Math Block Room 204',
     },
     progress: 0,
@@ -1270,7 +1270,7 @@ export const UDSM_BSC_MATH_STATS_COURSES: Course[] = [
     department: 'Department of Mathematics',
     instructor: {
       name: 'Dr. C. N. Kagashe',
-      title: 'Undergraduate Project Coordinator',
+      title: 'Senior Lecturer',
       office: 'Math Building 1st Floor',
     },
     progress: 0,
@@ -1459,12 +1459,16 @@ export function isVerifiedProgramme(programmeId?: string, programmeName?: string
 export function getVerifiedStudentCourses(profile?: StudentProfile | null): Course[] {
   if (!profile) return [];
 
-  // Check if student has saved university & programme
-  const hasValidUni = isVerifiedUniversity(profile.universityId, profile.university, profile.universityShort);
-  const hasValidProg = isVerifiedProgramme(profile.programmeId, profile.programme);
+  const pid = (profile.programmeId || '').toLowerCase().trim();
+  const deptId = (profile.departmentId || '').toLowerCase().trim();
 
-  // If university or programme is not verified (e.g. UDOM, SUA, Comp Sci, or empty), return no courses
-  if (!hasValidUni || !hasValidProg) {
+  // ONLY return Math & Stats courses if the student's profile is explicitly Math & Stats AND Mathematics Department!
+  // VENUE MUST NEVER ASSUME THAT A USER IS A MATHEMATICS & STATISTICS STUDENT.
+  const isExplicitMathStats =
+    (pid === 'math-stats' || pid === 'udsm-bsc-math-stats') &&
+    (!deptId || deptId === 'dept-math');
+
+  if (!isExplicitMathStats) {
     return [];
   }
 

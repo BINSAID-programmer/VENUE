@@ -40,6 +40,7 @@ import {
 import {
   UDSM_VERIFIED_COURSES,
   UDSM_PROGRAMMES,
+  UDSM_PROGRAMME_COURSES,
   OFFICIAL_SOURCE_UDSM_PROSPECTUS_2025_2026,
 } from '../data/udsmProspectus2025';
 import { normalizeCourseCode, buildStableCourseId } from './catalogueValidation';
@@ -127,6 +128,42 @@ class CourseCurriculumService {
         this.officialRecordsByTerm.set(aliasKey, aliasList);
       }
     }
+
+    // Also index official audited programme courses for comprehensive offline and fallback coverage
+    for (const pc of UDSM_PROGRAMME_COURSES) {
+      const pId = pc.programmeId.toLowerCase().trim();
+      const y = Number(pc.yearOfStudy);
+      const s = Number(pc.semester);
+      if (!pId || !y || !s) continue;
+
+      this.verifiedProgrammeIds.add(pId);
+      const key = `${pId}_${y}_${s}`;
+      const list = this.officialRecordsByTerm.get(key) || [];
+      const cleanCode = pc.code.replace(/\s+/g, '');
+      if (!list.some((existing) => existing.code.replace(/\s+/g, '') === cleanCode)) {
+        list.push({
+          id: pc.id,
+          code: pc.code,
+          courseCode: pc.code,
+          title: pc.title,
+          courseName: pc.title,
+          credits: Number(pc.credits) || 12,
+          yearOfStudy: y,
+          semester: s,
+          courseType: pc.status || 'Core',
+          status: pc.status || 'Core',
+          programmeId: pId,
+          departmentId: pc.departmentId,
+          academicUnitId: pc.academicUnitId,
+          universityId: pc.universityId || 'udsm',
+          verified: true,
+          active: true,
+          source: pc.source,
+          sourceType: pc.sourceType || 'official_prospectus',
+        } as CourseRecord);
+      }
+      this.officialRecordsByTerm.set(key, list);
+    }
   }
 
   /**
@@ -140,7 +177,17 @@ class CourseCurriculumService {
     if (clean === 'udsm-bcom-acc') return 'bcom-accounting';
     if (clean === 'udsm-llb') return 'llb';
     if (clean === 'udsm-md') return 'doctor-medicine';
+    if (clean === 'barch' || clean === 'udsm-barch' || clean === 'udsm-b-arch') return 'b-arch';
+    if (clean === 'udsm-bsc-qs') return 'bsc-qs';
     return clean;
+  }
+
+  /**
+   * Clears in-memory caches to prevent stale data between user logins or profile switches
+   */
+  public clearCache(): void {
+    this.termCoursesCache.clear();
+    this.programmeSummaryCache.clear();
   }
 
   /**
@@ -148,37 +195,48 @@ class CourseCurriculumService {
    *
    * Core scalable query for VENUE:
    * - Queries Firestore specifically by (programmeId, yearOfStudy, semester)
+   * - Scoped by departmentId to prevent cross-department contamination
    * - Uses in-memory cache to prevent duplicate fetches
-   * - Falls back to verified audited catalogue data if offline or not yet seeded
-   * - Never loads the entire university catalogue at once
+   * - Returns 'CURRICULUM DATA MISSING — DO NOT INFER' when curriculum is not yet published
+   * - NEVER falls back to Mathematics & Statistics for other programmes!
    */
   async getCoursesByProgrammeAndTerm(params: {
     programmeId: string;
     yearOfStudy: number;
     semester: number;
+    departmentId?: string;
+    academicUnitId?: string;
     universityId?: string;
+    userId?: string;
     pageSize?: number;
   }): Promise<{
     courses: CourseRecord[];
     source: 'firestore' | 'cache' | 'catalogue_fallback';
     verified: boolean;
+    missingCurriculum?: boolean;
+    statusMessage?: string;
   }> {
     const { yearOfStudy, semester } = params;
     const rawProgId = params.programmeId || '';
     const cleanProgId = this.normalizeProgrammeId(rawProgId);
+    const cleanDeptId = (params.departmentId || '').toLowerCase().trim();
 
     if (!cleanProgId || !yearOfStudy || !semester) {
-      return { courses: [], source: 'cache', verified: true };
+      return { courses: [], source: 'cache', verified: false };
     }
 
-    const cacheKey = `${cleanProgId}_${yearOfStudy}_${semester}`;
+    // Scoped cache key to isolate by programme, department, year, semester
+    const cacheKey = `${cleanProgId}_${cleanDeptId || 'all'}_${yearOfStudy}_${semester}`;
 
     // 1. Check in-memory cache
     if (this.termCoursesCache.has(cacheKey)) {
+      const cached = this.termCoursesCache.get(cacheKey) || [];
       return {
-        courses: this.termCoursesCache.get(cacheKey) || [],
+        courses: cached,
         source: 'cache',
-        verified: true,
+        verified: cached.length > 0,
+        missingCurriculum: cached.length === 0,
+        statusMessage: cached.length === 0 ? 'CURRICULUM DATA MISSING — DO NOT INFER' : undefined,
       };
     }
 
@@ -196,7 +254,7 @@ class CourseCurriculumService {
       const snapshot = await getDocs(q);
 
       if (!snapshot.empty) {
-        const firestoreCourses: CourseRecord[] = snapshot.docs.map((d) => {
+        let firestoreCourses: CourseRecord[] = snapshot.docs.map((d) => {
           const data = d.data() as CourseRecord;
           return {
             ...data,
@@ -223,7 +281,7 @@ class CourseCurriculumService {
 
     // 3. Official Audited Catalogue Repository Fallback
     const fallbackCourses =
-      this.officialRecordsByTerm.get(cacheKey) ||
+      this.officialRecordsByTerm.get(`${cleanProgId}_${yearOfStudy}_${semester}`) ||
       this.officialRecordsByTerm.get(`${rawProgId}_${yearOfStudy}_${semester}`) ||
       [];
 
@@ -240,10 +298,13 @@ class CourseCurriculumService {
     // Cache the fallback result for fast subsequent accesses
     this.termCoursesCache.set(cacheKey, standardized);
 
+    const isMissing = standardized.length === 0;
     return {
       courses: standardized,
       source: 'catalogue_fallback',
       verified: standardized.length > 0,
+      missingCurriculum: isMissing,
+      statusMessage: isMissing ? 'CURRICULUM DATA MISSING — DO NOT INFER' : undefined,
     };
   }
 
@@ -262,9 +323,20 @@ class CourseCurriculumService {
     }
 
     // Find programme metadata to determine duration
-    const progMeta = UDSM_PROGRAMMES.find(
+    let progMeta = UDSM_PROGRAMMES.find(
       (p) => p.id.toLowerCase() === cleanId || p.id.toLowerCase() === programmeId.toLowerCase()
     );
+
+    if (!progMeta) {
+      try {
+        const pSnap = await getDoc(doc(db, 'programmes', cleanId));
+        if (pSnap.exists()) {
+          progMeta = pSnap.data() as any;
+        }
+      } catch (err) {
+        console.warn('Could not fetch programme from firestore:', err);
+      }
+    }
 
     const durationYears = progMeta?.durationYears || 3;
     const programmeName = progMeta?.name || 'Academic Degree Programme';
@@ -282,6 +354,9 @@ class CourseCurriculumService {
           programmeId: cleanId,
           yearOfStudy: year,
           semester: sem,
+          departmentId,
+          academicUnitId,
+          universityId,
         });
 
         const termCredits = courses.reduce((acc, curr) => acc + (Number(curr.credits) || 0), 0);
@@ -425,11 +500,17 @@ class CourseCurriculumService {
       progress: 0,
       gradeTarget: 'A',
       accentColor: cType === 'Core' ? '#0284C7' : '#D97706',
-      overview: `${title} (${code}) is an official ${cType.toLowerCase()} course carrying ${credits} credit units in Year ${yearNum}, Semester ${semNum}, accredited under the official University Prospectus.`,
+      overview: record.choiceConstraint
+        ? `${title} (${code}) carries ${credits} credit units in Year ${yearNum}, Semester ${semNum}. Note: ${record.choiceConstraint}.`
+        : `${title} (${code}) is an official ${cType.toLowerCase()} course carrying ${credits} credit units in Year ${yearNum}, Semester ${semNum}, accredited under the official University Prospectus.`,
       syllabus: [],
       materials: [],
       pastPapersCount: 0,
       recommendedResources: [],
+      electiveRule: record.electiveRule,
+      choiceConstraint: record.choiceConstraint,
+      note: record.note || record.notes,
+      notes: record.note || record.notes,
       active: record.active !== false,
       verified: record.verified !== false,
       source: record.source || OFFICIAL_SOURCE_UDSM_PROSPECTUS_2025_2026,
@@ -454,8 +535,8 @@ class CourseCurriculumService {
     this.isBootstrapping = true;
 
     try {
-      // Check if primary course 'udsm_math-stats_mt-100' exists in Firestore
-      const sampleDocRef = doc(db, FIRESTORE_COURSE_COLLECTION, 'udsm_math-stats_mt-100');
+      // Check if primary course exists in Firestore
+      const sampleDocRef = doc(db, FIRESTORE_COURSE_COLLECTION, 'math-stats_mt_100_y1s1');
       const snap = await getDoc(sampleDocRef);
 
       if (snap.exists()) {
@@ -468,9 +549,8 @@ class CourseCurriculumService {
       let seeded = 0;
       let skipped = 0;
 
-      // Seed first batch of primary verified courses (e.g. BSc Math & Stats, BSc Computer Science, Economics)
+      // Seed first batch of primary verified courses (e.g. BSc Computer Science, Economics)
       const primaryProgs = new Set([
-        'math-stats',
         'bsc-cs',
         'ba-economics',
         'bcom-accounting',
@@ -520,14 +600,6 @@ class CourseCurriculumService {
     } finally {
       this.isBootstrapping = false;
     }
-  }
-
-  /**
-   * Clears in-memory caches (useful after profile updates or admin edits)
-   */
-  clearCache() {
-    this.termCoursesCache.clear();
-    this.programmeSummaryCache.clear();
   }
 }
 
