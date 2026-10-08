@@ -1,6 +1,289 @@
 import { StudentProfile } from '../types';
-import { db, auth } from './firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { db, dbDefault, auth, storage, isVerifiedOwnerAccount } from './firebase';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { updateProfile, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
+
+/**
+ * Validates a profile photo file against strict MIME type and file size boundaries.
+ */
+export function validateProfilePhotoFile(file: File): { valid: boolean; error?: string } {
+  if (!file) {
+    return { valid: false, error: 'No file selected.' };
+  }
+
+  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+  if (!allowedMimeTypes.includes(file.type.toLowerCase())) {
+    return {
+      valid: false,
+      error: 'Invalid file format. Please upload a JPEG, PNG, or WebP image.',
+    };
+  }
+
+  const maxBytes = 5 * 1024 * 1024; // 5 MB limit
+  if (file.size > maxBytes) {
+    return {
+      valid: false,
+      error: 'File size exceeds 5MB limit. Please choose a smaller photo.',
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Uploads a profile photo to Firebase Storage with progress tracking and resilient fallback.
+ */
+export async function uploadStudentProfilePhoto(
+  uid: string,
+  file: File,
+  onProgress?: (pct: number) => void
+): Promise<string> {
+  const validation = validateProfilePhotoFile(file);
+  if (!validation.valid) {
+    throw new Error(validation.error || 'Invalid photo file');
+  }
+
+  onProgress?.(5);
+
+  const cleanUid = (uid || auth.currentUser?.uid || 'user').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const safeExt = ['png', 'webp', 'jpg', 'jpeg'].includes(ext) ? ext : 'jpg';
+  const storagePath = `profiles/${cleanUid}/avatar_${Date.now()}.${safeExt}`;
+
+  // 1. Attempt Cloud Storage upload with bounded timeout
+  try {
+    const storageRef = ref(storage, storagePath);
+    const metadata = {
+      contentType: file.type || 'image/jpeg',
+      customMetadata: {
+        uid: cleanUid,
+        uploadedAt: new Date().toISOString(),
+      },
+    };
+
+    const uploadTask = uploadBytesResumable(storageRef, file, metadata);
+
+    const downloadUrl = await new Promise<string>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        try {
+          uploadTask.cancel();
+        } catch {}
+        reject(new Error('Storage upload timed out'));
+      }, 12000);
+
+      uploadTask.on(
+        'state_changed',
+        (snap) => {
+          if (snap.totalBytes > 0) {
+            const pct = Math.min(95, Math.round((snap.bytesTransferred / snap.totalBytes) * 100));
+            onProgress?.(pct);
+          }
+        },
+        (err) => {
+          clearTimeout(timer);
+          reject(err);
+        },
+        async () => {
+          clearTimeout(timer);
+          try {
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(url);
+          } catch (urlErr) {
+            reject(urlErr);
+          }
+        }
+      );
+    });
+
+    onProgress?.(100);
+
+    // Sync to Firebase Auth currentUser photoURL if available
+    if (auth.currentUser) {
+      try {
+        await updateProfile(auth.currentUser, { photoURL: downloadUrl });
+      } catch {
+        // non-blocking
+      }
+    }
+
+    return downloadUrl;
+  } catch (cloudErr) {
+    console.warn('Firebase Cloud Storage profile upload note, falling back to optimized compression:', cloudErr);
+  }
+
+  // 2. Resilient fallback: High-fidelity canvas downsampling DataURL
+  onProgress?.(50);
+  const compressedDataUrl = await compressAndFormatImage(file, 512, 0.85);
+  onProgress?.(100);
+
+  return compressedDataUrl;
+}
+
+/**
+ * Updates only permitted personal profile fields (Full Name, Profile Photo, Phone Number).
+ * Academic fields (University, Programme, Registration Number, Year, Semester) remain strictly preserved.
+ */
+export async function updateStudentPersonalProfile(
+  uid: string,
+  updates: {
+    fullName?: string;
+    name?: string;
+    phoneNumber?: string;
+    profilePhoto?: string;
+  }
+): Promise<StudentProfile> {
+  const targetUid = uid || auth.currentUser?.uid;
+  if (!targetUid) {
+    throw new Error('Authenticated user UID is required to update profile.');
+  }
+
+  const newName = (updates.fullName || updates.name || '').trim();
+  if (!newName) {
+    throw new Error('Full Name cannot be empty.');
+  }
+
+  // 1. Fetch current profile to ensure existing academic identity is not altered
+  const existing = await loadStudentProfile(targetUid);
+  const now = new Date().toISOString();
+
+  const merged: StudentProfile = {
+    ...(existing || {
+      uid: targetUid,
+      email: auth.currentUser?.email || '',
+      creatorTag: 'VENUE Student',
+      country: '',
+      university: '',
+      universityShort: '',
+      college: '',
+      programme: '',
+      programmeShort: '',
+      academicYear: '',
+      yearOfStudy: '',
+      semester: '',
+      registrationNumber: '',
+      gpa: 0,
+      gpaMax: 5,
+      creditsCompleted: 0,
+      totalCredits: 0,
+      studyStreakDays: 0,
+      studyHoursThisWeek: 0,
+      skills: [],
+      achievements: [],
+    }),
+    uid: targetUid,
+    name: newName,
+    fullName: newName,
+    phoneNumber: updates.phoneNumber !== undefined ? updates.phoneNumber.trim() : (existing?.phoneNumber || ''),
+    profilePhoto: updates.profilePhoto !== undefined ? updates.profilePhoto : (existing?.profilePhoto || existing?.avatar || ''),
+    photoURL: updates.profilePhoto !== undefined ? updates.profilePhoto : (existing?.profilePhoto || existing?.avatar || ''),
+    avatar: updates.profilePhoto !== undefined ? updates.profilePhoto : (existing?.profilePhoto || existing?.avatar || ''),
+    updatedAt: now,
+  };
+
+  // 2. Save persistently to server storage
+  try {
+    const res = await fetch('/api/student/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: targetUid, profile: merged }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.profile) {
+        // Cache in localStorage
+        try {
+          localStorage.setItem(`venue_profile_${targetUid}`, JSON.stringify(data.profile));
+        } catch {}
+      }
+    }
+  } catch (err) {
+    console.warn('Server personal profile sync note:', err);
+  }
+
+  // 3. Update Firestore documents in students and users collections
+  if (auth.currentUser && auth.currentUser.uid === targetUid) {
+    try {
+      const fsPayload = {
+        name: newName,
+        fullName: newName,
+        phoneNumber: merged.phoneNumber,
+        profilePhoto: merged.profilePhoto,
+        photoURL: merged.profilePhoto,
+        avatar: merged.profilePhoto,
+        updatedAt: now,
+      };
+      await setDoc(doc(db, 'students', targetUid), fsPayload, { merge: true });
+      await setDoc(doc(db, 'users', targetUid), fsPayload, { merge: true });
+    } catch (fsErr) {
+      console.warn('Firestore personal profile update note:', fsErr);
+    }
+
+    // 4. Update Firebase Auth displayName & photoURL
+    try {
+      await updateProfile(auth.currentUser, {
+        displayName: newName,
+        photoURL: merged.profilePhoto || undefined,
+      });
+    } catch {
+      // non-blocking
+    }
+  }
+
+  // Local cache
+  try {
+    localStorage.setItem(`venue_profile_${targetUid}`, JSON.stringify(merged));
+  } catch {}
+
+  return merged;
+}
+
+/**
+ * Triggers a secure password reset email via Firebase Authentication.
+ */
+export async function sendStudentPasswordResetEmail(email?: string): Promise<{ success: boolean; message: string }> {
+  const targetEmail = (email || auth.currentUser?.email || '').trim();
+  if (!targetEmail) {
+    return { success: false, message: 'Valid email address is required.' };
+  }
+
+  try {
+    await sendPasswordResetEmail(auth, targetEmail);
+    return {
+      success: true,
+      message: `Password reset instructions sent to ${targetEmail}. Please check your inbox.`,
+    };
+  } catch (err: any) {
+    console.error('Password reset error:', err);
+    return {
+      success: false,
+      message: err?.message || 'Failed to send password reset email. Please try again.',
+    };
+  }
+}
+
+/**
+ * Triggers an email verification link via Firebase Authentication.
+ */
+export async function sendStudentEmailVerification(): Promise<{ success: boolean; message: string }> {
+  if (!auth.currentUser) {
+    return { success: false, message: 'User is not currently authenticated.' };
+  }
+
+  try {
+    await sendEmailVerification(auth.currentUser);
+    return {
+      success: true,
+      message: 'Verification link sent to your registered email address.',
+    };
+  } catch (err: any) {
+    console.error('Email verification error:', err);
+    return {
+      success: false,
+      message: err?.message || 'Failed to send verification email. Please try again later.',
+    };
+  }
+}
 
 /**
  * Generates a stable, unique student identifier from an authenticated Firebase UID or email.
@@ -75,33 +358,45 @@ export async function loadStudentProfile(uid: string, email?: string): Promise<S
   const targetUid = (auth.currentUser ? auth.currentUser.uid : uid) || '';
   if (!targetUid && !email) return null;
 
-  try {
-    // 1. Try Firestore direct document read if authenticated (check 'users' then 'students')
-    if (auth.currentUser && auth.currentUser.uid === targetUid) {
-      try {
-        const userDoc = await getDoc(doc(db, 'users', targetUid));
-        if (userDoc.exists()) {
-          const fsData = userDoc.data() as StudentProfile;
-          try {
-            localStorage.setItem(`venue_profile_${targetUid}`, JSON.stringify(fsData));
-          } catch {
-            // ignore
-          }
-          return fsData;
-        }
+  const sanitizeLoadedProfile = (raw: StudentProfile): StudentProfile => {
+    const resolvedUid = targetUid || raw.uid;
+    const isOwner = isVerifiedOwnerAccount(resolvedUid, email || raw.email);
+    return {
+      ...raw,
+      uid: resolvedUid,
+      ...(isOwner ? { status: 'active', accountStatus: 'active' } : {}),
+    };
+  };
 
-        const studentDoc = await getDoc(doc(db, 'students', targetUid));
-        if (studentDoc.exists()) {
-          const fsData = studentDoc.data() as StudentProfile;
-          try {
-            localStorage.setItem(`venue_profile_${targetUid}`, JSON.stringify(fsData));
-          } catch {
-            // ignore
+  try {
+    // 1. Try Firestore direct document read if authenticated (check 'users' then 'students' across db and dbDefault)
+    if (auth.currentUser && auth.currentUser.uid === targetUid) {
+      for (const firestoreInstance of [db, dbDefault]) {
+        try {
+          const userDoc = await getDoc(doc(firestoreInstance, 'users', targetUid));
+          if (userDoc.exists()) {
+            const fsData = sanitizeLoadedProfile(userDoc.data() as StudentProfile);
+            try {
+              localStorage.setItem(`venue_profile_${targetUid}`, JSON.stringify(fsData));
+            } catch {
+              // ignore
+            }
+            return fsData;
           }
-          return fsData;
+
+          const studentDoc = await getDoc(doc(firestoreInstance, 'students', targetUid));
+          if (studentDoc.exists()) {
+            const fsData = sanitizeLoadedProfile(studentDoc.data() as StudentProfile);
+            try {
+              localStorage.setItem(`venue_profile_${targetUid}`, JSON.stringify(fsData));
+            } catch {
+              // ignore
+            }
+            return fsData;
+          }
+        } catch (fsErr) {
+          console.warn('Firestore profile lookup note:', fsErr);
         }
-      } catch (fsErr) {
-        console.warn('Firestore profile lookup note:', fsErr);
       }
     }
 
@@ -111,16 +406,17 @@ export async function loadStudentProfile(uid: string, email?: string): Promise<S
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.profile) {
+          const safeProf = sanitizeLoadedProfile(data.profile as StudentProfile);
           // Cache in localStorage for offline fast boot
           try {
-            localStorage.setItem(`venue_profile_${targetUid}`, JSON.stringify(data.profile));
-            if (data.profile.email) {
-              localStorage.setItem(`venue_profile_email_${data.profile.email.toLowerCase().trim()}`, JSON.stringify(data.profile));
+            localStorage.setItem(`venue_profile_${targetUid}`, JSON.stringify(safeProf));
+            if (safeProf.email) {
+              localStorage.setItem(`venue_profile_email_${safeProf.email.toLowerCase().trim()}`, JSON.stringify(safeProf));
             }
           } catch {
             // ignore localStorage quota issues
           }
-          return data.profile as StudentProfile;
+          return safeProf;
         }
       }
     }
@@ -132,7 +428,7 @@ export async function loadStudentProfile(uid: string, email?: string): Promise<S
       if (resByEmail.ok) {
         const data = await resByEmail.json();
         if (data.success && data.profile) {
-          return data.profile as StudentProfile;
+          return sanitizeLoadedProfile(data.profile as StudentProfile);
         }
       }
     }
@@ -141,13 +437,13 @@ export async function loadStudentProfile(uid: string, email?: string): Promise<S
     if (targetUid) {
       const cached = localStorage.getItem(`venue_profile_${targetUid}`);
       if (cached) {
-        return JSON.parse(cached) as StudentProfile;
+        return sanitizeLoadedProfile(JSON.parse(cached) as StudentProfile);
       }
     }
     if (email) {
       const cachedByEmail = localStorage.getItem(`venue_profile_email_${email.toLowerCase().trim()}`);
       if (cachedByEmail) {
-        return JSON.parse(cachedByEmail) as StudentProfile;
+        return sanitizeLoadedProfile(JSON.parse(cachedByEmail) as StudentProfile);
       }
     }
 
@@ -159,7 +455,7 @@ export async function loadStudentProfile(uid: string, email?: string): Promise<S
       const cached = localStorage.getItem(`venue_profile_${targetUid}`);
       if (cached) {
         try {
-          return JSON.parse(cached) as StudentProfile;
+          return sanitizeLoadedProfile(JSON.parse(cached) as StudentProfile);
         } catch {
           return null;
         }
@@ -254,10 +550,19 @@ export async function saveStudentProfile(profile: StudentProfile): Promise<Stude
   };
 
   // Cache in localStorage for immediate optimistic UI rendering
+  // Stage 9B Security Hardening: Strip any unauthorized role escalation or administrative permission injection
+  const safeStudentProfile: StudentProfile = {
+    ...enrichedProfile,
+    role: enrichedProfile.role === 'super_admin' || enrichedProfile.role === 'university_admin' || enrichedProfile.role === 'college_admin' || enrichedProfile.role === 'department_moderator' || enrichedProfile.role === 'lecturer'
+      ? 'student'
+      : (enrichedProfile.role || 'student'),
+  };
+  delete (safeStudentProfile as any).permissions;
+
   try {
-    localStorage.setItem(`venue_profile_${uid}`, JSON.stringify(enrichedProfile));
-    if (enrichedProfile.email) {
-      localStorage.setItem(`venue_profile_email_${enrichedProfile.email.toLowerCase().trim()}`, JSON.stringify(enrichedProfile));
+    localStorage.setItem(`venue_profile_${uid}`, JSON.stringify(safeStudentProfile));
+    if (safeStudentProfile.email) {
+      localStorage.setItem(`venue_profile_email_${safeStudentProfile.email.toLowerCase().trim()}`, JSON.stringify(safeStudentProfile));
     }
     localStorage.setItem('venue_current_student_uid', uid);
   } catch {
@@ -273,7 +578,7 @@ export async function saveStudentProfile(profile: StudentProfile): Promise<Stude
       },
       body: JSON.stringify({
         uid,
-        profile: enrichedProfile,
+        profile: safeStudentProfile,
       }),
     });
 
@@ -299,12 +604,12 @@ export async function saveStudentProfile(profile: StudentProfile): Promise<Stude
   // Direct Firestore sync if authenticated in Firebase
   if (auth.currentUser && auth.currentUser.uid === uid) {
     try {
-      await setDoc(doc(db, 'users', uid), enrichedProfile, { merge: true });
-      await setDoc(doc(db, 'students', uid), enrichedProfile, { merge: true });
+      await setDoc(doc(db, 'users', uid), safeStudentProfile, { merge: true });
+      await setDoc(doc(db, 'students', uid), safeStudentProfile, { merge: true });
     } catch (fsErr) {
       console.warn('Firestore direct sync note:', fsErr);
     }
   }
 
-  return enrichedProfile;
+  return safeStudentProfile;
 }

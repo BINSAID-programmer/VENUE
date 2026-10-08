@@ -1,0 +1,408 @@
+[
+  {
+    "id": "evt_ai_1791007046755_u8114",
+    "eventType": "ai_tutor_query",
+    "userId": "test..._uid",
+    "userRole": "student",
+    "feature": "ai_tutor",
+    "timestamp": "2026-10-03T05:57:26.755Z",
+    "metadata": {
+      "modelId": "gemini-3.1-flash-lite",
+      "tokens": 1308
+    }
+  },
+  {
+    "id": "evt_read_test_student_123_ann_course_reg_clearance_2026",
+    "eventType": "announcement_read",
+    "userId": "test_student_123",
+    "userRole": "student",
+    "feature": "announcements",
+    "timestamp": "2026-10-03T05:47:12.628Z",
+    "metadata": {
+      "announcementId": "ann_course_reg_clearance_2026"
+    }
+  },
+  {
+    "id": "evt_course_cs174",
+    "eventType": "course_view",
+    "userId": "stu_w4mg9281",
+    "userRole": "student",
+    "feature": "courses",
+    "timestamp": "2026-10-01T11:39:03.496Z",
+    "metadata": {
+      "courseCode": "CS 174",
+      "courseTitle": "Introduction to Artificial Intelligence"
+    }
+  },
+  {
+    "id": "evt_mat_view_1",
+    "eventType": "material_view",
+    "userId": "stu_w4mg9281",
+    "userRole": "student",
+    "feature": "materials",
+    "timestamp": "2026-10-01T12:39:03.496Z",
+    "metadata": {
+      "materialId": "mat_cs174_lec01",
+      "title": "State Space Search & Heuristics Lecture Notes",
+      "courseCode": "CS 174",
+      "materialType": "Lecture Notes"
+    }
+  },
+  {
+    "id": "evt_quiz_1",
+    "eventType": "quiz_attempt",
+    "userId": "stu_w4mg9281",
+    "userRole": "student",
+    "feature": "quizzes",
+    "timestamp": "2026-10-02T11:39:03.496Z",
+    "metadata": {
+      "quizId": "quiz_cs174_midterm",
+      "courseCode": "CS 174",
+      "score": 85
+    }
+  },
+  {
+    "id": "evt_plan_1",
+    "eventType": "planner_task",
+    "userId": "test1234",
+    "userRole": "student",
+    "feature": "study_planner",
+    "timestamp": "2026-10-02T23:39:03.496Z",
+    "metadata": {
+      "action": "create",
+      "courseCode": "IS 244"
+    }
+  },
+  {
+    "id": "evt_mat_dl_1",
+    "eventType": "material_download",
+    "userId": "test1234",
+    "userRole": "student",
+    "feature": "materials",
+    "timestamp": "2026-10-03T07:39:03.496Z",
+    "metadata": {
+      "materialId": "mat_is244_handout",
+      "title": "Database Relational Algebra Handout",
+      "courseCode": "IS 244",
+      "materialType": "Handouts"
+    }
+  },
+  {
+    "id": "evt_dl_1791150736818_j8jx",
+    "eventType": "material_download",
+    "userId": "student_user",
+    "userRole": "student",
+    "feature": "materials",
+    "timestamp": "2026-10-04T21:52:16.818Z",
+    "metadata": {
+      "fileName": "lecture_notes_st113.pdf",
+      "storagePath": "materials/udsm/st_113/mat_test_9c_001/lecture_notes_st113.pdf"
+    }
+  },
+  {
+    "id": "evt_1791182427687_qktj0",
+    "eventType": "course_view",
+    "feature": "courses",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T06:40:27.687Z",
+    "metadata": {
+      "courseCode": "ST 113",
+      "courseTitle": "Basic Statistics"
+    }
+  },
+  {
+    "id": "evt_1791182427689_hhbus",
+    "eventType": "course_view",
+    "feature": "courses",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T06:40:27.689Z",
+    "metadata": {
+      "courseCode": "ST 113",
+      "courseTitle": "Basic Statistics"
+    }
+  },
+  {
+    "id": "evt_1791182675984_wmr0c",
+    "eventType": "course_view",
+    "feature": "courses",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T06:44:35.984Z",
+    "metadata": {
+      "courseCode": "ST 113",
+      "courseTitle": "Basic Statistics"
+    }
+  },
+  {
+    "id": "evt_1791182675985_mhzi5",
+    "eventType": "course_view",
+    "feature": "courses",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T06:44:35.985Z",
+    "metadata": {
+      "courseCode": "ST 113",
+      "courseTitle": "Basic Statistics"
+    }
+  },
+  {
+    "id": "evt_1791182684070_ue85a",
+    "eventType": "material_view",
+    "feature": "materials",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T06:44:44.070Z",
+    "metadata": {
+      "materialId": "mat_1791182643325_hbzvws",
+      "title": "basic statistics reference book",
+      "courseCode": "ST 113",
+      "materialType": "Reference Materials"
+    }
+  },
+  {
+    "id": "evt_1791182684071_384fb",
+    "eventType": "material_view",
+    "feature": "materials",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T06:44:44.071Z",
+    "metadata": {
+      "materialId": "mat_1791182643325_hbzvws",
+      "title": "basic statistics reference book",
+      "courseCode": "ST 113",
+      "materialType": "Reference Materials"
+    }
+  },
+  {
+    "id": "evt_1791182692695_dvgmf",
+    "eventType": "material_download",
+    "feature": "materials",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T06:44:52.696Z",
+    "metadata": {
+      "materialId": "mat_1791182643325_hbzvws",
+      "title": "basic statistics reference book",
+      "courseCode": "ST 113",
+      "materialType": "Reference Materials"
+    }
+  },
+  {
+    "id": "evt_1791182722768_sik1x",
+    "eventType": "material_view",
+    "feature": "materials",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T06:45:22.768Z",
+    "metadata": {
+      "materialId": "mat_1791182643325_hbzvws",
+      "title": "basic statistics reference book",
+      "courseCode": "ST 113",
+      "materialType": "Reference Materials"
+    }
+  },
+  {
+    "id": "evt_1791182722768_kdz63",
+    "eventType": "material_view",
+    "feature": "materials",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T06:45:22.768Z",
+    "metadata": {
+      "materialId": "mat_1791182643325_hbzvws",
+      "title": "basic statistics reference book",
+      "courseCode": "ST 113",
+      "materialType": "Reference Materials"
+    }
+  },
+  {
+    "id": "evt_1791182749379_qqyqv",
+    "eventType": "course_view",
+    "feature": "courses",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T06:45:49.379Z",
+    "metadata": {
+      "courseCode": "ST 113",
+      "courseTitle": "Basic Statistics"
+    }
+  },
+  {
+    "id": "evt_1791182749379_7lqib",
+    "eventType": "course_view",
+    "feature": "courses",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T06:45:49.379Z",
+    "metadata": {
+      "courseCode": "ST 113",
+      "courseTitle": "Basic Statistics"
+    }
+  },
+  {
+    "id": "evt_1791183041630_zwbks",
+    "eventType": "ai_tutor_query",
+    "feature": "ai_tutor",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T06:50:41.630Z",
+    "metadata": {
+      "courseContext": "ST 113",
+      "queryLength": 24
+    }
+  },
+  {
+    "id": "evt_1791183086160_3sd0d",
+    "eventType": "ai_tutor_query",
+    "feature": "ai_tutor",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T06:51:26.160Z",
+    "metadata": {
+      "courseContext": "ST 113",
+      "queryLength": 61
+    }
+  },
+  {
+    "id": "evt_1791183107362_ag6em",
+    "eventType": "ai_tutor_query",
+    "feature": "ai_tutor",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T06:51:47.362Z",
+    "metadata": {
+      "courseContext": "ST 113",
+      "queryLength": 93
+    }
+  },
+  {
+    "id": "evt_1791185790600_uj2av",
+    "eventType": "course_view",
+    "feature": "courses",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T07:36:30.600Z",
+    "metadata": {
+      "courseCode": "ST 113",
+      "courseTitle": "Basic Statistics"
+    }
+  },
+  {
+    "id": "evt_1791185790601_zwdg7",
+    "eventType": "course_view",
+    "feature": "courses",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T07:36:30.601Z",
+    "metadata": {
+      "courseCode": "ST 113",
+      "courseTitle": "Basic Statistics"
+    }
+  },
+  {
+    "id": "evt_view_1791185793850_82ax",
+    "eventType": "material_view",
+    "userId": "student_user",
+    "userRole": "student",
+    "feature": "materials",
+    "timestamp": "2026-10-05T07:36:33.850Z",
+    "metadata": {
+      "fileName": "basic_statistics_1_221120_150758-1.pdf",
+      "storagePath": "materials/udsm/math-stats_st_113_y1s1/mat_1791182643325_hbzvws/basic_statistics_1_221120_150758-1.pdf",
+      "mode": "inline_view"
+    }
+  },
+  {
+    "id": "evt_1791185793457_2gdzj",
+    "eventType": "material_view",
+    "feature": "materials",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T07:36:33.458Z",
+    "metadata": {
+      "materialId": "mat_1791182643325_hbzvws",
+      "title": "basic statistics reference book",
+      "courseCode": "ST 113",
+      "materialType": "Reference Materials"
+    }
+  },
+  {
+    "id": "evt_1791185793458_au76z",
+    "eventType": "material_view",
+    "feature": "materials",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-05T07:36:33.458Z",
+    "metadata": {
+      "materialId": "mat_1791182643325_hbzvws",
+      "title": "basic statistics reference book",
+      "courseCode": "ST 113",
+      "materialType": "Reference Materials"
+    }
+  },
+  {
+    "id": "evt_view_1791186065417_4o93",
+    "eventType": "material_view",
+    "userId": "student_user",
+    "userRole": "student",
+    "feature": "materials",
+    "timestamp": "2026-10-05T07:41:05.417Z",
+    "metadata": {
+      "fileName": "basic_statistics_1_221120_150758-1.pdf",
+      "storagePath": "materials/udsm/math-stats_st_113_y1s1/mat_1791182643325_hbzvws/basic_statistics_1_221120_150758-1.pdf",
+      "mode": "inline_view"
+    }
+  },
+  {
+    "id": "evt_1791396118949_vyr39",
+    "eventType": "course_view",
+    "feature": "courses",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-07T18:01:58.949Z",
+    "metadata": {
+      "courseCode": "ST 113",
+      "courseTitle": "Basic Statistics"
+    }
+  },
+  {
+    "id": "evt_1791396118950_gxqso",
+    "eventType": "course_view",
+    "feature": "courses",
+    "userId": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "userRole": "admin",
+    "timestamp": "2026-10-07T18:01:58.950Z",
+    "metadata": {
+      "courseCode": "ST 113",
+      "courseTitle": "Basic Statistics"
+    }
+  },
+  {
+    "id": "evt_view_1791400452018_s3k3",
+    "eventType": "material_view",
+    "userId": "student_user",
+    "userRole": "student",
+    "feature": "materials",
+    "timestamp": "2026-10-07T19:14:12.018Z",
+    "metadata": {
+      "fileName": "basic_statistics_1_221120_150758-1.pdf",
+      "storagePath": "materials/udsm/math-stats_st_113_y1s1/mat_1791182643325_hbzvws/basic_statistics_1_221120_150758-1.pdf",
+      "mode": "inline_view"
+    }
+  },
+  {
+    "id": "evt_view_1791400452049_woki",
+    "eventType": "material_view",
+    "userId": "student_user",
+    "userRole": "student",
+    "feature": "materials",
+    "timestamp": "2026-10-07T19:14:12.049Z",
+    "metadata": {
+      "fileName": "basic_statistics_1_221120_150758-1.pdf",
+      "storagePath": "materials/udsm/math-stats_st_113_y1s1/mat_1791182643325_hbzvws/basic_statistics_1_221120_150758-1.pdf",
+      "mode": "inline_view"
+    }
+  }
+]

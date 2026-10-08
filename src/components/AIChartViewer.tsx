@@ -24,12 +24,14 @@ import { useTheme } from '../context/ThemeContext';
 
 interface AIChartViewerProps {
   chart: AIChartData;
+  forceLight?: boolean;
 }
 
-const DEFAULT_COLORS = ['#38bdf8', '#818cf8', '#34d399', '#f472b6', '#fbbf24', '#a78bfa'];
+const DEFAULT_COLORS = ['#2563eb', '#0284c7', '#059669', '#7c3aed', '#d97706', '#e11d48'];
 
-export const AIChartViewer: React.FC<AIChartViewerProps> = ({ chart }) => {
-  const { isDark } = useTheme();
+export const AIChartViewer: React.FC<AIChartViewerProps> = ({ chart, forceLight = false }) => {
+  const { isDark: themeIsDark } = useTheme();
+  const isDark = forceLight ? false : themeIsDark;
   const { type, title, description, xAxisLabel, yAxisLabel, data = [], series = [] } = chart;
 
   if (!data || data.length === 0) {

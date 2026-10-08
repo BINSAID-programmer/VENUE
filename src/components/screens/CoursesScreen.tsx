@@ -83,6 +83,8 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
     return Array.from({ length: Math.max(1, durationYears) }, (_, i) => i + 1);
   }, [durationYears]);
 
+  const [liveMetaByCode, setLiveMetaByCode] = useState<Map<string, any>>(new Map());
+
   // Load complete programme curriculum roadmap on initial mount or programme change
   useEffect(() => {
     if (!currentProgrammeId) {
@@ -93,9 +95,16 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
     let isMounted = true;
     const loadRoadmap = async () => {
       try {
-        const roadmap = await courseCurriculumService.getProgrammeCurriculumRoadmap(currentProgrammeId);
+        const [roadmap, liveMeta] = await Promise.all([
+          courseCurriculumService.getProgrammeCurriculumRoadmap(currentProgrammeId),
+          courseCurriculumService.getCourseLiveMetadataMap({
+            universityId: profile?.universityId,
+            programmeId: currentProgrammeId,
+          }),
+        ]);
         if (isMounted) {
           setCurriculumRoadmap(roadmap);
+          setLiveMetaByCode(liveMeta);
         }
       } catch (err) {
         console.warn('CoursesScreen: Error loading curriculum roadmap:', err);
@@ -106,7 +115,7 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [currentProgrammeId]);
+  }, [currentProgrammeId, profile?.universityId]);
 
   // Load term courses whenever selectedYear and selectedSemester are set
   useEffect(() => {
@@ -175,9 +184,15 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
 
   // Convert CourseRecord to UI Course model when needed
   const handleSelectCourseRecord = (record: CourseRecord) => {
+    const codeNorm = (record.code || record.courseCode || '').replace(/\s+/g, '').toUpperCase();
+    const liveMeta =
+      liveMetaByCode.get(record.id) ||
+      (record.canonicalCourseId ? liveMetaByCode.get(record.canonicalCourseId) : undefined) ||
+      liveMetaByCode.get(codeNorm);
     const uiCourse = courseCurriculumService.mapRecordToCourse(
       record,
-      profile?.programmeName || profile?.programme
+      profile?.programmeName || profile?.programme,
+      liveMeta
     );
     onSelectCourse(uiCourse);
   };
@@ -826,9 +841,29 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
                       </p>
                     )}
 
-                    <p className="text-xs text-slate-400 flex items-center gap-1.5">
+                    <p className="text-xs text-slate-400 flex items-center gap-1.5 flex-wrap">
                       <Building className="w-3.5 h-3.5 text-slate-500" />
-                      <span>{course.departmentId || profile?.department || 'Academic Department'}</span>
+                      <span>
+                        {courseCurriculumService.resolveDepartmentName(
+                          course.offeringDepartmentId || course.departmentId,
+                          course.offeringDepartmentName || profile?.department
+                        )}
+                      </span>
+                      {(() => {
+                        const codeNorm = (course.code || course.courseCode || '').replace(/\s+/g, '').toUpperCase();
+                        const liveMeta =
+                          liveMetaByCode.get(course.id) ||
+                          (course.canonicalCourseId ? liveMetaByCode.get(course.canonicalCourseId) : undefined) ||
+                          liveMetaByCode.get(codeNorm);
+                        return (
+                          <>
+                            <span className="text-slate-600">•</span>
+                            <span className="text-slate-400">
+                              {liveMeta?.lecturerName || 'Lecturer Not Assigned'}
+                            </span>
+                          </>
+                        );
+                      })()}
                     </p>
                   </div>
 
@@ -838,10 +873,25 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
                 </div>
 
                 <div className="mt-3 pt-2.5 border-t border-slate-800/70 flex items-center justify-between text-[11px] text-slate-400">
-                  <span className="flex items-center gap-1 text-slate-400">
-                    <CheckCircle2 className="w-3 h-3 text-sky-400" />
-                    Verified Prospectus Curriculum
-                  </span>
+                  {(() => {
+                    const codeNorm = (course.code || course.courseCode || '').replace(/\s+/g, '').toUpperCase();
+                    const liveMeta =
+                      liveMetaByCode.get(course.id) ||
+                      (course.canonicalCourseId ? liveMetaByCode.get(course.canonicalCourseId) : undefined) ||
+                      liveMetaByCode.get(codeNorm);
+                    const totalMats = liveMeta?.totalMaterialsCount || 0;
+                    return totalMats > 0 ? (
+                      <span className="flex items-center gap-1 text-emerald-400 font-medium">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                        {totalMats} {totalMats === 1 ? 'Material Available' : 'Materials Available'}
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-slate-500">
+                        <BookOpen className="w-3 h-3 text-slate-500" />
+                        No Materials Uploaded Yet
+                      </span>
+                    );
+                  })()}
                   <span className="text-sky-400 font-medium group-hover:underline">
                     View Course Details
                   </span>
@@ -982,21 +1032,52 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
             <div className="flex items-start justify-between gap-2">
               <span className="text-slate-400 font-medium">Degree Programme:</span>
               <span className="text-white font-semibold text-right">
-                {profile?.programme || course.programmeId}
+                {profile?.programme || courseCurriculumService.resolveProgrammeName(course.programmeId)}
               </span>
             </div>
             <div className="flex items-start justify-between gap-2">
               <span className="text-slate-400 font-medium">Department:</span>
               <span className="text-slate-200 text-right">
-                {course.departmentId || profile?.department || 'Academic Department'}
+                {courseCurriculumService.resolveDepartmentName(
+                  course.offeringDepartmentId || course.departmentId,
+                  course.offeringDepartmentName || profile?.department
+                )}
               </span>
             </div>
             <div className="flex items-start justify-between gap-2">
               <span className="text-slate-400 font-medium">Academic Unit:</span>
               <span className="text-slate-200 text-right">
-                {profile?.college || 'Faculty / College'}
+                {courseCurriculumService.resolveAcademicUnitName(
+                  course.offeringAcademicUnitId || course.academicUnitId || course.collegeId,
+                  profile?.college
+                )}
               </span>
             </div>
+            {(() => {
+              const codeNorm = (course.code || course.courseCode || '').replace(/\s+/g, '').toUpperCase();
+              const liveMeta =
+                liveMetaByCode.get(course.id) ||
+                (course.canonicalCourseId ? liveMetaByCode.get(course.canonicalCourseId) : undefined) ||
+                liveMetaByCode.get(codeNorm);
+              return (
+                <>
+                  <div className="flex items-start justify-between gap-2 pt-1 border-t border-slate-800/70">
+                    <span className="text-slate-400 font-medium">Course Lecturer:</span>
+                    <span className="text-slate-200 text-right">
+                      {liveMeta?.lecturerName || 'Lecturer Not Assigned'}
+                    </span>
+                  </div>
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-slate-400 font-medium">Uploaded Materials:</span>
+                    <span className="text-slate-200 text-right">
+                      {liveMeta && liveMeta.totalMaterialsCount > 0
+                        ? `${liveMeta.totalMaterialsCount} ${liveMeta.totalMaterialsCount === 1 ? 'File' : 'Files'} Available`
+                        : 'No Materials Uploaded Yet'}
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           {/* Choice Constraint / Special Curriculum Requirement */}

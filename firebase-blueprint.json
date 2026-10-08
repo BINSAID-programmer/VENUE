@@ -454,9 +454,57 @@
           "type": "string",
           "description": "Enrolled university name"
         },
+        "universityId": {
+          "type": "string",
+          "description": "Unique identifier of the enrolled university"
+        },
+        "universityShort": {
+          "type": "string",
+          "description": "Short code or acronym of the university (e.g. UDSM)"
+        },
+        "college": {
+          "type": "string",
+          "description": "Academic Unit or College name"
+        },
+        "academicUnitId": {
+          "type": "string",
+          "description": "Unique identifier of the Academic Unit (College, School, Institute)"
+        },
+        "academicUnitName": {
+          "type": "string",
+          "description": "Canonical name of the Academic Unit"
+        },
+        "department": {
+          "type": "string",
+          "description": "Academic department name"
+        },
+        "departmentId": {
+          "type": "string",
+          "description": "Unique identifier of the department"
+        },
         "programme": {
           "type": "string",
           "description": "Enrolled programme name"
+        },
+        "programmeId": {
+          "type": "string",
+          "description": "Unique identifier of the programme"
+        },
+        "programmeShort": {
+          "type": "string",
+          "description": "Short or abbreviated programme name"
+        },
+        "programmeCode": {
+          "type": "string",
+          "description": "Institutional degree code"
+        },
+        "degreeLevel": {
+          "type": "string",
+          "description": "Academic degree level (e.g. Bachelor's Degree)"
+        },
+        "academicYear": {
+          "type": "string",
+          "description": "Curriculum academic year session (e.g. 2025/2026)"
         },
         "yearOfStudy": {
           "type": "string",
@@ -465,6 +513,23 @@
         "semester": {
           "type": "string",
           "description": "Current active semester"
+        },
+        "registrationNumber": {
+          "type": "string",
+          "description": "Official institutional student registration number"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "inactive"],
+          "description": "Student account status"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp when account was registered"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp when profile was last updated"
         }
       },
       "required": ["uid", "email", "name"]
@@ -597,9 +662,872 @@
         }
       },
       "required": ["id", "text", "timestamp"]
+    },
+    "adminUser": {
+      "title": "AdminUser",
+      "description": "Role-based administrative profile for VENUE platform governance",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the administrator"
+        },
+        "email": {
+          "type": "string",
+          "description": "Official email address of the administrator"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "super_admin",
+            "university_admin",
+            "college_admin",
+            "department_moderator",
+            "verified_lecturer"
+          ],
+          "description": "Administrative role tier in the VENUE hierarchy"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Full name or title of the administrator"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "suspended"],
+          "description": "Active operational status of administrative account"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp when the administrative role was created"
+        }
+      },
+      "required": ["uid", "email", "role", "status", "createdAt"]
+    },
+    "academicMaterial": {
+      "title": "AcademicMaterial",
+      "description": "Educational resource, lecture note, slide, assignment, solution, or past paper associated with an accredited course",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the academic material document"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the material"
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional summary or synopsis of the material content"
+        },
+        "materialType": {
+          "type": "string",
+          "enum": [
+            "Lecture Notes",
+            "Handouts",
+            "Slides",
+            "Past Papers",
+            "Assignments",
+            "Solutions",
+            "Tutorials",
+            "Reference Materials",
+            "Other"
+          ],
+          "description": "Academic categorization of the material"
+        },
+        "fileName": {
+          "type": "string",
+          "description": "Original or sanitized filename"
+        },
+        "fileUrl": {
+          "type": "string",
+          "description": "Direct download URL or storage reference"
+        },
+        "storagePath": {
+          "type": "string",
+          "description": "Firebase Cloud Storage canonical path"
+        },
+        "fileSize": {
+          "type": "string",
+          "description": "Human-readable file size string (e.g. 2.4 MB)"
+        },
+        "mimeType": {
+          "type": "string",
+          "description": "MIME type (e.g. application/pdf)"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "draft", "archived"],
+          "description": "Publishing status"
+        },
+        "universityId": {
+          "type": "string",
+          "description": "Foreign key to the parent university"
+        },
+        "academicUnitId": {
+          "type": "string",
+          "description": "Foreign key to the college, school, or institute"
+        },
+        "departmentId": {
+          "type": "string",
+          "description": "Foreign key to the academic department"
+        },
+        "programmeId": {
+          "type": "string",
+          "description": "Foreign key to the degree programme"
+        },
+        "yearId": {
+          "type": "number",
+          "description": "Year of study (1, 2, 3, etc.)"
+        },
+        "semesterId": {
+          "type": "number",
+          "description": "Semester number (1, 2)"
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Foreign key to the catalogue course"
+        },
+        "courseCode": {
+          "type": "string",
+          "description": "Accredited course code (e.g. MT 171)"
+        },
+        "courseTitle": {
+          "type": "string",
+          "description": "Title of the course"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO 8601 creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO 8601 update timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "materialType",
+        "fileName",
+        "fileUrl",
+        "fileSize",
+        "status",
+        "universityId",
+        "courseId"
+      ]
+    },
+    "lecturer": {
+      "title": "Lecturer",
+      "description": "Verified academic faculty member, course instructor, or lecturer record",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the lecturer document"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Full legal or academic name of the lecturer"
+        },
+        "email": {
+          "type": "string",
+          "description": "Official institutional email address"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone number"
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Profile photo URL"
+        },
+        "staffId": {
+          "type": "string",
+          "description": "Institutional staff ID or payroll reference"
+        },
+        "title": {
+          "type": "string",
+          "description": "Academic title/salutation (e.g. Prof., Dr., Mr., Ms.)"
+        },
+        "position": {
+          "type": "string",
+          "description": "Academic rank (e.g. Professor, Senior Lecturer, Lecturer)"
+        },
+        "bio": {
+          "type": "string",
+          "description": "Lecturer professional biography or academic background"
+        },
+        "office": {
+          "type": "string",
+          "description": "Lecturer office room number or departmental location"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Firebase Authentication UID of the linked lecturer user"
+        },
+        "accountLinked": {
+          "type": "boolean",
+          "description": "Whether an authenticated VENUE account has been linked"
+        },
+        "linkedAt": {
+          "type": "string",
+          "description": "Timestamp when the Firebase UID was linked"
+        },
+        "invitationCode": {
+          "type": "string",
+          "description": "One-time invitation token for account linking"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["lecturer"],
+          "description": "Role identifier"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "inactive"],
+          "description": "Operational status"
+        },
+        "verificationStatus": {
+          "type": "string",
+          "enum": ["pending", "verified", "rejected"],
+          "description": "Faculty credential verification status"
+        },
+        "universityId": {
+          "type": "string",
+          "description": "Foreign key to parent university"
+        },
+        "academicUnitId": {
+          "type": "string",
+          "description": "Foreign key to academic unit / college"
+        },
+        "departmentId": {
+          "type": "string",
+          "description": "Foreign key to offering academic department"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO 8601 creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO 8601 update timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "fullName",
+        "email",
+        "status",
+        "verificationStatus",
+        "universityId",
+        "academicUnitId",
+        "departmentId"
+      ]
+    },
+    "lecturerCourseAssignment": {
+      "title": "LecturerCourseAssignment",
+      "description": "Accredited course assignment linking a lecturer to a canonical course and teaching context",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the lecturer course assignment document"
+        },
+        "lecturerId": {
+          "type": "string",
+          "description": "Foreign key pointing to the lecturer record"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the assigned lecturer if account is linked"
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Foreign key pointing to the canonical course record"
+        },
+        "courseCode": {
+          "type": "string",
+          "description": "Accredited course code"
+        },
+        "courseTitle": {
+          "type": "string",
+          "description": "Official title of the assigned course"
+        },
+        "credits": {
+          "type": "number",
+          "description": "Academic credits"
+        },
+        "universityId": {
+          "type": "string",
+          "description": "Parent university identifier"
+        },
+        "academicUnitId": {
+          "type": "string",
+          "description": "Academic unit / college identifier"
+        },
+        "departmentId": {
+          "type": "string",
+          "description": "Department identifier"
+        },
+        "programmeId": {
+          "type": "string",
+          "description": "Degree programme context where course is taught"
+        },
+        "yearOfStudy": {
+          "type": "number",
+          "description": "Year of study context"
+        },
+        "semester": {
+          "type": "number",
+          "description": "Semester context"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "inactive"],
+          "description": "Assignment operational status"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO 8601 creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO 8601 update timestamp"
+        }
+      },
+      "required": ["id", "lecturerId", "courseId", "courseCode", "courseTitle", "credits", "universityId", "status"]
+    },
+    "announcement": {
+      "title": "Announcement",
+      "description": "Centralized institutional notices, alerts, and academic memos",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the announcement"
+        },
+        "announcementId": {
+          "type": "string",
+          "description": "Unique announcement identifier"
+        },
+        "title": {
+          "type": "string",
+          "description": "Official title of the announcement"
+        },
+        "content": {
+          "type": "string",
+          "description": "Full text or markdown content of the announcement"
+        },
+        "summary": {
+          "type": "string",
+          "description": "Concise summary or preview text"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["General", "Academic", "Important", "Event", "Maintenance"],
+          "description": "Category of the announcement"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Draft", "Published", "Archived"],
+          "description": "Current lifecycle status"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "Authenticated Administrator UID who created the record"
+        },
+        "createdByName": {
+          "type": "string",
+          "description": "Display name or email of the creator"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO 8601 creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO 8601 modification timestamp"
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "Admin UID who last modified the record"
+        },
+        "publishedAt": {
+          "type": ["string", "null"],
+          "description": "ISO 8601 timestamp when the announcement was officially published"
+        },
+        "audienceType": {
+          "type": "string",
+          "enum": ["everyone", "targeted"],
+          "description": "Whether announcement is general institutional or targeted"
+        },
+        "targetUniversityId": {
+          "type": "string",
+          "description": "Catalogue university identifier"
+        },
+        "targetAcademicUnitId": {
+          "type": "string",
+          "description": "Catalogue academic unit (College/School) identifier"
+        },
+        "targetDepartmentId": {
+          "type": "string",
+          "description": "Catalogue department identifier"
+        },
+        "targetProgrammeId": {
+          "type": "string",
+          "description": "Catalogue degree programme identifier"
+        },
+        "targetYearOfStudy": {
+          "type": "string",
+          "description": "Target year of study e.g. Year 1, Year 2"
+        },
+        "targetSemester": {
+          "type": "string",
+          "description": "Target semester e.g. Semester 1, Semester 2"
+        }
+      },
+      "required": ["id", "title", "content", "type", "status", "createdBy", "createdAt", "updatedAt"]
+    },
+    "announcementRead": {
+      "title": "AnnouncementRead",
+      "description": "Scalable tracking record of when a student or lecturer opened an announcement",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deterministic ID: {userId}_{announcementId}"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the reader"
+        },
+        "announcementId": {
+          "type": "string",
+          "description": "Identifier of the announcement read"
+        },
+        "readAt": {
+          "type": "string",
+          "description": "ISO 8601 timestamp when the user read the announcement"
+        }
+      },
+      "required": ["id", "userId", "announcementId", "readAt"]
+    },
+    "aiUsageLog": {
+      "title": "AIUsageLog",
+      "description": "Minimal metadata for tracking AI Tutor requests and token consumption without storing chat content",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique usage log identifier"
+        },
+        "userUid": {
+          "type": "string",
+          "description": "Firebase Auth UID or anonymous student identifier"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO 8601 timestamp of the request"
+        },
+        "modelId": {
+          "type": "string",
+          "description": "AI model identifier used e.g. gemini-2.5-flash"
+        },
+        "promptTokens": {
+          "type": "number",
+          "description": "Number of input tokens consumed"
+        },
+        "completionTokens": {
+          "type": "number",
+          "description": "Number of output tokens generated"
+        },
+        "totalTokens": {
+          "type": "number",
+          "description": "Total tokens consumed"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["success", "error"],
+          "description": "Execution status of the AI request"
+        },
+        "approxCostUsd": {
+          "type": "number",
+          "description": "Approximate computed cost in USD"
+        }
+      },
+      "required": ["id", "userUid", "timestamp", "modelId", "status"]
+    },
+    "analyticsSummary": {
+      "title": "AnalyticsSummary",
+      "description": "Aggregated platform counts and metrics cached to avoid expensive collection scans",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Summary period or snapshot identifier e.g. platform_overview"
+        },
+        "lastAggregatedAt": {
+          "type": "string",
+          "description": "ISO 8601 timestamp when aggregate was calculated"
+        },
+        "metrics": {
+          "type": "object",
+          "description": "Key metric counts and breakdowns"
+        }
+      },
+      "required": ["id", "lastAggregatedAt"]
+    },
+    "analyticsEvent": {
+      "title": "AnalyticsEvent",
+      "description": "Granular user interaction event for engagement and feature telemetry",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deterministic event identifier"
+        },
+        "eventType": {
+          "type": "string",
+          "description": "Action type e.g. material_view, quiz_attempt, ai_tutor_query"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Masked or authenticated user UID"
+        },
+        "userRole": {
+          "type": "string",
+          "description": "student, lecturer, or admin"
+        },
+        "feature": {
+          "type": "string",
+          "description": "Target VENUE feature e.g. materials, ai_tutor, study_planner, quizzes"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO 8601 timestamp of user interaction"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Minimal contextual fields (course code, material type, etc)"
+        }
+      },
+      "required": ["id", "eventType", "userId", "feature", "timestamp"]
+    },
+    "auditLog": {
+      "title": "AuditLog",
+      "description": "Immutable administrative audit record tracking critical platform mutations for accountability",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique audit log entry identifier"
+        },
+        "actorUid": {
+          "type": "string",
+          "description": "UID of the administrator or system process performing the action"
+        },
+        "actorName": {
+          "type": "string",
+          "description": "Display name or email of the acting administrator"
+        },
+        "actorRole": {
+          "type": "string",
+          "description": "Administrative role at the time of the action"
+        },
+        "action": {
+          "type": "string",
+          "description": "Specific action identifier e.g. catalogue.programme.create, material.upload"
+        },
+        "entityType": {
+          "type": "string",
+          "description": "Type of resource modified e.g. programme, material, announcement, student"
+        },
+        "entityId": {
+          "type": "string",
+          "description": "Primary identifier of the affected entity"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO 8601 creation timestamp"
+        },
+        "outcome": {
+          "type": "string",
+          "description": "Operation result: success or failure"
+        },
+        "summary": {
+          "type": "string",
+          "description": "Human-readable description of the administrative mutation"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Change diff, attributes modified, or operational context"
+        },
+        "source": {
+          "type": "string",
+          "description": "trusted_server or client_service"
+        }
+      },
+      "required": ["id", "actorUid", "actorRole", "action", "entityType", "entityId", "timestamp", "outcome", "summary"]
+    },
+    "communityPost": {
+      "title": "CommunityPost",
+      "description": "Authenticated student or lecturer academic community discussion post",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string", "description": "Unique post identifier" },
+        "authorUid": { "type": "string", "description": "Firebase Auth UID of the post author" },
+        "authorName": { "type": "string", "description": "Verified display name of the author" },
+        "authorPhoto": { "type": "string", "description": "Profile photo URL of the author" },
+        "authorRoleLabel": { "type": "string", "description": "Programme and year label of the author" },
+        "communityId": { "type": "string", "description": "Target academic community identifier" },
+        "communityType": {
+          "type": "string",
+          "enum": ["university", "academic_unit", "department", "programme", "course"],
+          "description": "Academic scope of the community"
+        },
+        "communityName": { "type": "string", "description": "Human-readable name of the community" },
+        "universityId": { "type": "string", "description": "University identifier" },
+        "category": { "type": "string", "description": "Discussion category" },
+        "title": { "type": "string", "minLength": 3, "maxLength": 200, "description": "Post title" },
+        "content": { "type": "string", "minLength": 3, "maxLength": 8000, "description": "Post body content" },
+        "imageUrl": { "type": "string", "description": "Optional image attachment URL" },
+        "createdAt": { "type": "string", "description": "ISO 8601 creation timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO 8601 update timestamp" },
+        "editedAt": { "type": ["string", "null"], "description": "ISO 8601 edit timestamp" },
+        "status": { "type": "string", "enum": ["active", "deleted", "hidden"], "description": "Post status" },
+        "likeCount": { "type": "number", "description": "Count of likes" },
+        "commentCount": { "type": "number", "description": "Count of comments" }
+      },
+      "required": ["postId", "authorUid", "authorName", "communityId", "communityType", "title", "content", "createdAt", "updatedAt", "status", "likeCount", "commentCount"]
+    },
+    "communityComment": {
+      "title": "CommunityComment",
+      "description": "Persistent comment or reply on a community post",
+      "type": "object",
+      "properties": {
+        "commentId": { "type": "string", "description": "Unique comment identifier" },
+        "postId": { "type": "string", "description": "Parent post identifier" },
+        "parentCommentId": { "type": ["string", "null"], "description": "Optional parent comment ID for threaded replies" },
+        "authorUid": { "type": "string", "description": "Firebase Auth UID of the comment author" },
+        "authorName": { "type": "string", "description": "Verified display name of the author" },
+        "authorPhoto": { "type": "string", "description": "Profile photo URL of the author" },
+        "content": { "type": "string", "minLength": 1, "maxLength": 3000, "description": "Comment text" },
+        "createdAt": { "type": "string", "description": "ISO 8601 creation timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO 8601 update timestamp" },
+        "likeCount": { "type": "number", "description": "Count of likes" },
+        "status": { "type": "string", "enum": ["active", "deleted", "hidden"], "description": "Comment status" }
+      },
+      "required": ["commentId", "postId", "authorUid", "authorName", "content", "createdAt", "updatedAt", "likeCount", "status"]
+    },
+    "communityLike": {
+      "title": "CommunityLike",
+      "description": "User like record on a community post or comment",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Composite ID: {targetId}_{userId}" },
+        "targetId": { "type": "string", "description": "Post or comment ID" },
+        "targetType": { "type": "string", "enum": ["post", "comment"], "description": "Target entity type" },
+        "userId": { "type": "string", "description": "Firebase Auth UID of the user" },
+        "createdAt": { "type": "string", "description": "ISO 8601 timestamp" }
+      },
+      "required": ["id", "targetId", "targetType", "userId", "createdAt"]
+    },
+    "communityBookmark": {
+      "title": "CommunityBookmark",
+      "description": "Saved/bookmarked community post record for a user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Composite ID: {userId}_{postId}" },
+        "userId": { "type": "string", "description": "Firebase Auth UID of the user" },
+        "postId": { "type": "string", "description": "Saved post ID" },
+        "communityId": { "type": "string", "description": "Community ID of the post" },
+        "createdAt": { "type": "string", "description": "ISO 8601 timestamp" }
+      },
+      "required": ["id", "userId", "postId", "communityId", "createdAt"]
+    },
+    "communityReport": {
+      "title": "CommunityReport",
+      "description": "Moderation report submitted for a community post, comment, or chat message",
+      "type": "object",
+      "properties": {
+        "reportId": { "type": "string", "description": "Unique report ID" },
+        "reporterUid": { "type": "string", "description": "Firebase Auth UID of the reporter" },
+        "targetType": { "type": "string", "enum": ["post", "comment", "message"], "description": "Reported entity type" },
+        "targetId": { "type": "string", "description": "Reported entity ID" },
+        "category": { "type": "string", "description": "Moderation reason category" },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "resolved"], "description": "Moderation status" },
+        "createdAt": { "type": "string", "description": "ISO 8601 timestamp" }
+      },
+      "required": ["reportId", "reporterUid", "targetType", "targetId", "category", "status", "createdAt"]
+    },
+    "chatConversation": {
+      "title": "ChatConversation",
+      "description": "Authenticated 1-to-1 direct or community group chat conversation",
+      "type": "object",
+      "properties": {
+        "conversationId": { "type": "string", "description": "Unique conversation ID" },
+        "type": { "type": "string", "enum": ["direct", "community_group"], "description": "Conversation type" },
+        "participantIds": { "type": "array", "description": "List of participant Firebase Auth UIDs" },
+        "communityId": { "type": "string", "description": "Optional associated community ID for group chats" },
+        "lastMessage": { "type": "string", "description": "Preview of the most recent message" },
+        "lastMessageAt": { "type": "string", "description": "ISO 8601 timestamp of the most recent message" },
+        "createdAt": { "type": "string", "description": "ISO 8601 creation timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO 8601 update timestamp" }
+      },
+      "required": ["conversationId", "type", "participantIds", "lastMessage", "lastMessageAt", "createdAt", "updatedAt"]
+    },
+    "chatMessage": {
+      "title": "ChatMessage",
+      "description": "Real-time message inside a chat conversation",
+      "type": "object",
+      "properties": {
+        "messageId": { "type": "string", "description": "Unique message ID" },
+        "conversationId": { "type": "string", "description": "Parent conversation ID" },
+        "senderUid": { "type": "string", "description": "Firebase Auth UID of the sender" },
+        "senderName": { "type": "string", "description": "Verified display name of the sender" },
+        "senderPhoto": { "type": "string", "description": "Profile photo URL of the sender" },
+        "text": { "type": "string", "maxLength": 4000, "description": "Message text content" },
+        "imageUrl": { "type": "string", "description": "Optional image attachment URL" },
+        "createdAt": { "type": "string", "description": "ISO 8601 creation timestamp" },
+        "editedAt": { "type": ["string", "null"], "description": "ISO 8601 edit timestamp" },
+        "status": { "type": "string", "enum": ["sent", "deleted"], "description": "Message delivery/visibility status" }
+      },
+      "required": ["messageId", "conversationId", "senderUid", "senderName", "text", "createdAt", "status"]
+    },
+    "lecturerCourseAnnouncement": {
+      "title": "LecturerCourseAnnouncement",
+      "description": "Official course announcement published by an assigned lecturer to a Course Community",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique announcement ID" },
+        "courseId": { "type": "string", "description": "Canonical course ID" },
+        "courseCode": { "type": "string", "description": "Course code e.g. ST 113" },
+        "courseTitle": { "type": "string", "description": "Course title" },
+        "universityId": { "type": "string", "description": "University ID" },
+        "lecturerId": { "type": "string", "description": "Verified lecturer record ID" },
+        "lecturerUid": { "type": "string", "description": "Firebase Auth UID of the publishing lecturer" },
+        "lecturerName": { "type": "string", "description": "Display name and title of the lecturer" },
+        "noticeType": { "type": "string", "description": "Announcement, Lecture Reminder, Assignment Instruction, Timetable / Room Change, Academic Notice" },
+        "title": { "type": "string", "minLength": 3, "maxLength": 200, "description": "Notice title" },
+        "content": { "type": "string", "minLength": 3, "maxLength": 8000, "description": "Notice body" },
+        "pinned": { "type": "boolean", "description": "Whether notice is pinned at the top of the channel" },
+        "ackCount": { "type": "number", "description": "Number of students who acknowledged receipt" },
+        "status": { "type": "string", "enum": ["active", "deleted"], "description": "Announcement status" },
+        "createdAt": { "type": "string", "description": "ISO 8601 creation timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO 8601 update timestamp" }
+      },
+      "required": ["id", "courseId", "courseCode", "lecturerId", "lecturerUid", "lecturerName", "noticeType", "title", "content", "status", "createdAt", "updatedAt"]
+    },
+    "communityReaction": {
+      "title": "CommunityReaction",
+      "description": "Lightweight emoji reaction on a community post, lecturer announcement, or official notice",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Composite ID: {targetId}_{userId}" },
+        "targetId": { "type": "string", "description": "Target entity ID" },
+        "targetType": { "type": "string", "enum": ["post", "comment", "lecturer_announcement", "official_announcement", "chat_message"], "description": "Target entity type" },
+        "userId": { "type": "string", "description": "Firebase Auth UID of the reacting user" },
+        "emoji": { "type": "string", "description": "Selected reaction emoji" },
+        "createdAt": { "type": "string", "description": "ISO 8601 timestamp" }
+      },
+      "required": ["id", "targetId", "targetType", "userId", "emoji", "createdAt"]
+    },
+    "communityAcknowledgement": {
+      "title": "CommunityAcknowledgement",
+      "description": "Student read-receipt acknowledgement on an official lecturer or institutional announcement",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Composite ID: {targetId}_{userId}" },
+        "targetId": { "type": "string", "description": "Announcement ID" },
+        "targetType": { "type": "string", "enum": ["lecturer_announcement", "official_announcement"], "description": "Announcement type" },
+        "userId": { "type": "string", "description": "Firebase Auth UID of the acknowledging student" },
+        "userName": { "type": "string", "description": "Student display name" },
+        "acknowledgedAt": { "type": "string", "description": "ISO 8601 timestamp" }
+      },
+      "required": ["id", "targetId", "targetType", "userId", "userName", "acknowledgedAt"]
+    },
+    "communityReadState": {
+      "title": "CommunityReadState",
+      "description": "Per-user last-visited timestamp for an academic community space",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Composite ID: {userId}_{communityId}" },
+        "userId": { "type": "string", "description": "Firebase Auth UID" },
+        "communityId": { "type": "string", "description": "Community ID" },
+        "lastReadAt": { "type": "string", "description": "ISO 8601 timestamp" }
+      },
+      "required": ["id", "userId", "communityId", "lastReadAt"]
+    },
+    "userBlockedPeers": {
+      "title": "UserBlockedPeers",
+      "description": "Per-user list of blocked peer UIDs for community safety",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "blockedUids": { "type": "array", "description": "Bounded list of blocked UIDs" },
+        "updatedAt": { "type": "string", "description": "ISO 8601 timestamp" }
+      },
+      "required": ["userId", "blockedUids", "updatedAt"]
+    },
+    "userNotification": {
+      "title": "UserNotification",
+      "description": "Real-time in-app notification for community replies, direct messages, and lecturer announcements",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Notification ID" },
+        "recipientUid": { "type": "string", "description": "Recipient Firebase Auth UID" },
+        "senderUid": { "type": "string", "description": "Sender Firebase Auth UID" },
+        "title": { "type": "string", "description": "Notification title" },
+        "message": { "type": "string", "description": "Notification summary" },
+        "timestamp": { "type": "string", "description": "ISO 8601 timestamp" },
+        "read": { "type": "boolean", "description": "Read status" },
+        "category": { "type": "string", "description": "Notification category" }
+      },
+      "required": ["id", "recipientUid", "title", "message", "timestamp", "read"]
     }
   },
   "firestore": {
+    "/audit_logs/{logId}": {
+      "schema": "auditLog",
+      "description": "Append-only, immutable administrative audit log records"
+    },
+    "/analytics_events/{eventId}": {
+      "schema": "analyticsEvent",
+      "description": "User interaction events for feature engagement and retention analysis"
+    },
+    "/ai_usage_logs/{logId}": {
+      "schema": "aiUsageLog",
+      "description": "Minimal metadata logs tracking AI Tutor usage for administrative analytics"
+    },
+    "/analytics_summaries/{summaryId}": {
+      "schema": "analyticsSummary",
+      "description": "Aggregated platform telemetry and metrics summaries"
+    },
+    "/announcementReads/{readId}": {
+      "schema": "announcementRead",
+      "description": "Scalable read-receipt documents tracking which announcements each user has opened"
+    },
+    "/announcements/{announcementId}": {
+      "schema": "announcement",
+      "description": "Centralized institutional announcements, academic notices, and maintenance alerts"
+    },
+    "/lecturer_courses/{assignmentId}": {
+      "schema": "lecturerCourseAssignment",
+      "description": "Relationship linking accredited faculty lecturers to canonical courses and degree teaching contexts"
+    },
+    "/lecturers/{lecturerId}": {
+      "schema": "lecturer",
+      "description": "Verified academic faculty members directory and departmental instructors"
+    },
+    "/materials/{materialId}": {
+      "schema": "academicMaterial",
+      "description": "Institutional repository of lecture notes, slides, handouts, and academic materials"
+    },
+    "/admin_users/{userId}": {
+      "schema": "adminUser",
+      "description": "Authorized administrative accounts and hierarchical RBAC role records"
+    },
     "/universities/{universityId}": {
       "schema": "university",
       "description": "Accredited universities directory"
@@ -651,6 +1579,94 @@
     "/student_results/{resultId}": {
       "schema": "studentResult",
       "description": "Top-level student results collection indexed by authenticated student UID"
+    },
+    "/students/{studentId}/study_tasks/{taskId}": {
+      "schema": "studyTask",
+      "description": "Authenticated student study planner tasks for the Home Dashboard and Study Planner"
+    },
+    "/students/{studentId}/study_exams/{examId}": {
+      "schema": "studyExam",
+      "description": "Authenticated student exam countdown entries"
+    },
+    "/students/{studentId}/weekly_goals/{goalId}": {
+      "schema": "weeklyGoal",
+      "description": "Authenticated student weekly study hour goals"
+    },
+    "/students/{studentId}/recent_activity/{activityId}": {
+      "schema": "studentRecentActivity",
+      "description": "Authenticated student recent academic activity items"
+    },
+    "/students/{studentId}/career_preferences/{prefId}": {
+      "schema": "studentCareerPreference",
+      "description": "Authenticated student career preferences, skills, industries, and postgraduate goals"
+    },
+    "/students/{studentId}/career_roadmaps/{roadmapId}": {
+      "schema": "studentCareerRoadmap",
+      "description": "Authenticated student saved multi-year career roadmaps"
+    },
+    "/ai_career_reports/{reportId}": {
+      "schema": "aiCareerReport",
+      "description": "Student-submitted safety and accuracy reports for AI Career Advisor responses"
+    },
+    "/community_posts/{postId}": {
+      "schema": "communityPost",
+      "description": "Academic community discussion posts across University, Academic Unit, Department, Programme, and Course communities"
+    },
+    "/community_comments/{commentId}": {
+      "schema": "communityComment",
+      "description": "Persistent comments and replies on community posts"
+    },
+    "/community_likes/{likeId}": {
+      "schema": "communityLike",
+      "description": "User likes on community posts and comments"
+    },
+    "/community_bookmarks/{bookmarkId}": {
+      "schema": "communityBookmark",
+      "description": "User saved/bookmarked community posts"
+    },
+    "/community_reports/{reportId}": {
+      "schema": "communityReport",
+      "description": "Moderation reports for community posts, comments, and chat messages"
+    },
+    "/chat_conversations/{conversationId}": {
+      "schema": "chatConversation",
+      "description": "Authenticated 1-to-1 direct and community group chat conversations"
+    },
+    "/chat_conversations/{conversationId}/messages/{messageId}": {
+      "schema": "chatMessage",
+      "description": "Real-time messages inside a chat conversation"
+    },
+    "/lecturer_course_announcements/{announcementId}": {
+      "schema": "lecturerCourseAnnouncement",
+      "description": "Official course announcements published by assigned lecturers"
+    },
+    "/community_reactions/{reactionId}": {
+      "schema": "communityReaction",
+      "description": "Lightweight emoji reactions on community posts and announcements"
+    },
+    "/community_acknowledgements/{ackId}": {
+      "schema": "communityAcknowledgement",
+      "description": "Student read-receipt acknowledgements on official announcements"
+    },
+    "/community_read_states/{stateId}": {
+      "schema": "communityReadState",
+      "description": "Per-user last-visited timestamps for academic communities"
+    },
+    "/user_blocked_peers/{userId}": {
+      "schema": "userBlockedPeers",
+      "description": "Per-user list of blocked peer UIDs"
+    },
+    "/user_notifications/{notifId}": {
+      "schema": "userNotification",
+      "description": "Real-time in-app notifications for community replies and direct messages"
+    },
+    "/community_ai_conversations/{conversationId}": {
+      "schema": "communityAiConversation",
+      "description": "Per-user, per-community persistent VENUE AI Community Assistant conversations"
+    },
+    "/community_ai_feedback/{feedbackId}": {
+      "schema": "communityAiFeedback",
+      "description": "User helpfulness ratings and safety reports on Community AI responses"
     }
   }
 }

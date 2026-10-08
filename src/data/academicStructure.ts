@@ -1,6 +1,7 @@
 import { Course } from '../types';
 import { UDSM_BSC_MATH_STATS_COURSES } from './udsmCatalogue';
-import { UDSM_VERIFIED_COURSES } from './udsmProspectus2025';
+import { UDSM_VERIFIED_COURSES, UDSM_DEPARTMENTS } from './udsmProspectus2025';
+export { UDSM_DEPARTMENTS };
 
 export interface AcademicUniversity {
   id: string;
@@ -776,9 +777,9 @@ export async function fetchBrowseCourses(params: {
           electiveRule: rec.electiveRule || rec.electiveChoiceRule,
           note: rec.note || rec.notes,
           instructor: {
-            name: 'Faculty Instructor',
-            title: 'Lecturer',
-            office: 'UDSM Campus',
+            name: 'Lecturer Not Assigned',
+            title: 'Academic Staff',
+            office: 'Not specified',
           },
           progress: 0,
           gradeTarget: 'A',
@@ -801,7 +802,7 @@ export async function fetchBrowseCourses(params: {
     console.warn('Error fetching courses from Firestore:', e);
   }
 
-  // 1. Math & Stats rich catalogue with syllabus
+  // 1. Math & Stats canonical catalogue
   const isMathStats =
     cleanProgId === 'math-stats' ||
     cleanProgId === 'math-stats-math' ||
@@ -810,7 +811,9 @@ export async function fetchBrowseCourses(params: {
 
   if (isMathStats) {
     const mathCourses = UDSM_BSC_MATH_STATS_COURSES.filter(
-      (course) => course.year === params.year && course.semester === params.semester
+      (course) =>
+        (course.year === params.year || course.year === `Year ${params.year}`) &&
+        (course.semester === params.semester || course.semester === `Semester ${params.semester}`)
     );
     if (mathCourses.length > 0) return mathCourses;
   }
@@ -831,21 +834,23 @@ export async function fetchBrowseCourses(params: {
   });
 
   if (matchingRecords.length > 0) {
+    const deptLookup = new Map(UDSM_DEPARTMENTS.map(d => [d.id, d.name]));
     return matchingRecords.map((rec) => ({
       id: rec.id,
       code: rec.code,
       title: rec.title,
+      name: rec.title,
       credits: rec.credits,
       year: rec.yearOfStudy as 1 | 2 | 3,
       semester: rec.semester as 1 | 2,
       type: rec.status,
-      department: rec.departmentId || 'Academic Department',
+      department: deptLookup.get(rec.departmentId) || rec.departmentId || 'Academic Department',
       universityId: rec.universityId,
       programmeId: rec.programmeId,
       instructor: {
-        name: 'Faculty Instructor',
-        title: 'Lecturer',
-        office: 'UDSM Campus',
+        name: 'Lecturer Not Assigned',
+        title: 'Academic Staff',
+        office: 'Not specified',
       },
       progress: 0,
       gradeTarget: 'A',

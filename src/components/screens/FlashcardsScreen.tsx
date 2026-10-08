@@ -45,6 +45,24 @@ export const FlashcardsScreen: React.FC<FlashcardsScreenProps> = ({ decks }) => 
 
   const masteredCount = currentDeck?.cards.filter((c) => masteredCards[c.id]).length || 0;
 
+  if (decks.length === 0 || !currentDeck) {
+    return (
+      <div className="p-4 sm:p-6 space-y-6 pb-24">
+        <div className="rounded-2xl bg-slate-900 border border-slate-800 p-8 text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-sky-400 flex items-center justify-center mx-auto">
+            <Layers className="w-7 h-7" />
+          </div>
+          <div className="space-y-1.5">
+            <h2 className="text-lg font-bold text-white">No Flashcard Decks Created Yet</h2>
+            <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+              Generate real flashcard decks from your enrolled courses and uploaded lecture materials inside the AI Tutor Flashcards workspace.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 sm:p-6 space-y-5 pb-24">
       <div>

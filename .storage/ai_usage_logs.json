@@ -1,0 +1,222 @@
+[
+  {
+    "id": "ai_1791007046755_u8114",
+    "userUid": "test..._uid",
+    "timestamp": "2026-10-03T05:57:26.755Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 945,
+    "completionTokens": 363,
+    "totalTokens": 1308,
+    "status": "success",
+    "approxCostUsd": 0.00018
+  },
+  {
+    "id": "ai_1791183041575_50502",
+    "userUid": "stud...user",
+    "timestamp": "2026-10-05T06:50:41.575Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 885,
+    "completionTokens": 444,
+    "totalTokens": 1329,
+    "status": "success",
+    "approxCostUsd": 0.0002
+  },
+  {
+    "id": "ai_1791183086215_f597i",
+    "userUid": "stud...user",
+    "timestamp": "2026-10-05T06:51:26.215Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 1109,
+    "completionTokens": 478,
+    "totalTokens": 1587,
+    "status": "success",
+    "approxCostUsd": 0.000227
+  },
+  {
+    "id": "ai_1791183107433_wmdvd",
+    "userUid": "stud...user",
+    "timestamp": "2026-10-05T06:51:47.433Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 1377,
+    "completionTokens": 401,
+    "totalTokens": 1778,
+    "status": "success",
+    "approxCostUsd": 0.000224
+  },
+  {
+    "id": "ai_1791183250913_4zef2",
+    "userUid": "stud...user",
+    "timestamp": "2026-10-05T06:54:10.913Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 885,
+    "completionTokens": 307,
+    "totalTokens": 1192,
+    "status": "success",
+    "approxCostUsd": 0.000158
+  },
+  {
+    "id": "ai_1791183381423_j5diu",
+    "userUid": "stud...user",
+    "timestamp": "2026-10-05T06:56:21.423Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 1412,
+    "completionTokens": 355,
+    "totalTokens": 1767,
+    "status": "success",
+    "approxCostUsd": 0.000212
+  },
+  {
+    "id": "ai_1791186522387_e0t3o",
+    "userUid": "stud..._10b",
+    "timestamp": "2026-10-05T07:48:42.388Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 2162,
+    "completionTokens": 513,
+    "totalTokens": 2675,
+    "status": "success",
+    "approxCostUsd": 0.000316
+  },
+  {
+    "id": "ai_1791186526640_5ih6z",
+    "userUid": "stud..._10b",
+    "timestamp": "2026-10-05T07:48:46.640Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 2071,
+    "completionTokens": 590,
+    "totalTokens": 2661,
+    "status": "success",
+    "approxCostUsd": 0.000332
+  },
+  {
+    "id": "ai_1791186529377_j5okh",
+    "userUid": "stud..._10b",
+    "timestamp": "2026-10-05T07:48:49.377Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 1313,
+    "completionTokens": 355,
+    "totalTokens": 1668,
+    "status": "success",
+    "approxCostUsd": 0.000205
+  },
+  {
+    "id": "ai_1791188394599_lr17n",
+    "userUid": "Faz9...jvw1",
+    "timestamp": "2026-10-05T08:19:54.599Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 2133,
+    "completionTokens": 199,
+    "totalTokens": 2332,
+    "status": "success",
+    "approxCostUsd": 0.00022
+  },
+  {
+    "id": "ai_1791188416855_ov5jy",
+    "userUid": "Faz9...jvw1",
+    "timestamp": "2026-10-05T08:20:16.855Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 2531,
+    "completionTokens": 162,
+    "totalTokens": 2693,
+    "status": "success",
+    "approxCostUsd": 0.000238
+  },
+  {
+    "id": "ai_1791188468854_xog91",
+    "userUid": "Faz9...jvw1",
+    "timestamp": "2026-10-05T08:21:08.854Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 2423,
+    "completionTokens": 509,
+    "totalTokens": 2932,
+    "status": "success",
+    "approxCostUsd": 0.000334
+  },
+  {
+    "id": "ai_1791188494359_rcuji",
+    "userUid": "Faz9...jvw1",
+    "timestamp": "2026-10-05T08:21:34.359Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 3145,
+    "completionTokens": 482,
+    "totalTokens": 3627,
+    "status": "success",
+    "approxCostUsd": 0.00038
+  },
+  {
+    "id": "ai_1791189748636_yeuhe",
+    "userUid": "stud...user",
+    "timestamp": "2026-10-05T08:42:28.636Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 1343,
+    "completionTokens": 79,
+    "totalTokens": 1422,
+    "status": "success",
+    "approxCostUsd": 0.000124
+  },
+  {
+    "id": "ai_1791189754085_bowub",
+    "userUid": "stud...user",
+    "timestamp": "2026-10-05T08:42:34.085Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 2134,
+    "completionTokens": 192,
+    "totalTokens": 2326,
+    "status": "success",
+    "approxCostUsd": 0.000218
+  },
+  {
+    "id": "ai_1791189759829_a3mo3",
+    "userUid": "stud...user",
+    "timestamp": "2026-10-05T08:42:39.829Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 2477,
+    "completionTokens": 427,
+    "totalTokens": 2904,
+    "status": "success",
+    "approxCostUsd": 0.000314
+  },
+  {
+    "id": "ai_1791189764491_jfhek",
+    "userUid": "stud...user",
+    "timestamp": "2026-10-05T08:42:44.491Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 2880,
+    "completionTokens": 79,
+    "totalTokens": 2959,
+    "status": "success",
+    "approxCostUsd": 0.00024
+  },
+  {
+    "id": "ai_1791189767134_pofor",
+    "userUid": "stud...user",
+    "timestamp": "2026-10-05T08:42:47.134Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 1370,
+    "completionTokens": 439,
+    "totalTokens": 1809,
+    "status": "success",
+    "approxCostUsd": 0.000234
+  },
+  {
+    "id": "ai_1791189773412_5gmrn",
+    "userUid": "stud...user",
+    "timestamp": "2026-10-05T08:42:53.412Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 1495,
+    "completionTokens": 1096,
+    "totalTokens": 2591,
+    "status": "success",
+    "approxCostUsd": 0.000441
+  },
+  {
+    "id": "ai_1791189777426_97tms",
+    "userUid": "stud...user",
+    "timestamp": "2026-10-05T08:42:57.426Z",
+    "modelId": "gemini-3.1-flash-lite",
+    "promptTokens": 1403,
+    "completionTokens": 259,
+    "totalTokens": 1662,
+    "status": "success",
+    "approxCostUsd": 0.000183
+  }
+]

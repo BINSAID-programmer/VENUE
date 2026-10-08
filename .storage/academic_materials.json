@@ -1,0 +1,41 @@
+{
+  "mat_1791182643325_hbzvws": {
+    "id": "mat_1791182643325_hbzvws",
+    "materialId": "mat_1791182643325_hbzvws",
+    "title": "basic statistics reference book",
+    "description": "Basic Statistics 1 Reference Textbook (Definitions, Sampling Methods, Frequency Distribution, Central Tendency, Dispersion, Skewness, Kurtosis, Correlation, Regression, and Index Numbers)",
+    "materialType": "Reference Materials",
+    "fileName": "basic_statistics_1_221120_150758-1.pdf",
+    "fileUrl": "/api/materials/file?path=materials%2Fudsm%2Fmath-stats_st_113_y1s1%2Fmat_1791182643325_hbzvws%2Fbasic_statistics_1_221120_150758-1.pdf&materialId=mat_1791182643325_hbzvws",
+    "storagePath": "materials/udsm/math-stats_st_113_y1s1/mat_1791182643325_hbzvws/basic_statistics_1_221120_150758-1.pdf",
+    "filePath": "materials/udsm/math-stats_st_113_y1s1/mat_1791182643325_hbzvws/basic_statistics_1_221120_150758-1.pdf",
+    "fileSize": "902.2 KB",
+    "mimeType": "application/pdf",
+    "contentType": "application/pdf",
+    "universityId": "udsm",
+    "universityName": "University of Dar es Salaam",
+    "academicUnitId": "conas",
+    "academicUnitName": "College of Natural and Applied Sciences (CoNAS)",
+    "departmentId": "dept_mathematics",
+    "departmentName": "Department of Mathematics",
+    "programmeId": "math-stats",
+    "programmeName": "BSc in Mathematics and Statistics",
+    "yearId": 1,
+    "semesterId": 1,
+    "courseId": "math-stats_st_113_y1s1",
+    "canonicalCourseId": "st_113",
+    "courseCode": "ST 113",
+    "courseTitle": "Basic Statistics",
+    "uploadedBy": {
+      "uid": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+      "email": "binsaid679@gmail.com",
+      "name": "Mussa Said",
+      "role": "super_admin"
+    },
+    "uploadedByUid": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "uploaderRole": "super_admin",
+    "status": "active",
+    "createdAt": "2026-10-05T06:44:13.547Z",
+    "updatedAt": "2026-10-05T06:44:13.547Z"
+  }
+}

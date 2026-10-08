@@ -4,9 +4,10 @@ import { useTheme } from '../../context/ThemeContext';
 
 interface DeviceWrapperProps {
   children: React.ReactNode;
+  fullWidth?: boolean;
 }
 
-export const DeviceWrapper: React.FC<DeviceWrapperProps> = ({ children }) => {
+export const DeviceWrapper: React.FC<DeviceWrapperProps> = ({ children, fullWidth = false }) => {
   const { isDark } = useTheme();
   // Allow toggling between Smartphone Frame and Expanded responsive view
   const [deviceMode, setDeviceMode] = useState<'mobile-frame' | 'fluid'>('mobile-frame');
@@ -24,6 +25,14 @@ export const DeviceWrapper: React.FC<DeviceWrapperProps> = ({ children }) => {
     const timer = setInterval(updateTime, 30000);
     return () => clearInterval(timer);
   }, []);
+
+  if (fullWidth) {
+    return (
+      <div className="min-h-screen w-full bg-slate-950 text-slate-100 antialiased font-sans selection:bg-indigo-600 selection:text-white">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div

@@ -27,6 +27,7 @@ import {
   fetchProgrammesForDepartment,
   fetchBrowseCourses,
 } from '../../data/academicStructure';
+import { courseCurriculumService, CourseLiveMetadata } from '../../services/courseCurriculumService';
 
 interface BrowseMaterialsScreenProps {
   profile: StudentProfile;
@@ -190,6 +191,8 @@ export const BrowseMaterialsScreen: React.FC<BrowseMaterialsScreenProps> = ({
     setLoadingProgrammes(false);
   };
 
+  const [liveMetaByCode, setLiveMetaByCode] = useState<Map<string, CourseLiveMetadata>>(new Map());
+
   const loadCourses = async (
     targetProgId: string,
     targetYear: number | null,
@@ -201,15 +204,46 @@ export const BrowseMaterialsScreen: React.FC<BrowseMaterialsScreenProps> = ({
 
     setLoadingCourses(true);
     setHasQueriedCourses(true);
-    const loadedCourses = await fetchBrowseCourses({
-      universityId,
-      programmeId: targetProgId,
-      year: targetYear,
-      semester: targetSemester,
-      specialisationId: targetSpecId || undefined,
-      subStreamSlug: targetStreamSlug || undefined,
+    const [loadedCourses, liveMeta] = await Promise.all([
+      fetchBrowseCourses({
+        universityId,
+        programmeId: targetProgId,
+        year: targetYear,
+        semester: targetSemester,
+        specialisationId: targetSpecId || undefined,
+        subStreamSlug: targetStreamSlug || undefined,
+      }),
+      courseCurriculumService.getCourseLiveMetadataMap({
+        universityId,
+        programmeId: targetProgId,
+      }),
+    ]);
+
+    const enriched = loadedCourses.map((c) => {
+      const codeNorm = (c.code || '').replace(/\s+/g, '').toUpperCase();
+      const meta = liveMeta.get(c.id) || liveMeta.get(codeNorm) || liveMeta.get((c.code || '').toUpperCase());
+      const resolvedDept = courseCurriculumService.resolveDepartmentName(c.department);
+      return {
+        ...c,
+        department: resolvedDept,
+        instructor: meta?.lecturerName
+          ? {
+              name: meta.lecturerName,
+              title: meta.lecturerTitle || 'Course Lecturer',
+              office: meta.lecturerOffice || resolvedDept,
+              email: meta.lecturerEmail || '',
+            }
+          : {
+              name: 'Lecturer Not Assigned',
+              title: 'Academic Staff',
+              office: 'Not specified',
+            },
+        pastPapersCount: meta?.pastPapersCount ?? 0,
+      };
     });
-    setCourses(loadedCourses);
+
+    setLiveMetaByCode(liveMeta);
+    setCourses(enriched);
     setLoadingCourses(false);
   };
 
@@ -616,8 +650,22 @@ export const BrowseMaterialsScreen: React.FC<BrowseMaterialsScreenProps> = ({
         {!loadingCourses && courses.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {courses.map((course) => {
-              const materialsCount = course.materials?.length || 0;
-              const pastPapersCount = course.pastPapersCount || 0;
+              const codeNorm = (course.code || '').replace(/\s+/g, '').toUpperCase();
+              const meta =
+                liveMetaByCode.get(course.id) ||
+                liveMetaByCode.get(codeNorm) ||
+                liveMetaByCode.get((course.code || '').toUpperCase());
+              const totalMaterialsCount = meta?.totalMaterialsCount || 0;
+              const notesAndHandoutsCount =
+                (meta?.notesCount || 0) + (meta?.handoutsCount || 0) + (meta?.slidesCount || 0) + (meta?.tutorialsCount || 0) + (meta?.referenceCount || 0);
+              const pastPapersCount = meta?.pastPapersCount || 0;
+              const lecturerDisplay =
+                meta?.lecturerName ||
+                (course.instructor?.name &&
+                course.instructor.name !== 'Faculty Instructor' &&
+                course.instructor.name !== 'Faculty Academic Staff'
+                  ? course.instructor.name
+                  : 'Lecturer Not Assigned');
 
               return (
                 <div
@@ -669,10 +717,10 @@ export const BrowseMaterialsScreen: React.FC<BrowseMaterialsScreenProps> = ({
                     </div>
 
                     <h4 className="text-sm font-bold text-white group-hover:text-sky-300 transition-colors line-clamp-1">
-                      {course.title}
+                      {course.title || course.name}
                     </h4>
                     <p className="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                      {course.overview}
+                      {course.overview || course.description}
                     </p>
                     {course.note && (
                       <p className="text-[10px] text-amber-400/90 italic mt-1.5 flex items-center gap-1">
@@ -681,22 +729,29 @@ export const BrowseMaterialsScreen: React.FC<BrowseMaterialsScreenProps> = ({
                       </p>
                     )}
                     <p className="text-[11px] text-slate-500 mt-1.5">
-                      {course.instructor?.name} • {course.department}
+                      {lecturerDisplay} • {course.department}
                     </p>
                   </div>
 
                   {/* Materials & Resources Badge */}
                   <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-[11px] text-slate-400">
-                      <span className="flex items-center gap-1 text-sky-400 font-medium">
-                        <FileText className="w-3.5 h-3.5" />
-                        {materialsCount} Handouts
-                      </span>
-                      <span>•</span>
-                      <span className="text-indigo-400 font-medium">
-                        {pastPapersCount} Past Papers
-                      </span>
-                    </div>
+                    {totalMaterialsCount > 0 ? (
+                      <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                        <span className="flex items-center gap-1 text-sky-400 font-medium">
+                          <FileText className="w-3.5 h-3.5" />
+                          {notesAndHandoutsCount} {notesAndHandoutsCount === 1 ? 'Document' : 'Documents'}
+                        </span>
+                        <span>•</span>
+                        <span className="text-indigo-400 font-medium">
+                          {pastPapersCount} {pastPapersCount === 1 ? 'Past Paper' : 'Past Papers'}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                        <FileText className="w-3.5 h-3.5 text-slate-600" />
+                        <span>No Materials Uploaded Yet</span>
+                      </div>
+                    )}
 
                     <span className="text-xs text-sky-400 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
                       <span>View</span>

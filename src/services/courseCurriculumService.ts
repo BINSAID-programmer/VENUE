@@ -30,22 +30,66 @@ import {
   setDoc,
   QueryConstraint,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, dbDefault } from './firebase';
 import {
   CourseRecord,
   Course,
   ProgrammeRecord,
   StudentProfile,
+  AcademicMaterialRecord,
 } from '../types';
 import {
   UDSM_VERIFIED_COURSES,
   UDSM_PROGRAMMES,
   UDSM_PROGRAMME_COURSES,
+  UDSM_DEPARTMENTS,
+  UDSM_ACADEMIC_UNITS,
   OFFICIAL_SOURCE_UDSM_PROSPECTUS_2025_2026,
 } from '../data/udsmProspectus2025';
+import {
+  AUDITED_DEPARTMENTS,
+  AUDITED_ACADEMIC_UNITS,
+  AUDITED_PROGRAMMES,
+} from '../data/udsmAuditedCatalogue2025';
 import { normalizeCourseCode, buildStableCourseId } from './catalogueValidation';
+import { studentMaterialsService } from './studentMaterialsService';
 
 export const FIRESTORE_COURSE_COLLECTION = 'catalogue_courses';
+
+export interface CourseAssignedLecturerInfo {
+  id: string;
+  fullName: string;
+  title?: string;
+  displayName: string;
+  position?: string;
+  email?: string;
+  departmentName?: string;
+}
+
+export interface CourseLiveMetadata {
+  courseId: string;
+  courseCode: string;
+  assignedLecturers: CourseAssignedLecturerInfo[];
+  primaryLecturerName: string | null;
+  primaryLecturerTitle: string | null;
+  primaryLecturerDepartment: string | null;
+  lecturerName?: string | null;
+  lecturerTitle?: string | null;
+  lecturerOffice?: string | null;
+  lecturerEmail?: string | null;
+  lecturerAssigned?: boolean;
+  totalMaterialsCount: number;
+  notesCount: number;
+  handoutsCount: number;
+  slidesCount: number;
+  pastPapersCount: number;
+  tutorialsCount: number;
+  referenceCount: number;
+  otherCount: number;
+  hasMaterials: boolean;
+}
+
+export type CourseLiveMetadataMap = Map<string, CourseLiveMetadata> & Record<string, any>;
 
 export interface CurriculumTermCourses {
   yearOfStudy: number;
@@ -461,41 +505,504 @@ class CourseCurriculumService {
   }
 
   /**
-   * 6. MAP CourseRecord TO UI Course TYPE
+   * 6. RESOLVE HUMAN-READABLE DEPARTMENT, ACADEMIC UNIT, AND PROGRAMME NAMES
+   */
+  public resolveDepartmentName(departmentIdOrName?: string, fallbackName?: string): string {
+    const raw = (departmentIdOrName || '').trim();
+    if (!raw) return fallbackName || 'Academic Department';
+
+    const lower = raw.toLowerCase();
+    const fromAudited = AUDITED_DEPARTMENTS.find(
+      (d) =>
+        d.id.toLowerCase() === lower ||
+        d.name.toLowerCase() === lower ||
+        (d.shortName && d.shortName.toLowerCase() === lower)
+    );
+    if (fromAudited) return fromAudited.name;
+
+    const fromProspectus = UDSM_DEPARTMENTS.find(
+      (d) =>
+        d.id.toLowerCase() === lower ||
+        d.name.toLowerCase() === lower ||
+        (d.shortName && d.shortName.toLowerCase() === lower)
+    );
+    if (fromProspectus) return fromProspectus.name;
+
+    // Common department ID aliases
+    const aliasMap: Record<string, string> = {
+      'dept-math': 'Department of Mathematics',
+      'dept-stats': 'Department of Statistics',
+      'dept-cse': 'Department of Computer Science and Engineering',
+      'dept-ete': 'Department of Electronics and Telecommunications Engineering',
+      'dept-ee': 'Department of Electrical Engineering',
+      'dept-mie': 'Department of Mechanical and Industrial Engineering',
+      'dept-sce': 'Department of Structural and Construction Engineering',
+      'dept-cpe': 'Department of Chemical and Process Engineering',
+      'dept-phys': 'Department of Physics',
+      'dept-chem': 'Chemistry Department',
+      'dept-chemistry': 'Chemistry Department',
+      'dept-botany': 'Department of Botany',
+      'dept-zoology': 'Department of Zoology and Wildlife Conservation',
+      'dept-biotech': 'Department of Molecular Biology and Biotechnology',
+      'dept-geosciences': 'Department of Geosciences',
+      'dept-petroleum-eng': 'Department of Petroleum and Energy Engineering',
+      'dept-accounting': 'Department of Accounting',
+      'dept-finance': 'Department of Finance',
+      'dept-marketing': 'Department of Marketing',
+      'dept-management': 'Department of General Management',
+      'dept-dev-studies': 'Department of Development Studies',
+      'dept-ccs': 'Centre for Communication Studies',
+      'dept-history': 'Department of History',
+      'dept-foreign-languages': 'Department of Foreign Languages and Linguistics',
+      'dept-archaeology': 'Department of Archaeology and Heritage Studies',
+      'dept-literature': 'Department of Literature',
+      'dept-philosophy': 'Department of Philosophy and Religious Studies',
+      'dept-law': 'University of Dar es Salaam School of Law',
+      'dept-business': 'University of Dar es Salaam Business School',
+      'dept-ci': 'Confucius Institute (CI-UDSM)',
+    };
+    if (aliasMap[lower]) return aliasMap[lower];
+
+    if (raw.startsWith('dept-')) {
+      return (
+        fallbackName ||
+        `Department of ${raw
+          .replace(/^dept-/, '')
+          .split('-')
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(' ')}`
+      );
+    }
+
+    return raw;
+  }
+
+  public resolveAcademicUnitName(unitIdOrName?: string, fallbackName?: string): string {
+    const raw = (unitIdOrName || '').trim();
+    if (!raw) return fallbackName || '';
+    const lower = raw.toLowerCase();
+
+    const fromAudited = AUDITED_ACADEMIC_UNITS.find(
+      (u) =>
+        u.id.toLowerCase() === lower ||
+        u.name.toLowerCase() === lower ||
+        (u.abbreviation && u.abbreviation.toLowerCase() === lower) ||
+        (u.shortName && u.shortName.toLowerCase() === lower)
+    );
+    if (fromAudited) {
+      return fromAudited.abbreviation
+        ? `${fromAudited.name} (${fromAudited.abbreviation})`
+        : fromAudited.name;
+    }
+
+    const fromProspectus = UDSM_ACADEMIC_UNITS.find(
+      (u) =>
+        u.id.toLowerCase() === lower ||
+        u.name.toLowerCase() === lower ||
+        (u.abbreviation && u.abbreviation.toLowerCase() === lower) ||
+        (u.shortName && u.shortName.toLowerCase() === lower)
+    );
+    if (fromProspectus) {
+      return fromProspectus.abbreviation
+        ? `${fromProspectus.name} (${fromProspectus.abbreviation})`
+        : fromProspectus.name;
+    }
+
+    return fallbackName || raw;
+  }
+
+  public resolveProgrammeName(programmeIdOrName?: string, fallbackName?: string): string {
+    const raw = (programmeIdOrName || '').trim();
+    if (!raw) return fallbackName || '';
+    const clean = this.normalizeProgrammeId(raw);
+    const lower = raw.toLowerCase();
+
+    const fromAudited = AUDITED_PROGRAMMES.find(
+      (p) =>
+        p.id.toLowerCase() === lower ||
+        p.id.toLowerCase() === clean ||
+        p.name.toLowerCase() === lower
+    );
+    if (fromAudited) return fromAudited.name;
+
+    const fromProspectus = UDSM_PROGRAMMES.find(
+      (p) =>
+        p.id.toLowerCase() === lower ||
+        p.id.toLowerCase() === clean ||
+        p.name.toLowerCase() === lower
+    );
+    if (fromProspectus) return fromProspectus.name;
+
+    return fallbackName || raw;
+  }
+
+  /**
+   * 7. GET LIVE COURSE METADATA (Real Lecturer Assignments & Real Uploaded Material Counts)
+   *
+   * Strictly reads from real Firestore collections (`lecturer_courses`, `lecturers`, `materials`)
+   * and `/api/materials/metadata`. Never fabricates lecturer names or material counts.
+   */
+  async getCourseLiveMetadataMap(
+    coursesOrParams?:
+      | Array<{
+          id: string;
+          code?: string;
+          courseCode?: string;
+          universityId?: string;
+          programmeId?: string;
+        }>
+      | {
+          universityId?: string;
+          programmeId?: string;
+          courseRecords?: Array<{
+            id: string;
+            code?: string;
+            courseCode?: string;
+            universityId?: string;
+            programmeId?: string;
+          }>;
+          courses?: Array<{
+            id: string;
+            code?: string;
+            courseCode?: string;
+            universityId?: string;
+            programmeId?: string;
+          }>;
+        }
+  ): Promise<CourseLiveMetadataMap> {
+    const result = new Map<string, CourseLiveMetadata>() as CourseLiveMetadataMap;
+
+    const setEntry = (key: string, val: CourseLiveMetadata) => {
+      if (!key) return;
+      result.set(key, val);
+      (result as any)[key] = val;
+    };
+
+    const getOrCreateEntry = (courseId: string, courseCode: string): CourseLiveMetadata => {
+      const cleanCode = normalizeCourseCode(courseCode || courseId);
+      const existing =
+        result.get(courseId) ||
+        (cleanCode ? result.get(cleanCode) : undefined) ||
+        (courseCode ? result.get(courseCode.toUpperCase().trim()) : undefined);
+      if (existing) {
+        if (courseId) setEntry(courseId, existing);
+        if (cleanCode) setEntry(cleanCode, existing);
+        if (courseCode) setEntry(courseCode.toUpperCase().trim(), existing);
+        return existing;
+      }
+      const created: CourseLiveMetadata = {
+        courseId: courseId || cleanCode,
+        courseCode: cleanCode,
+        assignedLecturers: [],
+        primaryLecturerName: null,
+        primaryLecturerTitle: null,
+        primaryLecturerDepartment: null,
+        lecturerName: null,
+        lecturerTitle: null,
+        lecturerOffice: null,
+        lecturerEmail: null,
+        lecturerAssigned: false,
+        totalMaterialsCount: 0,
+        notesCount: 0,
+        handoutsCount: 0,
+        slidesCount: 0,
+        pastPapersCount: 0,
+        tutorialsCount: 0,
+        referenceCount: 0,
+        otherCount: 0,
+        hasMaterials: false,
+      };
+      if (courseId) setEntry(courseId, created);
+      if (cleanCode) setEntry(cleanCode, created);
+      if (courseCode) setEntry(courseCode.toUpperCase().trim(), created);
+      return created;
+    };
+
+    let targetCourses: Array<{
+      id: string;
+      code: string;
+      universityId?: string;
+      programmeId?: string;
+    }> = [];
+
+    let filterUniId: string | undefined;
+    let filterProgId: string | undefined;
+
+    if (Array.isArray(coursesOrParams)) {
+      targetCourses = coursesOrParams.map((c) => ({
+        id: c.id,
+        code: c.code || c.courseCode || c.id,
+        universityId: c.universityId,
+        programmeId: c.programmeId,
+      }));
+    } else if (coursesOrParams && typeof coursesOrParams === 'object') {
+      filterUniId = coursesOrParams.universityId;
+      filterProgId = coursesOrParams.programmeId;
+      const providedList = coursesOrParams.courseRecords || coursesOrParams.courses;
+      if (Array.isArray(providedList) && providedList.length > 0) {
+        targetCourses = providedList.map((c) => ({
+          id: c.id,
+          code: c.code || c.courseCode || c.id,
+          universityId: c.universityId || filterUniId,
+          programmeId: c.programmeId || filterProgId,
+        }));
+      } else if (filterProgId) {
+        const cleanProg = this.normalizeProgrammeId(filterProgId);
+        const matchingCatalogue = UDSM_VERIFIED_COURSES.filter(
+          (c) =>
+            this.normalizeProgrammeId(c.programmeId) === cleanProg ||
+            c.programmeId.toLowerCase() === filterProgId!.toLowerCase()
+        );
+        targetCourses = matchingCatalogue.map((c) => ({
+          id: c.id,
+          code: c.code || c.courseCode || c.id,
+          universityId: c.universityId || filterUniId,
+          programmeId: c.programmeId,
+        }));
+      }
+    }
+
+    const codeToIds = new Map<string, string[]>();
+    for (const c of targetCourses) {
+      const cleanCode = normalizeCourseCode(c.code || c.id);
+      getOrCreateEntry(c.id, c.code || c.id);
+      const existingIds = codeToIds.get(cleanCode) || [];
+      if (!existingIds.includes(c.id)) existingIds.push(c.id);
+      codeToIds.set(cleanCode, existingIds);
+    }
+
+    // A. Fetch Real Lecturer Course Assignments from Firestore (both dbDefault and db)
+    try {
+      const dbsToCheck = [dbDefault, db].filter(Boolean);
+      const assignmentsById = new Map<string, any>();
+      const lecturersById = new Map<string, any>();
+
+      for (const targetDb of dbsToCheck) {
+        try {
+          const lcaSnap = await getDocs(query(collection(targetDb, 'lecturer_courses'), limit(300)));
+          lcaSnap.forEach((d) => {
+            const data = d.data();
+            if (data && data.status !== 'inactive' && data.lecturerId) {
+              assignmentsById.set(d.id, { id: d.id, ...data });
+            }
+          });
+        } catch {
+          // continue
+        }
+
+        try {
+          const lecSnap = await getDocs(query(collection(targetDb, 'lecturers'), limit(300)));
+          lecSnap.forEach((d) => {
+            const data = d.data();
+            if (data && data.status === 'active' && data.fullName) {
+              lecturersById.set(d.id, { id: d.id, ...data });
+            }
+          });
+        } catch {
+          // continue
+        }
+      }
+
+      assignmentsById.forEach((assign) => {
+        const lec = lecturersById.get(assign.lecturerId);
+        if (!lec) return;
+
+        const assignCodeRaw = String(assign.courseCode || '').trim();
+        const assignCode = normalizeCourseCode(assignCodeRaw);
+        const assignCourseId = String(assign.courseId || '').trim();
+
+        const displayName = lec.title
+          ? `${lec.title} ${lec.fullName}`.trim()
+          : String(lec.fullName).trim();
+
+        const deptName = lec.departmentName || this.resolveDepartmentName(lec.departmentId);
+
+        const info: CourseAssignedLecturerInfo = {
+          id: lec.id,
+          fullName: lec.fullName,
+          title: lec.title || undefined,
+          displayName,
+          position: lec.position || 'Course Lecturer',
+          email: lec.email || undefined,
+          departmentName: deptName,
+        };
+
+        const entry = getOrCreateEntry(assignCourseId || assignCode, assignCodeRaw || assignCode);
+        if (!entry.assignedLecturers.some((existing) => existing.id === info.id)) {
+          entry.assignedLecturers.push(info);
+        }
+        if (!entry.primaryLecturerName) {
+          entry.primaryLecturerName = info.displayName;
+          entry.primaryLecturerTitle = info.position || info.title || 'Course Lecturer';
+          entry.primaryLecturerDepartment = info.departmentName || null;
+          entry.lecturerName = info.displayName;
+          entry.lecturerTitle = info.position || info.title || 'Course Lecturer';
+          entry.lecturerOffice = info.departmentName || null;
+          entry.lecturerEmail = info.email || null;
+          entry.lecturerAssigned = true;
+        }
+
+        if (assignCode && codeToIds.has(assignCode)) {
+          for (const cid of codeToIds.get(assignCode)!) {
+            setEntry(cid, entry);
+          }
+        }
+      });
+    } catch (err) {
+      console.warn('CourseCurriculumService: Failed to fetch real lecturer assignments:', err);
+    }
+
+    // B. Fetch Real Uploaded Materials from Firestore & Backend Metadata Endpoint
+    try {
+      const dbsToCheck = [dbDefault, db].filter(Boolean);
+      const rawMaterialsById = new Map<string, any>();
+
+      for (const targetDb of dbsToCheck) {
+        try {
+          const matSnap = await getDocs(query(collection(targetDb, 'materials'), limit(500)));
+          matSnap.forEach((d) => {
+            const data = d.data();
+            if (data) {
+              rawMaterialsById.set(d.id, { id: d.id, ...data });
+            }
+          });
+        } catch {
+          // continue
+        }
+      }
+
+      try {
+        const resp = await fetch('/api/materials/metadata');
+        if (resp.ok) {
+          const payload = await resp.json();
+          const items = Array.isArray(payload?.materials)
+            ? payload.materials
+            : Array.isArray(payload)
+            ? payload
+            : [];
+          for (const item of items) {
+            if (item && item.id && !rawMaterialsById.has(item.id)) {
+              rawMaterialsById.set(item.id, item);
+            }
+          }
+        }
+      } catch {
+        // continue
+      }
+
+      rawMaterialsById.forEach((m) => {
+        const status = String(m.status || 'published').toLowerCase();
+        if (status !== 'published' && status !== 'active') return;
+        if (m.visibility && m.visibility !== 'students') return;
+
+        // Require a valid file reference or storage path so missing/failed uploads are never counted
+        const hasValidStorageRef = Boolean(
+          (m.storagePath && String(m.storagePath).trim()) ||
+            (m.filePath && String(m.filePath).trim()) ||
+            (m.fileUrl && String(m.fileUrl).trim()) ||
+            (m.downloadURL && String(m.downloadURL).trim())
+        );
+        if (!hasValidStorageRef) return;
+
+        if (
+          filterUniId &&
+          m.universityId &&
+          String(m.universityId).toLowerCase() !== filterUniId.toLowerCase()
+        ) {
+          return;
+        }
+
+        const matCourseId = String(m.courseId || '').trim();
+        const matCodeRaw = String(m.courseCode || '').trim();
+        const matCodeNorm = normalizeCourseCode(matCodeRaw || matCourseId);
+        if (!matCourseId && !matCodeNorm) return;
+
+        const entry = getOrCreateEntry(matCourseId || matCodeNorm, matCodeRaw || matCodeNorm);
+        entry.totalMaterialsCount++;
+        entry.hasMaterials = true;
+
+        const mType = String(m.materialType || '');
+        if (mType === 'Lecture Notes') entry.notesCount++;
+        else if (mType === 'Handouts') entry.handoutsCount++;
+        else if (mType === 'Slides') entry.slidesCount++;
+        else if (mType === 'Past Papers') entry.pastPapersCount++;
+        else if (
+          mType === 'Tutorials' ||
+          mType === 'Assignments' ||
+          mType === 'Solutions'
+        ) {
+          entry.tutorialsCount++;
+        } else if (mType === 'Reference Materials') {
+          entry.referenceCount++;
+        } else {
+          entry.otherCount++;
+        }
+
+        if (matCodeNorm && codeToIds.has(matCodeNorm)) {
+          for (const cid of codeToIds.get(matCodeNorm)!) {
+            setEntry(cid, entry);
+          }
+        }
+      });
+    } catch (err) {
+      console.warn('CourseCurriculumService: Failed to fetch course materials counts:', err);
+    }
+
+    return result;
+  }
+
+  /**
+   * 8. MAP CourseRecord TO UI Course TYPE
    *
    * Translates official database CourseRecord into the VENUE Course interface
    * without fabricating fake lecturer names, notes, or past papers.
    */
-  mapRecordToCourse(record: CourseRecord, programmeName?: string): Course {
+  mapRecordToCourse(
+    record: CourseRecord,
+    indexOrProgrammeName?: number | string,
+    liveMetadata?: CourseLiveMetadata
+  ): Course {
+    const programmeName =
+      typeof indexOrProgrammeName === 'string' ? indexOrProgrammeName : undefined;
     const code = record.courseCode || record.code;
     const title = record.courseName || record.title;
     const yearNum = Number(record.yearOfStudy) || 1;
     const semNum = Number(record.semester) || 1;
     const cType = (record.courseType || record.status || 'Core') as 'Core' | 'Elective';
     const credits = Number(record.credits) || 12;
+    const resolvedDept = this.resolveDepartmentName(
+      record.offeringDepartmentId || record.departmentId,
+      record.offeringDepartmentName
+    );
+    const resolvedProgName = this.resolveProgrammeName(record.programmeId, programmeName);
+
+    const hasRealLecturer = Boolean(liveMetadata?.lecturerName);
 
     return {
       id: record.id,
       code,
       courseCode: code,
       title,
+      name: title,
       courseName: title,
       credits,
-      year: yearNum,
+      year: yearNum as 1 | 2 | 3,
       yearOfStudy: yearNum,
-      semester: semNum,
+      semester: semNum as 1 | 2,
       type: cType,
       courseType: cType,
-      department: record.departmentId || 'Academic Department',
+      department: resolvedDept,
+      departmentId: record.departmentId || record.offeringDepartmentId,
       academicUnitId: record.academicUnitId || record.institutionId || record.collegeId,
       collegeId: record.collegeId || record.academicUnitId,
       universityId: record.universityId || 'udsm',
       programmeId: record.programmeId,
-      programmeName: programmeName || record.programmeId,
+      programmeName: resolvedProgName || record.programmeId,
       instructor: {
-        name: 'Faculty Academic Staff',
-        title: 'Lecturer / Course Instructor',
-        office: 'Academic Department Office',
+        name: hasRealLecturer ? liveMetadata!.lecturerName! : 'Lecturer Not Assigned',
+        title: hasRealLecturer ? liveMetadata!.lecturerTitle || 'Course Lecturer' : 'Academic Staff',
+        office: hasRealLecturer ? liveMetadata!.lecturerOffice || resolvedDept : 'Not specified',
+        email: hasRealLecturer ? liveMetadata!.lecturerEmail || '' : '',
       },
       progress: 0,
       gradeTarget: 'A',
@@ -505,7 +1012,7 @@ class CourseCurriculumService {
         : `${title} (${code}) is an official ${cType.toLowerCase()} course carrying ${credits} credit units in Year ${yearNum}, Semester ${semNum}, accredited under the official University Prospectus.`,
       syllabus: [],
       materials: [],
-      pastPapersCount: 0,
+      pastPapersCount: liveMetadata?.pastPapersCount ?? 0,
       recommendedResources: [],
       electiveRule: record.electiveRule,
       choiceConstraint: record.choiceConstraint,
@@ -515,7 +1022,16 @@ class CourseCurriculumService {
       verified: record.verified !== false,
       source: record.source || OFFICIAL_SOURCE_UDSM_PROSPECTUS_2025_2026,
       sourceType: record.sourceType || 'official_prospectus',
-    };
+      ...(liveMetadata
+        ? {
+            realMaterialsCount: liveMetadata.totalMaterialsCount,
+            realNotesCount: liveMetadata.notesCount + liveMetadata.slidesCount,
+            realHandoutsCount: liveMetadata.handoutsCount,
+            realPastPapersCount: liveMetadata.pastPapersCount,
+            realTutorialsCount: liveMetadata.tutorialsCount,
+          }
+        : {}),
+    } as Course;
   }
 
   /**

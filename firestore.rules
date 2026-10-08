@@ -14,119 +14,1289 @@ service cloud.firestore {
       return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    // Public Academic Catalogue: Countries
+    // Verified Platform Owner & Super Admin Verification (Stage 9B)
+    function isVerifiedPlatformOwner() {
+      return isSignedIn() &&
+        request.auth.uid == 'Faz9X1kqMZWkujTMKYaRfvM4jvw1' &&
+        request.auth.token.email == 'binsaid679@gmail.com';
+    }
+
+    function hasActiveAdminDoc() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/admin_users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admin_users/$(request.auth.uid)).data.status == 'active';
+    }
+
+    function getAdminRole() {
+      return get(/databases/$(database)/documents/admin_users/$(request.auth.uid)).data.role;
+    }
+
+    function isSuperAdmin() {
+      return isVerifiedPlatformOwner() || (
+        hasActiveAdminDoc() &&
+        (getAdminRole() == 'super_admin' || getAdminRole() == 'Super Admin')
+      );
+    }
+
+    function isUniversityAdmin() {
+      return isSuperAdmin() || (
+        hasActiveAdminDoc() && getAdminRole() == 'university_admin'
+      );
+    }
+
+    function isCollegeAdmin() {
+      return isUniversityAdmin() || (
+        hasActiveAdminDoc() && getAdminRole() == 'college_admin'
+      );
+    }
+
+    function isDepartmentModerator() {
+      return isCollegeAdmin() || (
+        hasActiveAdminDoc() && getAdminRole() == 'department_moderator'
+      );
+    }
+
+    function isAnyActiveAdmin() {
+      return isDepartmentModerator();
+    }
+
+    // Helper: Check if a student account is active (not deactivated/restricted)
+    function isStudentAccountActive(userId) {
+      return isVerifiedPlatformOwner() || (
+        (!exists(/databases/$(database)/documents/students/$(userId)) ||
+         (get(/databases/$(database)/documents/students/$(userId)).data.get('status', 'active') == 'active' &&
+          get(/databases/$(database)/documents/students/$(userId)).data.get('accountStatus', 'active') == 'active')) &&
+        (!exists(/databases/$(database)/documents/users/$(userId)) ||
+         (get(/databases/$(database)/documents/users/$(userId)).data.get('status', 'active') == 'active' &&
+          get(/databases/$(database)/documents/users/$(userId)).data.get('accountStatus', 'active') == 'active'))
+      );
+    }
+
+    // Helper: Validate whether a lecturer document belongs to the authenticated user, is active, and verified
+    function isActiveVerifiedLecturerOwner(lecturerId) {
+      return isSignedIn() &&
+        lecturerId is string &&
+        lecturerId.size() > 0 &&
+        exists(/databases/$(database)/documents/lecturers/$(lecturerId)) &&
+        get(/databases/$(database)/documents/lecturers/$(lecturerId)).data.userId == request.auth.uid &&
+        get(/databases/$(database)/documents/lecturers/$(lecturerId)).data.get('status', 'active') == 'active' &&
+        get(/databases/$(database)/documents/lecturers/$(lecturerId)).data.get('verificationStatus', 'verified') == 'verified';
+    }
+
+    // Role-based Administrative Users & Permissions
+    match /admin_users/{userId} {
+      // Authenticated user can read their own admin record; Super Admins can list and read all
+      allow read: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
+      // Only Super Admins can modify administrative users, or initial bootstrap for verified platform owner; owner cannot be deactivated
+      allow create, update: if (
+        isSuperAdmin() ||
+        (isOwner(userId) && userId == 'Faz9X1kqMZWkujTMKYaRfvM4jvw1' &&
+         (request.resource.data.role == 'super_admin' || request.resource.data.role == 'Super Admin') &&
+         request.resource.data.email == 'binsaid679@gmail.com')
+      ) && isValidId(userId) &&
+      !(userId == 'Faz9X1kqMZWkujTMKYaRfvM4jvw1' && ('status' in request.resource.data) && request.resource.data.status != 'active') &&
+      !(userId == 'Faz9X1kqMZWkujTMKYaRfvM4jvw1' && ('role' in request.resource.data) && request.resource.data.role != 'super_admin' && request.resource.data.role != 'Super Admin');
+      allow delete: if isSuperAdmin() && userId != 'Faz9X1kqMZWkujTMKYaRfvM4jvw1' && isValidId(userId);
+    }
+
+    // Public Academic Catalogue: Countries (Read-only for students/lecturers; Admin write-only, or initial official prospectus seed if non-existent)
     match /countries/{countryId} {
       allow read: if true;
-      allow write: if isValidId(countryId);
+      allow create: if isValidId(countryId) && (isAnyActiveAdmin() || (!exists(/databases/$(database)/documents/countries/$(countryId)) && request.resource.data.get('verified', false) == true));
+      allow update, delete: if isAnyActiveAdmin() && isValidId(countryId);
     }
 
     // Public Academic Catalogue: Universities
     match /universities/{universityId} {
       allow read: if true;
-      allow write: if isValidId(universityId);
+      allow create: if isValidId(universityId) && (isAnyActiveAdmin() || (!exists(/databases/$(database)/documents/universities/$(universityId)) && request.resource.data.get('verified', false) == true));
+      allow update, delete: if isAnyActiveAdmin() && isValidId(universityId);
     }
 
     // Public Academic Catalogue: Academic Units (Colleges, Schools, Institutes)
     match /academic_units/{academicUnitId} {
       allow read: if true;
-      allow write: if isValidId(academicUnitId);
+      allow create: if isValidId(academicUnitId) && (isAnyActiveAdmin() || (!exists(/databases/$(database)/documents/academic_units/$(academicUnitId)) && request.resource.data.get('verified', false) == true));
+      allow update, delete: if isAnyActiveAdmin() && isValidId(academicUnitId);
     }
 
     // Public Academic Catalogue: Departments
     match /departments/{departmentId} {
       allow read: if true;
-      allow write: if isValidId(departmentId);
+      allow create: if isValidId(departmentId) && (isAnyActiveAdmin() || (!exists(/databases/$(database)/documents/departments/$(departmentId)) && request.resource.data.get('verified', false) == true));
+      allow update, delete: if isAnyActiveAdmin() && isValidId(departmentId);
     }
 
     // Public Academic Catalogue: Programmes
     match /programmes/{programmeId} {
       allow read: if true;
-      allow write: if isValidId(programmeId);
+      allow create: if isValidId(programmeId) && (isAnyActiveAdmin() || (!exists(/databases/$(database)/documents/programmes/$(programmeId)) && request.resource.data.get('verified', false) == true));
+      allow update, delete: if isAnyActiveAdmin() && isValidId(programmeId);
     }
 
     // Public Academic Catalogue: Academic Years
     match /academic_years/{academicYearId} {
       allow read: if true;
-      allow write: if isValidId(academicYearId);
+      allow create: if isValidId(academicYearId) && (isAnyActiveAdmin() || (!exists(/databases/$(database)/documents/academic_years/$(academicYearId)) && request.resource.data.get('verified', false) == true));
+      allow update, delete: if isAnyActiveAdmin() && isValidId(academicYearId);
     }
 
-    // Public Academic Catalogue: Courses (Students have read-only access to official courses)
+    // Public Academic Catalogue: Courses (Students and lecturers have read-only access to official courses)
     match /catalogue_courses/{courseId} {
       allow read: if true;
-      allow write: if isValidId(courseId);
+      allow create: if isValidId(courseId) && (isAnyActiveAdmin() || (!exists(/databases/$(database)/documents/catalogue_courses/$(courseId)) && request.resource.data.get('verified', false) == true));
+      allow update, delete: if isAnyActiveAdmin() && isValidId(courseId);
     }
 
     // Public Academic Catalogue: Canonical Courses
     match /canonical_courses/{courseId} {
       allow read: if true;
-      allow write: if isValidId(courseId);
+      allow create: if isValidId(courseId) && (isAnyActiveAdmin() || (!exists(/databases/$(database)/documents/canonical_courses/$(courseId)) && request.resource.data.get('verified', false) == true));
+      allow update, delete: if isAnyActiveAdmin() && isValidId(courseId);
     }
 
     // Public Academic Catalogue: Programme Course Relationships
     match /programme_courses/{relId} {
       allow read: if true;
-      allow write: if isValidId(relId);
+      allow create: if isValidId(relId) && (isAnyActiveAdmin() || (!exists(/databases/$(database)/documents/programme_courses/$(relId)) && request.resource.data.get('verified', false) == true));
+      allow update, delete: if isAnyActiveAdmin() && isValidId(relId);
     }
 
     // Public Academic Catalogue: Service Courses
     match /service_courses/{courseId} {
       allow read: if true;
-      allow write: if isValidId(courseId);
+      allow create: if isValidId(courseId) && (isAnyActiveAdmin() || (!exists(/databases/$(database)/documents/service_courses/$(courseId)) && request.resource.data.get('verified', false) == true));
+      allow update, delete: if isAnyActiveAdmin() && isValidId(courseId);
     }
 
-    // User Profiles (Private to individual user)
+    // Academic Catalogue Audit Logs (Append-only, Admin read/create only)
+    match /catalogue_audit_logs/{logId} {
+      allow get, list: if isAnyActiveAdmin();
+      allow create: if isAnyActiveAdmin() && isValidId(logId);
+      allow update, delete: if false;
+    }
+
+    // Lecturer Audit Logs (Append-only, Admin read/create only)
+    match /lecturer_audit_logs/{logId} {
+      allow get, list: if isAnyActiveAdmin();
+      allow create: if isAnyActiveAdmin() && isValidId(logId);
+      allow update, delete: if false;
+    }
+
+    // Student Audit Logs (Append-only, Admin read/create only)
+    match /student_audit_logs/{logId} {
+      allow get, list: if isAnyActiveAdmin();
+      allow create: if isAnyActiveAdmin() && isValidId(logId);
+      allow update, delete: if false;
+    }
+
+    // Centralized VENUE Announcements System (Stage 7A)
+    match /announcements/{announcementId} {
+      // Students and lecturers can only read published announcements; Admins can read all (including Drafts and Archived)
+      allow get: if isAnyActiveAdmin() || resource.data.status == 'Published';
+      allow list: if isAnyActiveAdmin() || resource.data.status == 'Published';
+      // Only authorized Admins can create announcements
+      allow create: if isAnyActiveAdmin() && isValidId(announcementId) &&
+        request.resource.data.title is string && request.resource.data.title.size() >= 3 && request.resource.data.title.size() <= 200 &&
+        request.resource.data.content is string && request.resource.data.content.size() >= 5;
+      // Only authorized Admins can edit or archive announcements
+      allow update: if isAnyActiveAdmin() && isValidId(announcementId) &&
+        request.resource.data.title is string && request.resource.data.title.size() >= 3 && request.resource.data.title.size() <= 200 &&
+        request.resource.data.content is string && request.resource.data.content.size() >= 5;
+      // Only authorized Admins can delete draft announcements (published announcements must be archived, not deleted)
+      allow delete: if isAnyActiveAdmin() && isValidId(announcementId) && resource.data.status == 'Draft';
+    }
+
+    // Announcement Read State Tracking (Stage 7B Scalable Read Relationship)
+    match /announcementReads/{readId} {
+      allow get: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || isAnyActiveAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAnyActiveAdmin());
+      allow create, update: if isSignedIn() && request.resource.data.userId == request.auth.uid && isValidId(readId);
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAnyActiveAdmin());
+    }
+
+    // AI Tutor Usage Metadata Tracking (Stage 8A Analytics Foundation)
+    match /ai_usage_logs/{logId} {
+      // Only authorized Admins can read or inspect AI analytics logs
+      allow get, list: if isAnyActiveAdmin();
+      // Allow creation of usage metadata by authenticated users
+      allow create: if isSignedIn() && isValidId(logId);
+      // Only Super Admins can modify or prune analytics logs
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // Analytics Summaries (Aggregated metrics cached to prevent full collection scans)
+    match /analytics_summaries/{summaryId} {
+      allow get, list: if isAnyActiveAdmin();
+      allow write: if isAnyActiveAdmin() && isValidId(summaryId);
+    }
+
+    // Analytics Events Tracking (Stage 8B Advanced Analytics & Engagement)
+    match /analytics_events/{eventId} {
+      // Only authorized Admins can view granular interaction events
+      allow get, list: if isAnyActiveAdmin();
+      // Allow creation of non-sensitive engagement events by authenticated active users
+      allow create: if isSignedIn() && isValidId(eventId);
+      // Only Super Admins can delete or manage raw events
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // Administrative Audit Logs (Stage 9A & 9B: Append-only, strictly immutable, Admin-only)
+    match /audit_logs/{logId} {
+      // Only authorized Admins can read or inspect audit logs (Students and Lecturers are strictly blocked)
+      allow get, list: if isAnyActiveAdmin();
+      // Only authorized active Admins can create administrative audit log records, and actorUid must match request.auth.uid
+      allow create: if isAnyActiveAdmin() &&
+        isValidId(logId) &&
+        request.resource.data.actorUid == request.auth.uid &&
+        request.resource.data.action is string &&
+        request.resource.data.entityType is string;
+      // Strictly immutable: audit records cannot be edited or deleted by anyone (including Super Admins)
+      allow update, delete: if false;
+    }
+
+    // Academic Materials Management (Stage 4A & Stage 9B Hardened)
+    match /materials/{materialId} {
+      // Students and Lecturers can read active materials; Admins and the uploading Lecturer can read all their materials
+      allow read: if isAnyActiveAdmin() ||
+        resource == null ||
+        !('status' in resource.data) ||
+        resource.data.status == 'active' ||
+        (isSignedIn() && (
+          resource.data.get('uploadedByUid', '') == request.auth.uid ||
+          resource.data.get('uploadedBy', '') == request.auth.uid ||
+          (resource.data.get('uploadedBy', null) is map && resource.data.uploadedBy.get('uid', '') == request.auth.uid)
+        ));
+
+      // Only Admins or active verified Lecturers uploading to their own account can create materials
+      allow create: if isValidId(materialId) && (
+        isAnyActiveAdmin() ||
+        (isSignedIn() &&
+         (request.resource.data.get('uploadedByUid', '') == request.auth.uid ||
+          (request.resource.data.get('uploadedBy', null) is map && request.resource.data.uploadedBy.get('uid', '') == request.auth.uid)) &&
+         request.resource.data.get('uploaderRole', '') == 'lecturer' &&
+         isActiveVerifiedLecturerOwner(request.resource.data.get('lecturerId', '')))
+      );
+
+      // Only Admins or the active verified Lecturer who owns the material can update its metadata (without reassigning ownership)
+      allow update: if isValidId(materialId) && (
+        isAnyActiveAdmin() ||
+        (isSignedIn() &&
+         (resource.data.get('uploadedByUid', '') == request.auth.uid ||
+          resource.data.get('uploadedBy', '') == request.auth.uid ||
+          (resource.data.get('uploadedBy', null) is map && resource.data.uploadedBy.get('uid', '') == request.auth.uid)) &&
+         request.resource.data.get('lecturerId', resource.data.get('lecturerId', '')) == resource.data.get('lecturerId', '') &&
+         isActiveVerifiedLecturerOwner(resource.data.get('lecturerId', '')))
+      );
+
+      // Only Admins or the active verified Lecturer who uploaded the material can delete it
+      allow delete: if isValidId(materialId) && (
+        isAnyActiveAdmin() ||
+        (isSignedIn() &&
+         (resource.data.get('uploadedByUid', '') == request.auth.uid ||
+          resource.data.get('uploadedBy', '') == request.auth.uid ||
+          (resource.data.get('uploadedBy', null) is map && resource.data.uploadedBy.get('uid', '') == request.auth.uid)) &&
+         isActiveVerifiedLecturerOwner(resource.data.get('lecturerId', '')))
+      );
+    }
+
+    match /academic_materials/{materialId} {
+      allow read: if isAnyActiveAdmin() ||
+        resource == null ||
+        !('status' in resource.data) ||
+        resource.data.status == 'active' ||
+        (isSignedIn() && (
+          resource.data.get('uploadedByUid', '') == request.auth.uid ||
+          resource.data.get('uploadedBy', '') == request.auth.uid ||
+          (resource.data.get('uploadedBy', null) is map && resource.data.uploadedBy.get('uid', '') == request.auth.uid)
+        ));
+      allow create: if isValidId(materialId) && (
+        isAnyActiveAdmin() ||
+        (isSignedIn() &&
+         (request.resource.data.get('uploadedByUid', '') == request.auth.uid ||
+          (request.resource.data.get('uploadedBy', null) is map && request.resource.data.uploadedBy.get('uid', '') == request.auth.uid)) &&
+         request.resource.data.get('uploaderRole', '') == 'lecturer' &&
+         isActiveVerifiedLecturerOwner(request.resource.data.get('lecturerId', '')))
+      );
+      allow update: if isValidId(materialId) && (
+        isAnyActiveAdmin() ||
+        (isSignedIn() &&
+         (resource.data.get('uploadedByUid', '') == request.auth.uid ||
+          resource.data.get('uploadedBy', '') == request.auth.uid ||
+          (resource.data.get('uploadedBy', null) is map && resource.data.uploadedBy.get('uid', '') == request.auth.uid)) &&
+         isActiveVerifiedLecturerOwner(resource.data.get('lecturerId', '')))
+      );
+      allow delete: if isValidId(materialId) && (
+        isAnyActiveAdmin() ||
+        (isSignedIn() &&
+         (resource.data.get('uploadedByUid', '') == request.auth.uid ||
+          resource.data.get('uploadedBy', '') == request.auth.uid ||
+          (resource.data.get('uploadedBy', null) is map && resource.data.uploadedBy.get('uid', '') == request.auth.uid)) &&
+         isActiveVerifiedLecturerOwner(resource.data.get('lecturerId', '')))
+      );
+    }
+
+    match /learning_materials/{materialId} {
+      allow read: if isAnyActiveAdmin() ||
+        resource == null ||
+        !('status' in resource.data) ||
+        resource.data.status == 'active' ||
+        (isSignedIn() && (
+          resource.data.get('uploadedByUid', '') == request.auth.uid ||
+          resource.data.get('uploadedBy', '') == request.auth.uid ||
+          (resource.data.get('uploadedBy', null) is map && resource.data.uploadedBy.get('uid', '') == request.auth.uid)
+        ));
+      allow create: if isValidId(materialId) && (
+        isAnyActiveAdmin() ||
+        (isSignedIn() &&
+         (request.resource.data.get('uploadedByUid', '') == request.auth.uid ||
+          (request.resource.data.get('uploadedBy', null) is map && request.resource.data.uploadedBy.get('uid', '') == request.auth.uid)) &&
+         request.resource.data.get('uploaderRole', '') == 'lecturer' &&
+         isActiveVerifiedLecturerOwner(request.resource.data.get('lecturerId', '')))
+      );
+      allow update: if isValidId(materialId) && (
+        isAnyActiveAdmin() ||
+        (isSignedIn() &&
+         (resource.data.get('uploadedByUid', '') == request.auth.uid ||
+          resource.data.get('uploadedBy', '') == request.auth.uid ||
+          (resource.data.get('uploadedBy', null) is map && resource.data.uploadedBy.get('uid', '') == request.auth.uid)) &&
+         isActiveVerifiedLecturerOwner(resource.data.get('lecturerId', '')))
+      );
+      allow delete: if isValidId(materialId) && (
+        isAnyActiveAdmin() ||
+        (isSignedIn() &&
+         (resource.data.get('uploadedByUid', '') == request.auth.uid ||
+          resource.data.get('uploadedBy', '') == request.auth.uid ||
+          (resource.data.get('uploadedBy', null) is map && resource.data.uploadedBy.get('uid', '') == request.auth.uid)) &&
+         isActiveVerifiedLecturerOwner(resource.data.get('lecturerId', '')))
+      );
+    }
+
+    // Material File Binary Manifests & Chunks (Durable Cloud File Backing for Material Viewer)
+    match /material_file_manifests/{materialId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(materialId) && (isAnyActiveAdmin() || isSignedIn());
+    }
+
+    match /material_file_chunks/{chunkId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(chunkId) && (isAnyActiveAdmin() || isSignedIn());
+    }
+
+    // Lecturer Management & Profile (Stage 5A, 5B & Stage 9B Hardened)
+    match /lecturers/{lecturerId} {
+      // Authenticated users can read lecturer profiles; Admins have full read access
+      allow read: if isSignedIn() || isAnyActiveAdmin();
+      // Only authorized Admins can create or delete lecturer records (Students and Lecturers cannot create/delete lecturer records)
+      allow create, delete: if isAnyActiveAdmin() && isValidId(lecturerId);
+      // Lecturers can only update permitted profile fields on their own active record, or perform initial UID linking with a valid invitation
+      allow update: if isValidId(lecturerId) && (
+        isAnyActiveAdmin() ||
+        // Case 1: Already linked lecturer updating their own permitted profile metadata (cannot change role, status, verificationStatus, universityId, academicUnitId, departmentId, userId)
+        (isSignedIn() &&
+         resource.data.userId == request.auth.uid &&
+         resource.data.get('status', 'active') == 'active' &&
+         (!('role' in request.resource.data) || request.resource.data.role == resource.data.get('role', 'lecturer')) &&
+         (!('status' in request.resource.data) || request.resource.data.status == resource.data.status) &&
+         (!('verificationStatus' in request.resource.data) || request.resource.data.verificationStatus == resource.data.verificationStatus) &&
+         (!('universityId' in request.resource.data) || request.resource.data.universityId == resource.data.universityId) &&
+         (!('academicUnitId' in request.resource.data) || request.resource.data.academicUnitId == resource.data.academicUnitId) &&
+         (!('departmentId' in request.resource.data) || request.resource.data.departmentId == resource.data.departmentId) &&
+         (!('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId)) ||
+        // Case 2: Unlinked lecturer record being linked to the authenticated user's own UID without changing status/verification/department
+        (isSignedIn() &&
+         (!('userId' in resource.data) || resource.data.userId == null || resource.data.userId == '') &&
+         request.resource.data.userId == request.auth.uid &&
+         (!('role' in request.resource.data) || request.resource.data.role == 'lecturer') &&
+         (!('status' in request.resource.data) || request.resource.data.status == resource.data.status) &&
+         (!('verificationStatus' in request.resource.data) || request.resource.data.verificationStatus == resource.data.verificationStatus) &&
+         (!('universityId' in request.resource.data) || request.resource.data.universityId == resource.data.universityId) &&
+         (!('academicUnitId' in request.resource.data) || request.resource.data.academicUnitId == resource.data.academicUnitId) &&
+         (!('departmentId' in request.resource.data) || request.resource.data.departmentId == resource.data.departmentId))
+      );
+    }
+
+    // Lecturer Course Assignments (Stage 5C & Stage 9B Hardened: Lecturers CANNOT assign themselves to courses)
+    match /lecturer_courses/{assignmentId} {
+      allow read: if isSignedIn() || isAnyActiveAdmin();
+      // Strictly restricted to authorized Admins only
+      allow create, update, delete: if isAnyActiveAdmin() && isValidId(assignmentId);
+    }
+
+    // User Profiles (Private to individual user, or manageable by active Admin)
     match /users/{userId} {
-      allow read, write: if isOwner(userId) && isValidId(userId);
+      allow read: if (isOwner(userId) || isAnyActiveAdmin()) && isValidId(userId);
+      allow list: if isAnyActiveAdmin();
+      allow create: if (isOwner(userId) || isAnyActiveAdmin()) && isValidId(userId) && (
+        isAnyActiveAdmin() ||
+        ((!('role' in request.resource.data) || request.resource.data.role == 'student') &&
+         (!('status' in request.resource.data) || request.resource.data.status == 'active') &&
+         (!('accountStatus' in request.resource.data) || request.resource.data.accountStatus == 'active') &&
+         !('permissions' in request.resource.data))
+      );
+      allow update: if isValidId(userId) && (
+        (isAnyActiveAdmin() &&
+         !(userId == 'Faz9X1kqMZWkujTMKYaRfvM4jvw1' && ('status' in request.resource.data) && request.resource.data.status != 'active') &&
+         !(userId == 'Faz9X1kqMZWkujTMKYaRfvM4jvw1' && ('accountStatus' in request.resource.data) && request.resource.data.accountStatus != 'active')) ||
+        (isOwner(userId) &&
+         isStudentAccountActive(userId) &&
+         // Student cannot change role or promote self to admin, super_admin, lecturer, moderator
+         (!('role' in request.resource.data) || request.resource.data.role == resource.data.get('role', 'student')) &&
+         // Student cannot toggle operational account status
+         (!('status' in request.resource.data) || request.resource.data.status == resource.data.get('status', 'active')) &&
+         (!('accountStatus' in request.resource.data) || request.resource.data.accountStatus == resource.data.get('accountStatus', 'active')) &&
+         // Student cannot assign administrative permissions
+         (!('permissions' in request.resource.data) || ('permissions' in resource.data && request.resource.data.permissions == resource.data.permissions)) &&
+         // Student cannot alter official institutional registration number once set
+         (!('registrationNumber' in request.resource.data) || !('registrationNumber' in resource.data) || resource.data.registrationNumber == '' || request.resource.data.registrationNumber == resource.data.registrationNumber) &&
+         // Student cannot alter protected academic placement once onboarding is completed
+         (!('universityId' in request.resource.data) || !('universityId' in resource.data) || resource.data.universityId == '' || request.resource.data.universityId == resource.data.universityId) &&
+         (!('academicUnitId' in request.resource.data) || !('academicUnitId' in resource.data) || resource.data.academicUnitId == '' || request.resource.data.academicUnitId == resource.data.academicUnitId) &&
+         (!('departmentId' in request.resource.data) || !('departmentId' in resource.data) || resource.data.departmentId == '' || request.resource.data.departmentId == resource.data.departmentId) &&
+         (!('programmeId' in request.resource.data) || !('programmeId' in resource.data) || resource.data.programmeId == '' || request.resource.data.programmeId == resource.data.programmeId) &&
+         (!('academicYear' in request.resource.data) || !('academicYear' in resource.data) || resource.data.academicYear == '' || request.resource.data.academicYear == resource.data.academicYear) &&
+         (!('yearOfStudy' in request.resource.data) || !('yearOfStudy' in resource.data) || resource.data.yearOfStudy == '' || request.resource.data.yearOfStudy == resource.data.yearOfStudy) &&
+         (!('semester' in request.resource.data) || !('semester' in resource.data) || resource.data.semester == '' || request.resource.data.semester == resource.data.semester))
+      );
+      allow delete: if false;
 
       // User Results
       match /results/{resultId} {
-        allow read, write: if isOwner(userId) && isValidId(resultId);
+        allow read: if (isOwner(userId) || isAnyActiveAdmin()) && isValidId(resultId);
+        allow write: if ((isOwner(userId) && isStudentAccountActive(userId)) || isAnyActiveAdmin()) && isValidId(resultId);
       }
 
-      // User AI Tutor Chats & Conversation History
+      // User AI Tutor Chats & Conversation History (Strictly private to the student)
       match /chats/{chatId} {
         allow get, list: if isOwner(userId);
-        allow write: if isOwner(userId) && isValidId(chatId);
+        allow write: if isOwner(userId) && isStudentAccountActive(userId) && isValidId(chatId);
 
         match /messages/{messageId} {
           allow get, list: if isOwner(userId);
-          allow write: if isOwner(userId) && isValidId(messageId);
+          allow write: if isOwner(userId) && isStudentAccountActive(userId) && isValidId(messageId);
         }
+      }
+
+      // AI Tutor Learning Sessions, Learning Progress & Personalized Tutor Memory Foundation
+      match /ai_learning_sessions/{sessionId} {
+        allow get, list: if isOwner(userId);
+        allow create, update: if isOwner(userId) &&
+          isStudentAccountActive(userId) &&
+          isValidId(sessionId) &&
+          request.resource.data.userId == request.auth.uid &&
+          !('role' in request.resource.data) &&
+          !('permissions' in request.resource.data);
+        allow delete: if isOwner(userId) && isValidId(sessionId);
+      }
+
+      match /ai_learning_progress/{progressId} {
+        allow get, list: if isOwner(userId);
+        allow create, update: if isOwner(userId) &&
+          isStudentAccountActive(userId) &&
+          isValidId(progressId) &&
+          request.resource.data.userId == request.auth.uid &&
+          !('role' in request.resource.data) &&
+          !('permissions' in request.resource.data) &&
+          !('trustedAcademicStatus' in request.resource.data);
+        allow delete: if isOwner(userId) && isValidId(progressId);
+      }
+
+      match /ai_tutor_memory/{memoryId} {
+        allow get, list: if isOwner(userId);
+        allow create, update: if isOwner(userId) &&
+          isStudentAccountActive(userId) &&
+          isValidId(memoryId) &&
+          request.resource.data.userId == request.auth.uid &&
+          !('role' in request.resource.data) &&
+          !('permissions' in request.resource.data) &&
+          !('trustedAcademicStatus' in request.resource.data) &&
+          (!('masteryScore' in request.resource.data) || (request.resource.data.masteryScore is number && request.resource.data.masteryScore >= 0 && request.resource.data.masteryScore <= 100)) &&
+          (!('confidence' in request.resource.data) || (request.resource.data.confidence is number && request.resource.data.confidence >= 0 && request.resource.data.confidence <= 1)) &&
+          (!('masteryLevel' in request.resource.data) || request.resource.data.masteryLevel in ['not_assessed', 'needs_review', 'developing', 'proficient', 'strong', 'novice', 'mastered']);
+        allow delete: if isOwner(userId) && isValidId(memoryId);
       }
     }
 
-    // Student Profiles (Isolated and private to the individual student)
+    // Student Profiles (Isolated and private to the individual student, or manageable by active Admin)
     match /students/{studentId} {
-      allow read, write: if isOwner(studentId) && isValidId(studentId);
+      allow read: if (isOwner(studentId) || isAnyActiveAdmin()) && isValidId(studentId);
+      allow list: if isAnyActiveAdmin();
+      allow create: if (isOwner(studentId) || isAnyActiveAdmin()) && isValidId(studentId) && (
+        isAnyActiveAdmin() ||
+        ((!('role' in request.resource.data) || request.resource.data.role == 'student') &&
+         (!('status' in request.resource.data) || request.resource.data.status == 'active') &&
+         (!('accountStatus' in request.resource.data) || request.resource.data.accountStatus == 'active') &&
+         !('permissions' in request.resource.data))
+      );
+      allow update: if isValidId(studentId) && (
+        (isAnyActiveAdmin() &&
+         !(studentId == 'Faz9X1kqMZWkujTMKYaRfvM4jvw1' && ('status' in request.resource.data) && request.resource.data.status != 'active') &&
+         !(studentId == 'Faz9X1kqMZWkujTMKYaRfvM4jvw1' && ('accountStatus' in request.resource.data) && request.resource.data.accountStatus != 'active')) ||
+        (isOwner(studentId) &&
+         isStudentAccountActive(studentId) &&
+         // Student cannot change role or promote self to admin, super_admin, lecturer, moderator
+         (!('role' in request.resource.data) || request.resource.data.role == resource.data.get('role', 'student')) &&
+         // Student cannot toggle operational account status
+         (!('status' in request.resource.data) || request.resource.data.status == resource.data.get('status', 'active')) &&
+         (!('accountStatus' in request.resource.data) || request.resource.data.accountStatus == resource.data.get('accountStatus', 'active')) &&
+         // Student cannot assign administrative permissions
+         (!('permissions' in request.resource.data) || ('permissions' in resource.data && request.resource.data.permissions == resource.data.permissions)) &&
+         // Student cannot alter official institutional registration number once set
+         (!('registrationNumber' in request.resource.data) || !('registrationNumber' in resource.data) || resource.data.registrationNumber == '' || request.resource.data.registrationNumber == resource.data.registrationNumber) &&
+         // Student cannot alter protected academic placement once onboarding is completed
+         (!('universityId' in request.resource.data) || !('universityId' in resource.data) || resource.data.universityId == '' || request.resource.data.universityId == resource.data.universityId) &&
+         (!('academicUnitId' in request.resource.data) || !('academicUnitId' in resource.data) || resource.data.academicUnitId == '' || request.resource.data.academicUnitId == resource.data.academicUnitId) &&
+         (!('departmentId' in request.resource.data) || !('departmentId' in resource.data) || resource.data.departmentId == '' || request.resource.data.departmentId == resource.data.departmentId) &&
+         (!('programmeId' in request.resource.data) || !('programmeId' in resource.data) || resource.data.programmeId == '' || request.resource.data.programmeId == resource.data.programmeId) &&
+         (!('academicYear' in request.resource.data) || !('academicYear' in resource.data) || resource.data.academicYear == '' || request.resource.data.academicYear == resource.data.academicYear) &&
+         (!('yearOfStudy' in request.resource.data) || !('yearOfStudy' in resource.data) || resource.data.yearOfStudy == '' || request.resource.data.yearOfStudy == resource.data.yearOfStudy) &&
+         (!('semester' in request.resource.data) || !('semester' in resource.data) || resource.data.semester == '' || request.resource.data.semester == resource.data.semester))
+      );
+      allow delete: if false;
 
       // Student Results (Isolated subcollection for academic grades & GPA)
       match /results/{resultId} {
-        allow read, write: if isOwner(studentId) && isValidId(resultId);
+        allow read: if (isOwner(studentId) || isAnyActiveAdmin()) && isValidId(resultId);
+        allow write: if ((isOwner(studentId) && isStudentAccountActive(studentId)) || isAnyActiveAdmin()) && isValidId(resultId);
       }
 
-      // Student AI Tutor Chats & Conversation History (Private to student)
+      // Student AI Tutor Chats & Conversation History (Strictly private to student)
       match /chats/{chatId} {
         allow get, list: if isOwner(studentId);
-        allow write: if isOwner(studentId) && isValidId(chatId);
+        allow write: if isOwner(studentId) && isStudentAccountActive(studentId) && isValidId(chatId);
 
         match /messages/{messageId} {
           allow get, list: if isOwner(studentId);
-          allow write: if isOwner(studentId) && isValidId(messageId);
+          allow write: if isOwner(studentId) && isStudentAccountActive(studentId) && isValidId(messageId);
         }
+      }
+
+      // AI Tutor Learning Sessions, Learning Progress & Personalized Tutor Memory Foundation
+      match /ai_learning_sessions/{sessionId} {
+        allow get, list: if isOwner(studentId);
+        allow create, update: if isOwner(studentId) &&
+          isStudentAccountActive(studentId) &&
+          isValidId(sessionId) &&
+          request.resource.data.userId == request.auth.uid &&
+          !('role' in request.resource.data) &&
+          !('permissions' in request.resource.data);
+        allow delete: if isOwner(studentId) && isValidId(sessionId);
+      }
+
+      match /ai_learning_progress/{progressId} {
+        allow get, list: if isOwner(studentId);
+        allow create, update: if isOwner(studentId) &&
+          isStudentAccountActive(studentId) &&
+          isValidId(progressId) &&
+          request.resource.data.userId == request.auth.uid &&
+          !('role' in request.resource.data) &&
+          !('permissions' in request.resource.data) &&
+          !('trustedAcademicStatus' in request.resource.data);
+        allow delete: if isOwner(studentId) && isValidId(progressId);
+      }
+
+      match /ai_tutor_memory/{memoryId} {
+        allow get, list: if isOwner(studentId);
+        allow create, update: if isOwner(studentId) &&
+          isStudentAccountActive(studentId) &&
+          isValidId(memoryId) &&
+          request.resource.data.userId == request.auth.uid &&
+          !('role' in request.resource.data) &&
+          !('permissions' in request.resource.data) &&
+          !('trustedAcademicStatus' in request.resource.data) &&
+          (!('masteryScore' in request.resource.data) || (request.resource.data.masteryScore is number && request.resource.data.masteryScore >= 0 && request.resource.data.masteryScore <= 100)) &&
+          (!('confidence' in request.resource.data) || (request.resource.data.confidence is number && request.resource.data.confidence >= 0 && request.resource.data.confidence <= 1)) &&
+          (!('masteryLevel' in request.resource.data) || request.resource.data.masteryLevel in ['not_assessed', 'needs_review', 'developing', 'proficient', 'strong', 'novice', 'mastered']);
+        allow delete: if isOwner(studentId) && isValidId(memoryId);
+      }
+
+      // Stage 11A: Student Study Tasks, Exam Countdowns, Weekly Goals & Recent Activity
+      match /study_tasks/{taskId} {
+        allow get, list: if isOwner(studentId);
+        allow create, update: if isOwner(studentId) &&
+          isStudentAccountActive(studentId) &&
+          isValidId(taskId) &&
+          request.resource.data.userId == request.auth.uid &&
+          request.resource.data.title is string &&
+          request.resource.data.title.size() >= 1 &&
+          request.resource.data.title.size() <= 200;
+        allow delete: if isOwner(studentId) && isValidId(taskId);
+      }
+
+      match /study_exams/{examId} {
+        allow get, list: if isOwner(studentId);
+        allow create, update: if isOwner(studentId) &&
+          isStudentAccountActive(studentId) &&
+          isValidId(examId) &&
+          request.resource.data.userId == request.auth.uid &&
+          request.resource.data.examName is string &&
+          request.resource.data.examName.size() >= 1 &&
+          request.resource.data.examName.size() <= 200;
+        allow delete: if isOwner(studentId) && isValidId(examId);
+      }
+
+      match /weekly_goals/{goalId} {
+        allow get, list: if isOwner(studentId);
+        allow create, update: if isOwner(studentId) &&
+          isStudentAccountActive(studentId) &&
+          isValidId(goalId) &&
+          request.resource.data.userId == request.auth.uid;
+        allow delete: if isOwner(studentId) && isValidId(goalId);
+      }
+
+      match /recent_activity/{activityId} {
+        allow get, list: if isOwner(studentId);
+        allow create, update: if isOwner(studentId) &&
+          isStudentAccountActive(studentId) &&
+          isValidId(activityId) &&
+          request.resource.data.userId == request.auth.uid &&
+          request.resource.data.title is string &&
+          request.resource.data.title.size() >= 1 &&
+          request.resource.data.title.size() <= 200;
+        allow delete: if isOwner(studentId) && isValidId(activityId);
+      }
+
+      // Stage 11B: Student Career Preferences & Personalized Career Roadmaps (Strictly Owner-Scoped)
+      match /career_preferences/{prefId} {
+        allow get, list: if isOwner(studentId);
+        allow create, update: if isOwner(studentId) &&
+          isStudentAccountActive(studentId) &&
+          isValidId(prefId) &&
+          request.resource.data.userId == request.auth.uid &&
+          !('role' in request.resource.data) &&
+          !('permissions' in request.resource.data);
+        allow delete: if isOwner(studentId) && isValidId(prefId);
+      }
+
+      match /career_roadmaps/{roadmapId} {
+        allow get, list: if isOwner(studentId);
+        allow create, update: if isOwner(studentId) &&
+          isStudentAccountActive(studentId) &&
+          isValidId(roadmapId) &&
+          request.resource.data.userId == request.auth.uid &&
+          request.resource.data.careerTitle is string &&
+          request.resource.data.careerTitle.size() >= 1 &&
+          request.resource.data.careerTitle.size() <= 200;
+        allow delete: if isOwner(studentId) && isValidId(roadmapId);
       }
     }
 
-    // Top-level student results collection (Enforcing authenticated owner validation)
+    // Stage 11B: AI Career Advisor Safety & Quality Reports (Play Store Compliance)
+    match /ai_career_reports/{reportId} {
+      allow read: if isAnyActiveAdmin();
+      allow create: if isSignedIn() &&
+        isValidId(reportId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.category in [
+          'Incorrect information',
+          'Misleading career advice',
+          'Offensive content',
+          'Other',
+          'inaccurate_career_info',
+          'wrong_course_mapping',
+          'outdated_opportunity',
+          'unhelpful_response',
+          'inappropriate_content'
+        ];
+      allow update, delete: if isAnyActiveAdmin();
+    }
+
+    // Top-level student results collection (Enforcing authenticated active owner validation)
     match /student_results/{resultId} {
-      allow read, write: if isSignedIn() && (
+      allow read: if isSignedIn() && (
+        (resource != null && resource.data.uid == request.auth.uid) ||
+        isAnyActiveAdmin()
+      ) && isValidId(resultId);
+      allow write: if isSignedIn() && isStudentAccountActive(request.auth.uid) && (
         (resource == null && request.resource.data.uid == request.auth.uid) ||
         (resource != null && resource.data.uid == request.auth.uid && request.resource.data.uid == request.auth.uid)
       ) && isValidId(resultId);
     }
 
+    // =========================================================================
+    // STAGE 11C & 11C-B: REAL COMMUNITY, LECTURER CHANNELS & IN-APP CHAT RULES
+    // =========================================================================
+
+    // Academic Community Posts
+    match /community_posts/{postId} {
+      allow get: if isSignedIn() && (resource == null || resource.data.status in ['active', 'removed'] || resource.data.authorUid == request.auth.uid || isAnyActiveAdmin());
+      allow list: if isSignedIn() && (resource.data.status in ['active', 'removed'] || resource.data.authorUid == request.auth.uid || isAnyActiveAdmin());
+
+      allow create: if isSignedIn() &&
+        isStudentAccountActive(request.auth.uid) &&
+        isValidId(postId) &&
+        request.resource.data.authorUid == request.auth.uid &&
+        request.resource.data.authorName is string &&
+        request.resource.data.authorName.size() >= 1 &&
+        request.resource.data.authorName.size() <= 100 &&
+        request.resource.data.communityId is string &&
+        request.resource.data.communityId.size() >= 3 &&
+        request.resource.data.communityId.size() <= 128 &&
+        request.resource.data.communityType in ['university', 'academic_unit', 'department', 'programme', 'course'] &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() >= 3 &&
+        request.resource.data.title.size() <= 200 &&
+        request.resource.data.content is string &&
+        request.resource.data.content.size() >= 3 &&
+        request.resource.data.content.size() <= 8000 &&
+        request.resource.data.status == 'active';
+
+      allow update: if isSignedIn() && isValidId(postId) && (
+        // 1. Author or Admin updating post content/status
+        ((resource.data.authorUid == request.auth.uid || isAnyActiveAdmin()) &&
+         request.resource.data.authorUid == resource.data.authorUid &&
+         request.resource.data.communityId == resource.data.communityId &&
+         request.resource.data.title is string &&
+         request.resource.data.title.size() >= 3 &&
+         request.resource.data.title.size() <= 200 &&
+         request.resource.data.content is string &&
+         request.resource.data.content.size() >= 3 &&
+         request.resource.data.content.size() <= 8000) ||
+        // 2. Authenticated active user or moderator updating likeCount, commentCount, reactionCounts, poll votes, event RSVP counts, bestAnswer, pin/lock, or moderation removal fields
+        (isStudentAccountActive(request.auth.uid) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+           'title',
+           'content',
+           'imageUrl',
+           'imageUrls',
+           'attachmentUrl',
+           'likeCount',
+           'commentCount',
+           'reactionCounts',
+           'poll',
+           'event',
+           'bestAnswerCommentId',
+           'bestAnswerMarkedByUid',
+           'bestAnswerMarkedByName',
+           'bestAnswerMarkedByRole',
+           'bestAnswerMarkedAt',
+           'pinned',
+           'pinnedByUid',
+           'pinnedByName',
+           'pinnedAt',
+           'commentsLocked',
+           'commentsLockedByUid',
+           'commentsLockedByName',
+           'commentsLockedAt',
+           'status',
+           'moderatedByUid',
+           'moderatedByName',
+           'moderationReason',
+           'moderatedAt',
+           'updatedAt'
+         ]))
+      );
+
+      allow delete: if isSignedIn() && isValidId(postId) && (
+        resource.data.authorUid == request.auth.uid || isAnyActiveAdmin()
+      );
+    }
+
+    // Official Lecturer Course Announcements Channel (Separate from Open Course Discussion)
+    match /lecturer_course_announcements/{announcementId} {
+      allow get, list: if isSignedIn();
+
+      // Strictly restricted to active verified Lecturers publishing under their own UID/lecturerId or active Admins
+      allow create: if isSignedIn() &&
+        isValidId(announcementId) &&
+        request.resource.data.lecturerUid == request.auth.uid &&
+        request.resource.data.courseCode is string &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() >= 3 &&
+        request.resource.data.title.size() <= 200 &&
+        request.resource.data.content is string &&
+        request.resource.data.content.size() >= 3 &&
+        request.resource.data.content.size() <= 8000 && (
+          isAnyActiveAdmin() ||
+          isActiveVerifiedLecturerOwner(request.resource.data.get('lecturerId', ''))
+        );
+
+      allow update: if isSignedIn() && isValidId(announcementId) && (
+        // 1. Publishing Lecturer or Admin editing/pinning/deleting notice
+        (isAnyActiveAdmin() ||
+         (resource.data.lecturerUid == request.auth.uid &&
+          isActiveVerifiedLecturerOwner(resource.data.get('lecturerId', '')))) ||
+        // 2. Enrolled students updating reactionCounts or ackCount only
+        (isStudentAccountActive(request.auth.uid) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactionCounts', 'ackCount', 'updatedAt']))
+      );
+
+      allow delete: if isSignedIn() && isValidId(announcementId) && (
+        isAnyActiveAdmin() ||
+        (resource.data.lecturerUid == request.auth.uid &&
+         isActiveVerifiedLecturerOwner(resource.data.get('lecturerId', '')))
+      );
+    }
+
+    // Lightweight Reactions (Posts, Lecturer Announcements, Official Notices)
+    match /community_reactions/{reactionId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isSignedIn() &&
+        isStudentAccountActive(request.auth.uid) &&
+        isValidId(reactionId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.targetId is string &&
+        request.resource.data.emoji is string &&
+        request.resource.data.emoji.size() <= 16;
+      allow delete: if isSignedIn() && isValidId(reactionId) && (
+        resource.data.userId == request.auth.uid || isAnyActiveAdmin()
+      );
+    }
+
+    // Student Acknowledgements / Read Receipts on Lecturer & Official Announcements
+    match /community_acknowledgements/{ackId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isSignedIn() &&
+        isStudentAccountActive(request.auth.uid) &&
+        isValidId(ackId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.targetId is string &&
+        request.resource.data.targetType in ['lecturer_announcement', 'official_announcement'];
+      allow delete: if isAnyActiveAdmin() && isValidId(ackId);
+    }
+
+    // Per-User Community Read States
+    match /community_read_states/{stateId} {
+      allow get, list: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || isAnyActiveAdmin());
+      allow create, update: if isSignedIn() &&
+        isValidId(stateId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.communityId is string;
+      allow delete: if isSignedIn() && isValidId(stateId) && resource.data.userId == request.auth.uid;
+    }
+
+    // Per-User Blocked Peers List
+    match /user_blocked_peers/{userId} {
+      allow get: if isOwner(userId) || isAnyActiveAdmin();
+      allow list: if isAnyActiveAdmin();
+      allow create, update: if isOwner(userId) &&
+        isValidId(userId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.blockedUids is list &&
+        request.resource.data.blockedUids.size() <= 100;
+      allow delete: if isOwner(userId);
+    }
+
+    // Per-User Muted Conversations List
+    match /user_muted_conversations/{userId} {
+      allow get: if isOwner(userId) || isAnyActiveAdmin();
+      allow list: if isAnyActiveAdmin();
+      allow create, update: if isOwner(userId) &&
+        isValidId(userId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.mutedConversationIds is list &&
+        request.resource.data.mutedConversationIds.size() <= 200;
+      allow delete: if isOwner(userId);
+    }
+
+    // Per-User Muted Users List (Stage 11C-E)
+    match /user_muted_users/{userId} {
+      allow get: if isOwner(userId) || isAnyActiveAdmin();
+      allow list: if isAnyActiveAdmin();
+      allow create, update: if isOwner(userId) &&
+        isValidId(userId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.mutedUids is list &&
+        request.resource.data.mutedUids.size() <= 200;
+      allow delete: if isOwner(userId);
+    }
+
+    // Per-User Muted Communities List (Stage 11C-E)
+    match /user_muted_communities/{userId} {
+      allow get: if isOwner(userId) || isAnyActiveAdmin();
+      allow list: if isAnyActiveAdmin();
+      allow create, update: if isOwner(userId) &&
+        isValidId(userId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.mutedCommunityIds is list &&
+        request.resource.data.mutedCommunityIds.size() <= 200;
+      allow delete: if isOwner(userId);
+    }
+
+    // Per-User Community Privacy & Social Controls (Stage 11C-E)
+    match /user_community_privacy_settings/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isAnyActiveAdmin();
+      allow create, update: if isOwner(userId) &&
+        isValidId(userId) &&
+        request.resource.data.userId == request.auth.uid;
+      allow delete: if isOwner(userId) || isAnyActiveAdmin();
+    }
+
+    // Scoped Community User Restrictions (Stage 11C-E Moderation)
+    match /community_user_restrictions/{restrictionId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isSignedIn() && isValidId(restrictionId);
+    }
+
+    // Scoped Community & Group Bans (Stage 11C-E Moderation)
+    match /community_bans/{banId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isSignedIn() && isValidId(banId);
+    }
+
+    // Real-time User Presence (Online / Recently Active / Privacy Toggle)
+    match /user_presence/{userId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isOwner(userId) &&
+        isValidId(userId) &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.status in ['online', 'recently_active', 'offline'] &&
+        request.resource.data.lastActiveAt is string &&
+        request.resource.data.lastActiveAt.size() <= 64;
+      allow delete: if isOwner(userId);
+    }
+
+    // Lightweight Real-time Typing Indicators per Conversation
+    match /conversation_typing_states/{conversationId} {
+      allow get: if isSignedIn() && (
+        resource == null ||
+        request.auth.uid in get(/databases/$(database)/documents/chat_conversations/$(conversationId)).data.participantIds ||
+        get(/databases/$(database)/documents/chat_conversations/$(conversationId)).data.type == 'community_group' ||
+        isAnyActiveAdmin()
+      );
+      allow create, update: if isSignedIn() &&
+        isValidId(conversationId) &&
+        request.resource.data.conversationId == conversationId && (
+          request.auth.uid in get(/databases/$(database)/documents/chat_conversations/$(conversationId)).data.participantIds ||
+          get(/databases/$(database)/documents/chat_conversations/$(conversationId)).data.type == 'community_group'
+        );
+      allow delete: if isSignedIn() && isValidId(conversationId);
+    }
+
+    // Real-time User Notifications
+    match /user_notifications/{notifId} {
+      allow get, list: if isSignedIn() && (resource == null || resource.data.recipientUid == request.auth.uid || isAnyActiveAdmin());
+      allow create: if isSignedIn() &&
+        isValidId(notifId) &&
+        request.resource.data.senderUid == request.auth.uid &&
+        request.resource.data.recipientUid is string &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() <= 200;
+      allow update, delete: if isSignedIn() && isValidId(notifId) && (
+        resource.data.recipientUid == request.auth.uid || isAnyActiveAdmin()
+      );
+    }
+
+    // Academic Community Comments & Replies
+    match /community_comments/{commentId} {
+      allow get: if isSignedIn() && (resource == null || resource.data.status in ['active', 'removed', 'hidden'] || resource.data.authorUid == request.auth.uid || isAnyActiveAdmin());
+      allow list: if isSignedIn() && (resource.data.status in ['active', 'removed', 'hidden'] || resource.data.authorUid == request.auth.uid || isAnyActiveAdmin());
+
+      allow create: if isSignedIn() &&
+        isStudentAccountActive(request.auth.uid) &&
+        isValidId(commentId) &&
+        request.resource.data.authorUid == request.auth.uid &&
+        request.resource.data.authorName is string &&
+        request.resource.data.authorName.size() >= 1 &&
+        request.resource.data.authorName.size() <= 100 &&
+        request.resource.data.postId is string &&
+        request.resource.data.postId.size() >= 3 &&
+        request.resource.data.postId.size() <= 128 &&
+        request.resource.data.content is string &&
+        request.resource.data.content.size() >= 1 &&
+        request.resource.data.content.size() <= 3000 &&
+        request.resource.data.status == 'active';
+
+      allow update: if isSignedIn() && isValidId(commentId) && (
+        ((resource.data.authorUid == request.auth.uid || isAnyActiveAdmin()) &&
+         request.resource.data.authorUid == resource.data.authorUid &&
+         request.resource.data.postId == resource.data.postId) ||
+        (isStudentAccountActive(request.auth.uid) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+           'content',
+           'likeCount',
+           'reactionCounts',
+           'status',
+           'moderatedByUid',
+           'moderatedByName',
+           'moderationReason',
+           'moderatedAt',
+           'updatedAt'
+         ]))
+      );
+
+      allow delete: if isSignedIn() && isValidId(commentId) && (
+        resource.data.authorUid == request.auth.uid || isAnyActiveAdmin()
+      );
+    }
+
+    // Community Poll Votes (Stage 11C-D)
+    match /community_poll_votes/{voteId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isSignedIn() &&
+        isStudentAccountActive(request.auth.uid) &&
+        isValidId(voteId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.postId is string &&
+        request.resource.data.selectedOptionIds is list &&
+        request.resource.data.selectedOptionIds.size() >= 1 &&
+        request.resource.data.selectedOptionIds.size() <= 10;
+      allow delete: if isSignedIn() && isValidId(voteId) && (
+        resource.data.userId == request.auth.uid || isAnyActiveAdmin()
+      );
+    }
+
+    // Community Event / Study Session RSVPs (Stage 11C-D)
+    match /community_event_rsvps/{rsvpId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isSignedIn() &&
+        isStudentAccountActive(request.auth.uid) &&
+        isValidId(rsvpId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.postId is string &&
+        request.resource.data.status in ['going', 'interested', 'not_going'];
+      allow delete: if isSignedIn() && isValidId(rsvpId) && (
+        resource.data.userId == request.auth.uid || isAnyActiveAdmin()
+      );
+    }
+
+    // Academic Study Groups (Stage 11C-D)
+    match /community_study_groups/{groupId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() &&
+        isStudentAccountActive(request.auth.uid) &&
+        isValidId(groupId) &&
+        request.resource.data.ownerUid == request.auth.uid &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() >= 2 &&
+        request.resource.data.name.size() <= 120 &&
+        request.resource.data.visibility in ['open', 'request', 'request_to_join', 'private'] &&
+        request.resource.data.memberUids is list &&
+        request.auth.uid in request.resource.data.memberUids;
+      allow update: if isSignedIn() &&
+        isStudentAccountActive(request.auth.uid) &&
+        isValidId(groupId) && (
+          resource.data.ownerUid == request.auth.uid ||
+          request.auth.uid in resource.data.get('adminUids', []) ||
+          isAnyActiveAdmin() ||
+          // Open study group join / leave or request to join or moderator action
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'memberUids',
+            'members',
+            'memberCount',
+            'pendingRequestUids',
+            'pendingRequests',
+            'conversationId',
+            'status',
+            'moderatedByUid',
+            'moderatedByName',
+            'moderationReason',
+            'moderatedAt',
+            'updatedAt'
+          ])
+        );
+      allow delete: if isSignedIn() && isValidId(groupId) && (
+        resource.data.ownerUid == request.auth.uid || isAnyActiveAdmin()
+      );
+    }
+
+    // Unified Saved / Bookmarked Items (Posts, Messages, Files, Announcements, Events)
+    match /user_saved_items/{savedId} {
+      allow get: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || isAnyActiveAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAnyActiveAdmin());
+      allow create, update: if isSignedIn() &&
+        isStudentAccountActive(request.auth.uid) &&
+        isValidId(savedId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.itemType in ['post', 'message', 'file', 'announcement', 'event'] &&
+        request.resource.data.targetId is string;
+      allow delete: if isSignedIn() && isValidId(savedId) && (
+        resource.data.userId == request.auth.uid || isAnyActiveAdmin()
+      );
+    }
+
+    // Community Likes (Post & Comment Likes)
+    match /community_likes/{likeId} {
+      allow get: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || isAnyActiveAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAnyActiveAdmin());
+      allow create: if isSignedIn() &&
+        isStudentAccountActive(request.auth.uid) &&
+        isValidId(likeId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.targetId is string &&
+        request.resource.data.targetType in ['post', 'comment'];
+      allow delete: if isSignedIn() && isValidId(likeId) && (
+        resource.data.userId == request.auth.uid || isAnyActiveAdmin()
+      );
+    }
+
+    // Community Bookmarks / Saved Posts
+    match /community_bookmarks/{bookmarkId} {
+      allow get: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || isAnyActiveAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAnyActiveAdmin());
+      allow create, update: if isSignedIn() &&
+        isStudentAccountActive(request.auth.uid) &&
+        isValidId(bookmarkId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.postId is string;
+      allow delete: if isSignedIn() && isValidId(bookmarkId) && (
+        resource.data.userId == request.auth.uid || isAnyActiveAdmin()
+      );
+    }
+
+    // Community Moderation Reports (Stage 11C-E)
+    match /community_reports/{reportId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() &&
+        isValidId(reportId) &&
+        request.resource.data.reporterUid == request.auth.uid &&
+        request.resource.data.targetType in [
+          'post',
+          'comment',
+          'message',
+          'image',
+          'file',
+          'profile',
+          'study_group',
+          'community',
+          'poll',
+          'event',
+          'lecturer_announcement'
+        ] &&
+        request.resource.data.targetId is string;
+      allow update, delete: if isSignedIn() && isValidId(reportId);
+    }
+
+    // Real In-App Chat Conversations (1-to-1 Direct, Private Group Chats & Community Group Chats)
+    match /chat_conversations/{conversationId} {
+      allow get: if isSignedIn() && (
+        resource == null ||
+        request.auth.uid in resource.data.participantIds ||
+        resource.data.type == 'community_group' ||
+        isAnyActiveAdmin()
+      );
+      allow list: if isSignedIn() && (
+        request.auth.uid in resource.data.participantIds ||
+        resource.data.type == 'community_group' ||
+        isAnyActiveAdmin()
+      );
+
+      allow create: if isSignedIn() &&
+        isStudentAccountActive(request.auth.uid) &&
+        isValidId(conversationId) &&
+        request.resource.data.type in ['direct', 'community_group', 'private_group'] &&
+        request.resource.data.participantIds is list &&
+        request.resource.data.participantIds.size() >= 1 &&
+        request.resource.data.participantIds.size() <= 200 &&
+        request.auth.uid in request.resource.data.participantIds;
+
+      allow update: if isSignedIn() &&
+        isStudentAccountActive(request.auth.uid) &&
+        isValidId(conversationId) && (
+          request.auth.uid in resource.data.participantIds ||
+          (resource.data.type == 'community_group' && request.auth.uid in request.resource.data.participantIds) ||
+          isAnyActiveAdmin()
+        );
+
+      allow delete: if isAnyActiveAdmin() && isValidId(conversationId);
+
+      // Conversation Messages Subcollection
+      match /messages/{messageId} {
+        allow get, list: if isSignedIn() && (
+          request.auth.uid in get(/databases/$(database)/documents/chat_conversations/$(conversationId)).data.participantIds ||
+          get(/databases/$(database)/documents/chat_conversations/$(conversationId)).data.type == 'community_group' ||
+          isAnyActiveAdmin()
+        );
+
+        allow create: if isSignedIn() &&
+          isStudentAccountActive(request.auth.uid) &&
+          isValidId(messageId) &&
+          request.resource.data.senderUid == request.auth.uid &&
+          request.resource.data.conversationId == conversationId &&
+          request.resource.data.text is string &&
+          request.resource.data.text.size() <= 4000 &&
+          (request.auth.uid in get(/databases/$(database)/documents/chat_conversations/$(conversationId)).data.participantIds ||
+           get(/databases/$(database)/documents/chat_conversations/$(conversationId)).data.type == 'community_group');
+
+        allow update: if isSignedIn() &&
+          isValidId(messageId) && (
+            // 1. Original sender editing their own message or soft-deleting their own message
+            (resource.data.senderUid == request.auth.uid &&
+             request.resource.data.senderUid == resource.data.senderUid &&
+             request.resource.data.conversationId == resource.data.conversationId &&
+             request.resource.data.text is string &&
+             request.resource.data.text.size() <= 4000) ||
+            // 2. Authorized participant updating reactions or pin status only (cannot alter another user's message text!)
+            ((request.auth.uid in get(/databases/$(database)/documents/chat_conversations/$(conversationId)).data.participantIds ||
+              get(/databases/$(database)/documents/chat_conversations/$(conversationId)).data.type == 'community_group') &&
+             request.resource.data.senderUid == resource.data.senderUid &&
+             request.resource.data.text == resource.data.text &&
+             request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+               'reactions',
+               'reactionCounts',
+               'pinned',
+               'pinnedByUid',
+               'pinnedByName',
+               'pinnedAt'
+             ])) ||
+            // 3. Group Admin / Owner, Course Lecturer, or Platform Admin performing moderation soft-removal
+            ((isAnyActiveAdmin() ||
+              get(/databases/$(database)/documents/chat_conversations/$(conversationId)).data.ownerUid == request.auth.uid ||
+              request.auth.uid in get(/databases/$(database)/documents/chat_conversations/$(conversationId)).data.get('adminUids', []) ||
+              get(/databases/$(database)/documents/chat_conversations/$(conversationId)).data.type == 'community_group') &&
+             request.resource.data.senderUid == resource.data.senderUid &&
+             request.resource.data.status in ['deleted', 'removed'])
+          );
+
+        allow delete: if isSignedIn() &&
+          isValidId(messageId) && (
+            resource.data.senderUid == request.auth.uid ||
+            isAnyActiveAdmin()
+          );
+      }
+    }
+
+    // Stage 11C-F: Per-User, Per-Community AI Assistant Conversations
+    match /community_ai_conversations/{conversationId} {
+      allow get: if isSignedIn() && (
+        resource == null ||
+        resource.data.userId == request.auth.uid ||
+        isAnyActiveAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isAnyActiveAdmin()
+      );
+      allow create: if isSignedIn() &&
+        isStudentAccountActive(request.auth.uid) &&
+        isValidId(conversationId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.communityId is string;
+      allow update: if isSignedIn() &&
+        isStudentAccountActive(request.auth.uid) &&
+        isValidId(conversationId) &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() &&
+        isValidId(conversationId) && (
+          resource.data.userId == request.auth.uid ||
+          isAnyActiveAdmin()
+        );
+    }
+
+    // Stage 11C-F: Community AI Response Feedback & Reports
+    match /community_ai_feedback/{feedbackId} {
+      allow get, list: if isSignedIn() && (
+        resource == null ||
+        resource.data.userId == request.auth.uid ||
+        isAnyActiveAdmin()
+      );
+      allow create: if isSignedIn() &&
+        isValidId(feedbackId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.rating in ['helpful', 'not_helpful', 'report'];
+      allow update, delete: if isSignedIn() &&
+        isValidId(feedbackId) && (
+          resource.data.userId == request.auth.uid ||
+          isAnyActiveAdmin()
+        );
+    }
+
     // Connection health check
     match /test/{testId} {
       allow read: if true;
+      allow write: if false;
     }
   }
 }

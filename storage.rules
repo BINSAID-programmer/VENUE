@@ -1,0 +1,137 @@
+rules_version = '2';
+
+// VENUE — Stage 9B: Firebase Storage Security Rules
+// Enforces role-based upload permissions, file size limits (max 50MB for materials, 5MB for avatars),
+// allowed academic MIME types, and path isolation.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedPlatformOwner() {
+      return isSignedIn() &&
+        request.auth.uid == 'Faz9X1kqMZWkujTMKYaRfvM4jvw1' &&
+        request.auth.token.email == 'binsaid679@gmail.com';
+    }
+
+    // Supported academic material MIME types (PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, JPG, PNG)
+    function isAllowedMaterialContentType() {
+      return request.resource != null &&
+        request.resource.contentType != null && (
+          request.resource.contentType.matches('application/pdf') ||
+          request.resource.contentType.matches('application/msword') ||
+          request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.*') ||
+          request.resource.contentType.matches('application/vnd.ms-powerpoint') ||
+          request.resource.contentType.matches('application/vnd.ms-excel') ||
+          request.resource.contentType.matches('image/jpeg') ||
+          request.resource.contentType.matches('image/png') ||
+          request.resource.contentType.matches('text/plain')
+        );
+    }
+
+    // Max 50MB for academic material files
+    function isUnderMaxMaterialSize() {
+      return request.resource != null && request.resource.size <= 50 * 1024 * 1024;
+    }
+
+    // Max 5MB for profile avatars
+    function isUnderMaxAvatarSize() {
+      return request.resource != null &&
+        request.resource.size <= 5 * 1024 * 1024 &&
+        request.resource.contentType != null &&
+        request.resource.contentType.matches('image/.*');
+    }
+
+    // 1. Academic Materials Storage Path: materials/{universityId}/{courseId}/{materialType}/{fileName}
+    match /materials/{universityId}/{courseId}/{materialType}/{fileName} {
+      // Authenticated students, lecturers, and admins can read/download course materials
+      allow read: if isSignedIn();
+      // Only authenticated users uploading valid academic file types under 50MB can write
+      // (Firestore metadata & lecturer course assignment checks are enforced in lecturerMaterialsService & firestore.rules)
+      allow create, update: if isSignedIn() && isAllowedMaterialContentType() && isUnderMaxMaterialSize();
+      allow delete: if isSignedIn();
+    }
+
+    // Fallback nested paths under materials/
+    match /materials/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && isAllowedMaterialContentType() && isUnderMaxMaterialSize();
+      allow delete: if isSignedIn();
+    }
+
+    // 2. Lecturer Profile Avatars: lecturers/{lecturerId}/{fileName}
+    match /lecturers/{lecturerId}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && isUnderMaxAvatarSize();
+      allow delete: if isSignedIn() || isVerifiedPlatformOwner();
+    }
+
+    // 3. Student Profile Avatars: users/{userId}/{fileName}
+    match /users/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && request.auth.uid == userId && isUnderMaxAvatarSize();
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isVerifiedPlatformOwner());
+    }
+
+    // 4. Community Post & Announcement Images: community_posts/{userId}/{fileName}, community_announcements/{userId}/{fileName}
+    match /community_posts/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && request.auth.uid == userId && isUnderMaxAvatarSize();
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isVerifiedPlatformOwner());
+    }
+
+    match /community_announcements/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && request.auth.uid == userId && isUnderMaxAvatarSize();
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isVerifiedPlatformOwner());
+    }
+
+    match /community_chat/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && request.auth.uid == userId && isUnderMaxAvatarSize();
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isVerifiedPlatformOwner());
+    }
+
+    // 5. Conversation Scoped Media, Voice Notes & Academic Documents:
+    //    community_media/{conversationId}/{senderUid}/{fileName}
+    //    community_voice/{conversationId}/{senderUid}/{fileName}
+    //    community_files/{conversationId}/{senderUid}/{fileName}
+    match /community_media/{conversationId}/{senderUid}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() &&
+        request.auth.uid == senderUid &&
+        request.resource != null &&
+        request.resource.size <= 10 * 1024 * 1024 &&
+        request.resource.contentType != null &&
+        request.resource.contentType.matches('image/.*');
+      allow delete: if isSignedIn() && (request.auth.uid == senderUid || isVerifiedPlatformOwner());
+    }
+
+    match /community_voice/{conversationId}/{senderUid}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() &&
+        request.auth.uid == senderUid &&
+        request.resource != null &&
+        request.resource.size <= 15 * 1024 * 1024 &&
+        request.resource.contentType != null &&
+        (request.resource.contentType.matches('audio/.*') || request.resource.contentType.matches('video/webm.*'));
+      allow delete: if isSignedIn() && (request.auth.uid == senderUid || isVerifiedPlatformOwner());
+    }
+
+    match /community_files/{conversationId}/{senderUid}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() &&
+        request.auth.uid == senderUid &&
+        isAllowedMaterialContentType() &&
+        request.resource.size <= 25 * 1024 * 1024;
+      allow delete: if isSignedIn() && (request.auth.uid == senderUid || isVerifiedPlatformOwner());
+    }
+
+    // Deny all other arbitrary paths by default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

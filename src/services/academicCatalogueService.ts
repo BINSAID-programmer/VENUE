@@ -1112,39 +1112,26 @@ class AcademicCatalogueService {
       }
     }
 
-    // Enrich with full course syllabus and materials from verified UDSM catalogue
+    // Map CourseRecord into Course interface without fake lecturers or fake counts
     return records.map((rec) => {
-      const existing =
-        this.enrichedCoursesMap.get(rec.id) ||
-        this.enrichedCoursesMap.get(rec.code.toLowerCase().replace(/\s+/g, '-'));
-
-      if (existing) {
-        return {
-          ...existing,
-          universityId: rec.universityId,
-          programmeId: rec.programmeId,
-          year: rec.yearOfStudy as 1 | 2 | 3,
-          semester: rec.semester as 1 | 2,
-          type: rec.status,
-        };
-      }
-
-      // Safe fallback strictly matching Course interface
+      const deptObj = this.deptsById.get(rec.offeringDepartmentId || rec.departmentId);
+      const deptName = deptObj?.name || courseCurriculumService.resolveDepartmentName(rec.offeringDepartmentId || rec.departmentId);
       return {
         id: rec.id,
         code: rec.code,
         title: rec.title,
+        name: rec.title,
         credits: rec.credits,
         year: rec.yearOfStudy as 1 | 2 | 3,
         semester: rec.semester as 1 | 2,
         type: rec.status,
-        department: rec.departmentId || 'Academic Department',
+        department: deptName,
         universityId: rec.universityId,
         programmeId: rec.programmeId,
         instructor: {
-          name: 'Faculty Instructor',
-          title: 'Lecturer',
-          office: 'UDSM Campus',
+          name: 'Lecturer Not Assigned',
+          title: 'Academic Staff',
+          office: 'Not specified',
         },
         progress: 0,
         gradeTarget: 'A',

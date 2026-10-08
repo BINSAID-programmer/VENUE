@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { StudyTask, WeeklyGoal, ExamCountdown, Course } from '../../types';
+import { analyticsTracker } from '../../services/analyticsTrackerService';
 
 interface StudyPlannerScreenProps {
   tasks: StudyTask[];
@@ -35,12 +36,18 @@ export const StudyPlannerScreen: React.FC<StudyPlannerScreenProps> = ({
   const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'exams'>('daily');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskCourse, setNewTaskCourse] = useState(courses[0]?.code || 'MT 201');
+  const [newTaskCourse, setNewTaskCourse] = useState(courses[0]?.code || 'General');
   const [newTaskTime, setNewTaskTime] = useState('16:00 - 18:00');
   const [newTaskPriority, setNewTaskPriority] = useState<'high' | 'medium' | 'low'>('high');
 
   const completedCount = tasks.filter((t) => t.completed).length;
   const completionPercent = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
+  const totalScheduledMinutes = tasks.reduce((sum, t) => sum + (Number(t.estimatedMinutes) || 60), 0);
+  const completedMinutes = tasks
+    .filter((t) => t.completed)
+    .reduce((sum, t) => sum + (Number(t.estimatedMinutes) || 60), 0);
+  const completedHours = Number((completedMinutes / 60).toFixed(1));
+  const scheduledHours = Number((totalScheduledMinutes / 60).toFixed(1));
 
   const handleCreateTask = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +65,7 @@ export const StudyPlannerScreen: React.FC<StudyPlannerScreenProps> = ({
     };
 
     onAddTask(newTask);
+    analyticsTracker.trackPlannerTask('create', newTask.id, newTask.courseCode);
     setNewTaskTitle('');
     setIsAddModalOpen(false);
   };
@@ -88,17 +96,19 @@ export const StudyPlannerScreen: React.FC<StudyPlannerScreenProps> = ({
           <span className="text-[10px] text-slate-500">{completedCount}/{tasks.length} Done</span>
         </div>
         <div className="border-x border-slate-800">
-          <p className="text-[10px] text-slate-400 font-medium">Weekly Target</p>
-          <p className="text-lg font-bold text-sky-400 mt-0.5">18.5 hrs</p>
-          <span className="text-[10px] text-slate-500">Goal: 23.0 hrs</span>
+          <p className="text-[10px] text-slate-400 font-medium">Task Hours</p>
+          <p className="text-lg font-bold text-sky-400 mt-0.5">{completedHours} hrs</p>
+          <span className="text-[10px] text-slate-500">
+            {scheduledHours > 0 ? `Planned: ${scheduledHours} hrs` : 'No tasks planned'}
+          </span>
         </div>
         <div>
-          <p className="text-[10px] text-slate-400 font-medium">Study Streak</p>
+          <p className="text-[10px] text-slate-400 font-medium">Active Courses</p>
           <p className="text-lg font-bold text-amber-400 mt-0.5 flex items-center justify-center gap-1">
-            <Flame className="w-4 h-4 fill-amber-400" />
-            14 Days
+            <Target className="w-4 h-4 text-amber-400" />
+            {courses.length}
           </p>
-          <span className="text-[10px] text-slate-500">Unbroken</span>
+          <span className="text-[10px] text-slate-500">Current Semester</span>
         </div>
       </div>
 
@@ -147,7 +157,15 @@ export const StudyPlannerScreen: React.FC<StudyPlannerScreenProps> = ({
             <span>Tap checkbox to mark done</span>
           </div>
 
-          {tasks.map((task) => (
+          {tasks.length === 0 ? (
+            <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 text-center space-y-2">
+              <p className="text-xs font-semibold text-slate-200">No study tasks scheduled yet</p>
+              <p className="text-[11px] text-slate-400">
+                Add your first study task to organize your revision and coursework blocks.
+              </p>
+            </div>
+          ) : (
+            tasks.map((task) => (
             <div
               key={task.id}
               className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-all ${
@@ -157,7 +175,12 @@ export const StudyPlannerScreen: React.FC<StudyPlannerScreenProps> = ({
               }`}
             >
               <div
-                onClick={() => onToggleTask(task.id)}
+                onClick={() => {
+                  onToggleTask(task.id);
+                  if (!task.completed) {
+                    analyticsTracker.trackPlannerTask('complete', task.id, task.courseCode);
+                  }
+                }}
                 className="flex items-center gap-3 min-w-0 cursor-pointer flex-1"
               >
                 <div
@@ -209,7 +232,8 @@ export const StudyPlannerScreen: React.FC<StudyPlannerScreenProps> = ({
                 </button>
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
       )}
 
@@ -220,7 +244,15 @@ export const StudyPlannerScreen: React.FC<StudyPlannerScreenProps> = ({
             Track your target study hours by academic discipline
           </p>
 
-          {weeklyGoals.map((goal) => {
+          {weeklyGoals.length === 0 ? (
+            <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 text-center space-y-2">
+              <p className="text-xs font-semibold text-slate-200">No weekly goals set yet</p>
+              <p className="text-[11px] text-slate-400">
+                Create daily study tasks or start an Exam Preparation plan in AI Tutor to build your weekly targets.
+              </p>
+            </div>
+          ) : (
+            weeklyGoals.map((goal) => {
             const pct = Math.min(Math.round((goal.currentHours / goal.targetHours) * 100), 100);
             return (
               <div key={goal.id} className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
@@ -242,7 +274,8 @@ export const StudyPlannerScreen: React.FC<StudyPlannerScreenProps> = ({
                 </div>
               </div>
             );
-          })}
+            })
+          )}
         </div>
       )}
 
@@ -253,7 +286,15 @@ export const StudyPlannerScreen: React.FC<StudyPlannerScreenProps> = ({
             University Examinations (UE) & Continuous Assessment (CA) schedules
           </p>
 
-          {exams.map((exam) => (
+          {exams.length === 0 ? (
+            <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 text-center space-y-2">
+              <p className="text-xs font-semibold text-slate-200">No upcoming exams added yet</p>
+              <p className="text-[11px] text-slate-400">
+                When your course test or examination dates are announced, they will appear here.
+              </p>
+            </div>
+          ) : (
+            exams.map((exam) => (
             <div
               key={exam.id}
               className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3"
@@ -277,7 +318,8 @@ export const StudyPlannerScreen: React.FC<StudyPlannerScreenProps> = ({
                 <div className="text-[9px] uppercase font-bold text-slate-400 mt-1">Days Left</div>
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
       )}
 
@@ -303,7 +345,7 @@ export const StudyPlannerScreen: React.FC<StudyPlannerScreenProps> = ({
                   type="text"
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
-                  placeholder="e.g. Practice Cauchy Sequences Proofs"
+                  placeholder="e.g. Revise Lecture Notes & Practice Questions"
                   required
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500"
                 />
@@ -316,6 +358,7 @@ export const StudyPlannerScreen: React.FC<StudyPlannerScreenProps> = ({
                   onChange={(e) => setNewTaskCourse(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-blue-500"
                 >
+                  <option value="General">General Study</option>
                   {courses.map((c) => (
                     <option key={c.id} value={c.code}>
                       {c.code} - {c.title}

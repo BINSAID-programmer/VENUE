@@ -24,8 +24,26 @@ import {
   Check,
   ShieldAlert,
   HelpCircle,
+  Megaphone,
+  Target,
+  Users,
+  CheckCheck,
+  Eye,
 } from 'lucide-react';
-import { UniversityAnnouncement, CalendarEvent, StudentService, StudentProfile, CourseRecord, AcademicUnitRecord } from '../../types';
+import {
+  UniversityAnnouncement,
+  CalendarEvent,
+  StudentService,
+  StudentProfile,
+  CourseRecord,
+  AcademicUnitRecord,
+  AnnouncementRecord,
+  AnnouncementType,
+  UserTargetingContext,
+} from '../../types';
+import { announcementsService } from '../../services/announcementsService';
+import { auth } from '../../services/firebase';
+import { UserAnnouncementModal } from '../common/UserAnnouncementModal';
 import { firestoreCatalogueService, ImportStats } from '../../services/firestoreCatalogueService';
 import {
   OFFICIAL_SOURCE_UDSM_PROSPECTUS_2025_2026,
@@ -78,6 +96,63 @@ export const UniversityHubScreen: React.FC<UniversityHubScreenProps> = ({
   const [, setLoadingUnits] = useState<boolean>(false);
   const [programmeCourses, setProgrammeCourses] = useState<CourseRecord[]>([]);
   const [, setLoadingCourses] = useState<boolean>(false);
+
+  // Centralized VENUE Announcements System (Stage 7A + 7B)
+  const [liveAnnouncements, setLiveAnnouncements] = useState<AnnouncementRecord[]>([]);
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState<boolean>(true);
+  const [selectedFeedType, setSelectedFeedType] = useState<AnnouncementType | 'ALL'>('ALL');
+  const [readFilter, setReadFilter] = useState<'all' | 'unread'>('all');
+  const [readAnnouncementIds, setReadAnnouncementIds] = useState<Set<string>>(new Set());
+  const [noticeSearch, setNoticeSearch] = useState<string>('');
+  const [viewingUserAnnouncement, setViewingUserAnnouncement] = useState<AnnouncementRecord | null>(null);
+
+  const loadLivePublishedAnnouncements = async () => {
+    try {
+      setLoadingAnnouncements(true);
+      const userContext: UserTargetingContext = {
+        userId: auth.currentUser?.uid,
+        role: 'student',
+        universityId: profile?.universityId,
+        academicUnitId: profile?.academicUnitId || profile?.collegeId,
+        departmentId: profile?.departmentId,
+        programmeId: profile?.programmeId,
+        yearOfStudy: profile?.yearOfStudy,
+        semester: profile?.semester,
+      };
+
+      const [items, userReads] = await Promise.all([
+        announcementsService.getPublishedAnnouncements(50, undefined, undefined, userContext),
+        auth.currentUser?.uid
+          ? announcementsService.getUserReadIds(auth.currentUser.uid)
+          : Promise.resolve(new Set<string>()),
+      ]);
+
+      if (items && items.length > 0) {
+        setLiveAnnouncements(items);
+      }
+      setReadAnnouncementIds(new Set(userReads));
+    } catch (err) {
+      console.warn('Failed to load published announcements from Firestore:', err);
+    } finally {
+      setLoadingAnnouncements(false);
+    }
+  };
+
+  const handleMarkAsRead = (id: string) => {
+    setReadAnnouncementIds((prev) => new Set([...prev, id]));
+  };
+
+  const handleMarkAllAsRead = async () => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    const allIds = liveAnnouncements.map((a) => a.id);
+    await announcementsService.markAllAsRead(allIds, uid);
+    setReadAnnouncementIds(new Set(allIds));
+  };
+
+  useEffect(() => {
+    loadLivePublishedAnnouncements();
+  }, [profile?.universityId, profile?.academicUnitId, profile?.departmentId, profile?.programmeId, profile?.yearOfStudy, profile?.semester]);
 
   // Dynamically load audited Academic Units from Firestore on mount
   useEffect(() => {
@@ -309,42 +384,270 @@ export const UniversityHubScreen: React.FC<UniversityHubScreenProps> = ({
 
       {/* Section 1: Announcements */}
       {activeSection === 'notices' && (
-        <div className="space-y-3">
-          {announcements.map((item) => (
-            <div
-              key={item.id}
-              className={`p-4 rounded-xl border space-y-2.5 transition-all ${
-                item.urgent
-                  ? 'bg-slate-900/90 border-blue-500/30 shadow-sm'
-                  : 'bg-slate-900/70 border-slate-800'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    {item.urgent && (
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        Urgent Notice
-                      </span>
-                    )}
-                    <span className="text-[10px] text-slate-400 font-medium">{item.date}</span>
-                  </div>
-                  <h3 className="text-sm font-bold text-white leading-snug">{item.title}</h3>
-                  <p className="text-[11px] text-sky-400 mt-0.5">{item.department}</p>
-                </div>
+        <div className="space-y-4">
+          {/* Feed Controls: Search & Unread/Category Chips */}
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
+              <div className="relative flex-1">
+                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={noticeSearch}
+                  onChange={(e) => setNoticeSearch(e.target.value)}
+                  placeholder="Search announcements by keywords or department..."
+                  className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+                />
+                {noticeSearch && (
+                  <button
+                    onClick={() => setNoticeSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs cursor-pointer"
+                  >
+                    ×
+                  </button>
+                )}
               </div>
 
-              <p className="text-xs text-slate-300 leading-relaxed">{item.content}</p>
+              <div className="flex items-center gap-2">
+                {/* Mark all as read button */}
+                {liveAnnouncements.some((a) => !readAnnouncementIds.has(a.id)) && (
+                  <button
+                    onClick={handleMarkAllAsRead}
+                    className="px-3 py-2 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs text-sky-400 font-medium flex items-center justify-center gap-1.5 transition cursor-pointer"
+                    title="Mark all as read"
+                  >
+                    <CheckCheck className="w-3.5 h-3.5" />
+                    <span>Mark all read</span>
+                  </button>
+                )}
 
-              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-                <span>Audience: {item.targetGroup}</span>
-                <span className="text-slate-500">
-                  {profile?.universityShort ? `Verified ${profile.universityShort} Memo` : 'Verified Official Memo'}
-                </span>
+                <button
+                  onClick={loadLivePublishedAnnouncements}
+                  disabled={loadingAnnouncements}
+                  className="px-3 py-2 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs text-slate-300 font-medium flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  title="Refresh notices"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingAnnouncements ? 'animate-spin text-blue-400' : ''}`} />
+                  <span className="hidden sm:inline">Refresh</span>
+                </button>
               </div>
             </div>
-          ))}
+
+            {/* Read Filter & Type Filter Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+              {/* Type Chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                {(['ALL', 'Academic', 'Important', 'Event', 'Maintenance', 'General'] as (AnnouncementType | 'ALL')[]).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setSelectedFeedType(t)}
+                    className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition shrink-0 cursor-pointer ${
+                      selectedFeedType === t
+                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
+                        : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                    }`}
+                  >
+                    {t === 'ALL' ? 'All Categories' : t}
+                  </button>
+                ))}
+              </div>
+
+              {/* All vs Unread Switcher (Stage 7B) */}
+              <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 shrink-0 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setReadFilter('all')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
+                    readFilter === 'all'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  All ({liveAnnouncements.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReadFilter('unread')}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
+                    readFilter === 'unread'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <span>Unread</span>
+                  {liveAnnouncements.filter((a) => !readAnnouncementIds.has(a.id)).length > 0 && (
+                    <span className="w-4 h-4 rounded-full bg-blue-500 text-[10px] text-white font-bold flex items-center justify-center">
+                      {liveAnnouncements.filter((a) => !readAnnouncementIds.has(a.id)).length}
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Announcements Feed Cards */}
+          {(() => {
+            const listToDisplay: AnnouncementRecord[] = liveAnnouncements;
+
+            let filtered = listToDisplay;
+
+            // Filter by Read / Unread (Stage 7B)
+            if (readFilter === 'unread') {
+              filtered = filtered.filter((item) => !readAnnouncementIds.has(item.id));
+            }
+
+            // Filter by Category Type
+            if (selectedFeedType !== 'ALL') {
+              filtered = filtered.filter((item) => item.type === selectedFeedType);
+            }
+
+            // Filter by Search Query
+            if (noticeSearch.trim()) {
+              const q = noticeSearch.trim().toLowerCase();
+              filtered = filtered.filter(
+                (item) =>
+                  item.title.toLowerCase().includes(q) ||
+                  item.content.toLowerCase().includes(q) ||
+                  (item.summary && item.summary.toLowerCase().includes(q)) ||
+                  (item.targetProgrammeName && item.targetProgrammeName.toLowerCase().includes(q)) ||
+                  (item.targetDepartmentName && item.targetDepartmentName.toLowerCase().includes(q))
+              );
+            }
+
+            if (filtered.length === 0) {
+              return (
+                <div className="p-8 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-2">
+                  <Megaphone className="w-6 h-6 text-slate-500 mx-auto" />
+                  <h4 className="text-sm font-semibold text-slate-300">
+                    {readFilter === 'unread'
+                      ? 'You are all caught up!'
+                      : 'No announcements found'}
+                  </h4>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    {readFilter === 'unread'
+                      ? 'There are no unread notices in your feed. Switch to "All" to review previous announcements.'
+                      : noticeSearch || selectedFeedType !== 'ALL'
+                      ? 'No notices match your current search or type filter.'
+                      : 'Check back later for official campus notices and timetable updates.'}
+                  </p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="space-y-3">
+                {filtered.map((item) => {
+                  const isRead = readAnnouncementIds.has(item.id);
+                  const isImportant = item.type === 'Important' || item.priority === 'important';
+                  const isMaintenance = item.type === 'Maintenance';
+                  const isAcademic = item.type === 'Academic';
+                  const isEvent = item.type === 'Event';
+                  const isTargeted = item.audienceType === 'targeted';
+
+                  const badgeClass = isImportant
+                    ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                    : isMaintenance
+                    ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                    : isAcademic
+                    ? 'bg-blue-500/15 text-sky-300 border-blue-500/30'
+                    : isEvent
+                    ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
+                    : 'bg-slate-800 text-slate-300 border-slate-700';
+
+                  const formattedDate = item.publishedAt
+                    ? new Date(item.publishedAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
+                    : 'Official Memo';
+
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => setViewingUserAnnouncement(item)}
+                      className={`p-4 rounded-xl border space-y-2.5 transition-all cursor-pointer hover:border-slate-700 hover:bg-slate-900/90 active:scale-[0.99] relative ${
+                        !isRead
+                          ? 'bg-slate-900/95 border-blue-500/30 shadow-md shadow-blue-950/20'
+                          : isImportant
+                          ? 'bg-slate-900/90 border-rose-500/30 shadow-sm'
+                          : 'bg-slate-900/70 border-slate-800 opacity-90'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1.5 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {/* Subtle unread dot (Stage 7B requirement) */}
+                            {!isRead && (
+                              <span
+                                className="w-2 h-2 rounded-full bg-blue-400 ring-4 ring-blue-500/20 animate-pulse shrink-0"
+                                title="Unread notice"
+                              />
+                            )}
+
+                            <span className={`text-[10px] px-2 py-0.5 rounded font-bold border flex items-center gap-1 ${badgeClass}`}>
+                              {isImportant && <AlertCircle className="w-3 h-3" />}
+                              {item.type}
+                            </span>
+
+                            {/* Audience Scope indicator (Stage 7B) */}
+                            {isTargeted ? (
+                              <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center gap-1">
+                                <Target className="w-2.5 h-2.5" />
+                                <span>{item.targetProgrammeName || item.targetDepartmentName || item.targetAcademicUnitName || 'Targeted'}</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                                <Users className="w-2.5 h-2.5" />
+                                <span>Everyone</span>
+                              </span>
+                            )}
+
+                            <span className="text-[10px] text-slate-400 font-medium">
+                              {formattedDate}
+                            </span>
+
+                            {/* Read State Indicator (Stage 7B) */}
+                            <span className="text-[10px] ml-auto">
+                              {isRead ? (
+                                <span className="text-slate-500 flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3 text-slate-600" />
+                                  <span>Read</span>
+                                </span>
+                              ) : (
+                                <span className="text-blue-400 font-semibold flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                                  <span>New</span>
+                                </span>
+                              )}
+                            </span>
+                          </div>
+
+                          <h3 className="text-sm font-bold text-white leading-snug hover:text-sky-400 transition flex items-center gap-1.5">
+                            <span>{item.title}</span>
+                          </h3>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-slate-300 leading-relaxed line-clamp-2">
+                        {item.summary || item.content}
+                      </p>
+
+                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                        <span className="text-slate-500 flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                          {item.createdByName || (profile?.universityShort ? `${profile.universityShort} Memo` : 'Official Memo')}
+                        </span>
+                        <span className="text-sky-400 font-semibold hover:underline flex items-center gap-1">
+                          <span>Read Memo</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -879,6 +1182,14 @@ export const UniversityHubScreen: React.FC<UniversityHubScreenProps> = ({
           )}
         </div>
       )}
+
+      {/* Full Official Announcement Reader Modal */}
+      <UserAnnouncementModal
+        isOpen={Boolean(viewingUserAnnouncement)}
+        onClose={() => setViewingUserAnnouncement(null)}
+        announcement={viewingUserAnnouncement}
+        onMarkAsRead={handleMarkAsRead}
+      />
     </div>
   );
 };

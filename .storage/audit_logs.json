@@ -1,0 +1,178 @@
+[
+  {
+    "id": "audit_1791183381429_amu7r5",
+    "actorUid": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "actorName": "VENUE Platform Administrator",
+    "actorRole": "super_admin",
+    "action": "material.delete",
+    "entityType": "academic_material",
+    "entityId": "materials/st_113/stage10a_verify_notes.txt",
+    "timestamp": "2026-10-05T06:56:21.429Z",
+    "outcome": "success",
+    "summary": "Deleted material file from storage: stage10a_verify_notes.txt",
+    "metadata": {
+      "storagePath": "materials/st_113/stage10a_verify_notes.txt"
+    },
+    "source": "trusted_server"
+  },
+  {
+    "id": "audit_1791183376484_hy2mhv",
+    "actorUid": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "actorName": "VENUE Platform Administrator",
+    "actorRole": "super_admin",
+    "action": "material.upload",
+    "entityType": "academic_material",
+    "entityId": "materials/st_113/stage10a_verify_notes.txt",
+    "timestamp": "2026-10-05T06:56:16.484Z",
+    "outcome": "success",
+    "summary": "Uploaded academic repository document: stage10a_verify_notes.txt",
+    "metadata": {
+      "storagePath": "materials/st_113/stage10a_verify_notes.txt",
+      "fileSize": 232,
+      "mimeType": "text/plain"
+    },
+    "source": "trusted_server"
+  },
+  {
+    "id": "audit_1791183250918_zjs4q3",
+    "actorUid": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "actorName": "VENUE Platform Administrator",
+    "actorRole": "super_admin",
+    "action": "material.delete",
+    "entityType": "academic_material",
+    "entityId": "materials/st_113/stage10a_verify_notes.txt",
+    "timestamp": "2026-10-05T06:54:10.918Z",
+    "outcome": "success",
+    "summary": "Deleted material file from storage: stage10a_verify_notes.txt",
+    "metadata": {
+      "storagePath": "materials/st_113/stage10a_verify_notes.txt"
+    },
+    "source": "trusted_server"
+  },
+  {
+    "id": "audit_1791183246283_yrm6f3",
+    "actorUid": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "actorName": "VENUE Platform Administrator",
+    "actorRole": "super_admin",
+    "action": "material.upload",
+    "entityType": "academic_material",
+    "entityId": "materials/st_113/stage10a_verify_notes.txt",
+    "timestamp": "2026-10-05T06:54:06.283Z",
+    "outcome": "success",
+    "summary": "Uploaded academic repository document: stage10a_verify_notes.txt",
+    "metadata": {
+      "storagePath": "materials/st_113/stage10a_verify_notes.txt",
+      "fileSize": 232,
+      "mimeType": "text/plain"
+    },
+    "source": "trusted_server"
+  },
+  {
+    "id": "audit_1791182653037_1qd2m7",
+    "actorUid": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "actorName": "Mussa Said",
+    "actorRole": "super_admin",
+    "action": "material.upload",
+    "entityType": "academic_material",
+    "entityId": "mat_1791182643325_hbzvws",
+    "timestamp": "2026-10-05T06:44:13.547Z",
+    "outcome": "success",
+    "summary": "Material action create material for material mat_1791182643325_hbzvws",
+    "metadata": {
+      "title": "basic statistics reference book",
+      "materialType": "Reference Materials",
+      "courseId": "math-stats_st_113_y1s1",
+      "programmeId": "math-stats",
+      "storagePath": "materials/udsm/math-stats_st_113_y1s1/mat_1791182643325_hbzvws/basic_statistics_1_221120_150758-1.pdf"
+    },
+    "source": "client_service"
+  },
+  {
+    "id": "audit_1791182651096_r569z2",
+    "actorUid": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "actorName": "VENUE Platform Administrator",
+    "actorRole": "super_admin",
+    "action": "material.upload",
+    "entityType": "academic_material",
+    "entityId": "materials/udsm/math-stats_st_113_y1s1/mat_1791182643325_hbzvws/basic_statistics_1_221120_150758-1.pdf",
+    "timestamp": "2026-10-05T06:44:11.096Z",
+    "outcome": "success",
+    "summary": "Uploaded academic repository document: basic_statistics_1_221120_150758-1.pdf",
+    "metadata": {
+      "storagePath": "materials/udsm/math-stats_st_113_y1s1/mat_1791182643325_hbzvws/basic_statistics_1_221120_150758-1.pdf",
+      "fileSize": 961244,
+      "mimeType": "application/pdf"
+    },
+    "source": "trusted_server"
+  },
+  {
+    "id": "audit_1791150736826_maw4wf",
+    "actorUid": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "actorName": "VENUE Platform Administrator",
+    "actorRole": "super_admin",
+    "action": "material.delete",
+    "entityType": "academic_material",
+    "entityId": "materials/udsm/st_113/mat_test_9c_001/lecture_notes_st113.pdf",
+    "timestamp": "2026-10-04T21:52:16.826Z",
+    "outcome": "success",
+    "summary": "Deleted material file from storage: lecture_notes_st113.pdf",
+    "metadata": {
+      "storagePath": "materials/udsm/st_113/mat_test_9c_001/lecture_notes_st113.pdf"
+    },
+    "source": "trusted_server"
+  },
+  {
+    "id": "audit_1791150736810_e5zcja",
+    "actorUid": "Faz9X1kqMZWkujTMKYaRfvM4jvw1",
+    "actorName": "VENUE Platform Administrator",
+    "actorRole": "super_admin",
+    "action": "material.upload",
+    "entityType": "academic_material",
+    "entityId": "materials/udsm/st_113/mat_test_9c_001/lecture_notes_st113.pdf",
+    "timestamp": "2026-10-04T21:52:16.810Z",
+    "outcome": "success",
+    "summary": "Uploaded academic repository document: lecture_notes_st113.pdf",
+    "metadata": {
+      "storagePath": "materials/udsm/st_113/mat_test_9c_001/lecture_notes_st113.pdf",
+      "fileSize": 51,
+      "mimeType": "application/pdf"
+    },
+    "source": "trusted_server"
+  },
+  {
+    "id": "audit_1791143950188_07fr7h",
+    "actorUid": "admin",
+    "actorName": "VENUE Platform Administrator",
+    "actorRole": "super_admin",
+    "action": "student.status_change",
+    "entityType": "student",
+    "entityId": "test1234",
+    "timestamp": "2026-10-04T19:59:10.188Z",
+    "outcome": "success",
+    "summary": "Activated student account for Test Student",
+    "metadata": {
+      "previousStatus": "inactive",
+      "newStatus": "active",
+      "studentEmail": "test@example.com"
+    },
+    "source": "trusted_server"
+  },
+  {
+    "id": "audit_1791143950180_1xgw19",
+    "actorUid": "admin",
+    "actorName": "VENUE Platform Administrator",
+    "actorRole": "super_admin",
+    "action": "student.status_change",
+    "entityType": "student",
+    "entityId": "test1234",
+    "timestamp": "2026-10-04T19:59:10.180Z",
+    "outcome": "success",
+    "summary": "Deactivated student account for Test Student",
+    "metadata": {
+      "previousStatus": "active",
+      "newStatus": "inactive",
+      "studentEmail": "test@example.com"
+    },
+    "source": "trusted_server"
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "firestore": {
+    "database": "ai-studio-venue-0f0462e8-c693-4a30-a668-4c4fc2f6c2f6",
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}

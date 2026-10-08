@@ -124,6 +124,24 @@ function sanitizeMessageForFirestore(msg: AIMessage): Record<string, any> {
   if (msg.imageGenPrompt) clean.imageGenPrompt = msg.imageGenPrompt;
   if (msg.chart) clean.chart = msg.chart;
   if (msg.diagramSvg) clean.diagramSvg = msg.diagramSvg;
+  if (typeof msg.groundedInMaterials === 'boolean') {
+    clean.groundedInMaterials = msg.groundedInMaterials;
+  }
+  if (Array.isArray(msg.referencedMaterials) && msg.referencedMaterials.length > 0) {
+    clean.referencedMaterials = msg.referencedMaterials.slice(0, 6).map((rm) => ({
+      materialId: String(rm.materialId || ''),
+      title: String(rm.title || ''),
+      materialType: String(rm.materialType || 'Lecture Notes'),
+      courseCode: String(rm.courseCode || ''),
+      ...(rm.courseTitle ? { courseTitle: String(rm.courseTitle) } : {}),
+      ...(rm.uploaderRole ? { uploaderRole: String(rm.uploaderRole) } : {}),
+      ...(rm.uploaderName ? { uploaderName: String(rm.uploaderName) } : {}),
+      ...(Array.isArray(rm.pageReferences) && rm.pageReferences.length > 0
+        ? { pageReferences: rm.pageReferences.slice(0, 12) }
+        : {}),
+      ...(typeof rm.chunksCount === 'number' ? { chunksCount: rm.chunksCount } : {}),
+    }));
+  }
 
   // Preserve image attachment metadata
   if (msg.imageAttachment) {
@@ -182,6 +200,13 @@ function normalizeMessage(data: any): AIMessage {
     generatedImageUrl: data.generatedImageUrl,
     imageGenStatus: data.imageGenStatus,
     imageGenPrompt: data.imageGenPrompt,
+    referencedMaterials: Array.isArray(data.referencedMaterials)
+      ? data.referencedMaterials
+      : undefined,
+    groundedInMaterials:
+      typeof data.groundedInMaterials === 'boolean'
+        ? data.groundedInMaterials
+        : undefined,
   };
 }
 

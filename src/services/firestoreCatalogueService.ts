@@ -191,7 +191,9 @@ export class FirestoreCatalogueService {
         const docs = snapshot.docs;
         const hasMore = docs.length > pageSize;
         const slice = hasMore ? docs.slice(0, pageSize) : docs;
-        const items = slice.map((d) => d.data() as AcademicUnitRecord);
+        const items = slice
+          .map((d) => d.data() as AcademicUnitRecord)
+          .filter((u) => !u.archived && u.status !== 'archived' && u.active !== false);
         const lastDoc = slice.length > 0 ? slice[slice.length - 1] : null;
 
         // Sort items logically: by type (College, Constituent College, School, Institute) then by name
@@ -353,7 +355,9 @@ export class FirestoreCatalogueService {
         const docs = snapshot.docs;
         const hasMore = docs.length > pageSize;
         const slice = hasMore ? docs.slice(0, pageSize) : docs;
-        const items = slice.map((d) => d.data() as DepartmentRecord);
+        const items = slice
+          .map((d) => d.data() as DepartmentRecord)
+          .filter((d) => !d.archived && d.status !== 'archived' && d.active !== false);
         const lastDoc = slice.length > 0 ? slice[slice.length - 1] : null;
 
         return { items, lastDoc, hasMore };
@@ -362,7 +366,14 @@ export class FirestoreCatalogueService {
       console.warn('Firestore getDepartments fallback note:', err);
     }
 
-    const localItems = INITIAL_DEPTS.filter((d) => d.academicUnitId === cleanUnitId);
+    const combinedDepts = [...UDSM_DEPARTMENTS, ...INITIAL_DEPTS];
+    const deptMap = new Map<string, DepartmentRecord>();
+    combinedDepts.forEach((d) => {
+      if (d && d.id) deptMap.set(d.id.toLowerCase(), d);
+    });
+    const localItems = Array.from(deptMap.values()).filter(
+      (d) => (d.academicUnitId || '').toLowerCase() === cleanUnitId
+    );
     return {
       items: localItems.slice(0, pageSize),
       lastDoc: null,
@@ -388,7 +399,8 @@ export class FirestoreCatalogueService {
       console.warn('Firestore getDepartmentById fallback note:', err);
     }
 
-    return INITIAL_DEPTS.find((d) => d.id === cleanId) || null;
+    const combinedDepts = [...UDSM_DEPARTMENTS, ...INITIAL_DEPTS];
+    return combinedDepts.find((d) => d.id.toLowerCase() === cleanId) || null;
   }
 
   /**
@@ -420,7 +432,9 @@ export class FirestoreCatalogueService {
         const docs = snapshot.docs;
         const hasMore = docs.length > pageSize;
         const slice = hasMore ? docs.slice(0, pageSize) : docs;
-        const items = slice.map((d) => d.data() as ProgrammeRecord);
+        const items = slice
+          .map((d) => d.data() as ProgrammeRecord)
+          .filter((p) => !p.archived && p.status !== 'archived' && p.active !== false);
         const lastDoc = slice.length > 0 ? slice[slice.length - 1] : null;
 
         return { items, lastDoc, hasMore };
@@ -429,7 +443,14 @@ export class FirestoreCatalogueService {
       console.warn('Firestore getProgrammes fallback note:', err);
     }
 
-    const localItems = INITIAL_PROGS.filter((p) => p.departmentId === cleanDeptId);
+    const combinedProgs = [...UDSM_PROGRAMMES, ...INITIAL_PROGS];
+    const progMap = new Map<string, ProgrammeRecord>();
+    combinedProgs.forEach((p) => {
+      if (p && p.id) progMap.set(p.id.toLowerCase(), p);
+    });
+    const localItems = Array.from(progMap.values()).filter(
+      (p) => (p.departmentId || '').toLowerCase() === cleanDeptId
+    );
     return {
       items: localItems.slice(0, pageSize),
       lastDoc: null,

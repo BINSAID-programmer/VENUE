@@ -17,19 +17,54 @@ import {
   signInWithRedirect,
   getRedirectResult,
 } from 'firebase/auth';
-import { initializeFirestore, getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import {
+  initializeFirestore,
+  getFirestore,
+  doc,
+  getDocFromServer,
+  setLogLevel,
+  memoryLocalCache,
+} from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../../firebase-applet-config.json';
+
+// Silence non-fatal WebChannel / transport reconnect notices in iframe & proxy environments
+try {
+  setLogLevel('silent');
+} catch {
+  // ignore
+}
 
 // Initialize Firebase App singleton
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
 
-// Initialize Firestore with explicit databaseId and forced long polling for reliable web connectivity in browser iframe environments
+// Initialize Firebase Cloud Storage with resilient failover timeouts
+export const storage = (() => {
+  const bucket = (firebaseConfig as any).storageBucket;
+  let s;
+  try {
+    s = bucket ? getStorage(app, bucket) : getStorage(app);
+  } catch (err) {
+    console.warn('Firebase storage initialization warning:', err);
+    s = getStorage(app);
+  }
+  // Configure fast upload retry timeout (10s instead of default 10min) to prevent infinite UI hangs
+  try {
+    s.maxUploadRetryTime = 10000;
+    s.maxOperationRetryTime = 10000;
+  } catch {
+    // ignore
+  }
+  return s;
+})();
+
+// Initialize Firestore with explicit databaseId and forced HTTPS long-polling for resilient connectivity in cloud and iframe environments
 export const db = (() => {
   const dbId = (firebaseConfig as { firestoreDatabaseId?: string }).firestoreDatabaseId;
   const firestoreSettings = {
     experimentalForceLongPolling: true,
-    useFetchStreams: false,
+    localCache: memoryLocalCache(),
   };
   try {
     return initializeFirestore(app, firestoreSettings, dbId);
@@ -38,21 +73,39 @@ export const db = (() => {
   }
 })();
 
-// Validate Connection to Firestore on app startup safely without blocking
-async function testConnection() {
+// Reference to the (default) Firestore database where legacy/bootstrapped admin_users and student records reside
+export const dbDefault = (() => {
+  const firestoreSettings = {
+    experimentalForceLongPolling: true,
+    localCache: memoryLocalCache(),
+  };
   try {
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      return;
-    }
-    await getDocFromServer(doc(db, 'test', 'connection'));
+    return initializeFirestore(app, firestoreSettings);
   } catch {
-    // Firestore operates in offline mode with cached data when backend token or network is not ready
+    return getFirestore(app);
   }
-}
-if (typeof window !== 'undefined') {
-  setTimeout(() => {
-    testConnection().catch(() => {});
-  }, 2000);
+})();
+
+// Verified Platform Owner constants matching Firestore admin_users & firestore.rules
+export const VERIFIED_OWNER_UID = 'Faz9X1kqMZWkujTMKYaRfvM4jvw1';
+export const VERIFIED_OWNER_EMAIL = 'binsaid679@gmail.com';
+
+export function isVerifiedOwnerAccount(uid?: string | null, email?: string | null): boolean {
+  const cleanUid = (uid || '').trim();
+  const cleanEmail = (email || '').trim().toLowerCase();
+  if (cleanUid === VERIFIED_OWNER_UID) {
+    return true;
+  }
+  // If authenticated via Firebase Auth with verified owner email
+  if (
+    cleanEmail === VERIFIED_OWNER_EMAIL &&
+    auth.currentUser &&
+    auth.currentUser.email?.toLowerCase().trim() === VERIFIED_OWNER_EMAIL &&
+    auth.currentUser.uid === cleanUid
+  ) {
+    return true;
+  }
+  return false;
 }
 
 export { firebaseConfig };

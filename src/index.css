@@ -640,6 +640,49 @@ button[class*="bg-gradient-to-"] *,
   color: #ffffff !important;
 }
 
+/* ============================================================
+   STAGE 10C: PREMIUM WHITE-FIRST AI TUTOR SURFACE OVERRIDES
+   Ensures the AI Tutor maintains a crisp, calm, white-first academic
+   canvas with dark typography regardless of global theme state.
+   ============================================================ */
+.venue-ai-tutor-white {
+  color-scheme: light !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.venue-ai-tutor-white input,
+.venue-ai-tutor-white textarea,
+.venue-ai-tutor-white select {
+  background-color: transparent !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: none !important;
+}
+
+.venue-ai-tutor-white select.venue-tutor-select {
+  background-color: #f8fafc !important;
+  color: #334155 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.venue-ai-tutor-white input::placeholder,
+.venue-ai-tutor-white textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.venue-ai-tutor-white .katex {
+  font-size: 1.04em;
+  color: #0f172a;
+}
+
+.venue-ai-tutor-white .katex-display {
+  margin: 0.75rem 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.35rem 0;
+}
+
 /* Code & pre styling */
 pre {
   background-color: #0f172a !important;

@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   ExternalLink,
   Compass,
+  UserCheck,
 } from 'lucide-react';
 import { ScreenId, StudentProfile } from '../../types';
 
@@ -140,6 +141,20 @@ export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onL
           desc: '8 soft academic color themes, alerts & app configuration',
           icon: Settings,
           color: 'text-slate-300 bg-slate-800 border-slate-700',
+        },
+        {
+          id: 'lecturer' as ScreenId,
+          name: 'Faculty & Lecturer Portal',
+          desc: 'Verified academic profile, catalogue placement, credentials & avatar',
+          icon: UserCheck,
+          color: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
+        },
+        {
+          id: 'admin' as ScreenId,
+          name: 'Platform Administration',
+          desc: 'Institutional Super Admin dashboard, academic telemetry & controls',
+          icon: ShieldCheck,
+          color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
         },
       ],
     },
