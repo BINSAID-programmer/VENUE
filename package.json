@@ -1,20 +1,21 @@
 {
-  "name": "react-example",
+  "name": "venue",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
     "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
-    "@tailwindcss/vite": "^4.1.14",
-    "@vitejs/plugin-react": "^5.0.4",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "firebase": "^12.19.0",
@@ -24,14 +25,14 @@
     "pdfjs-dist": "^6.4.299",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
-    "recharts": "^3.10.1",
-    "vite": "^6.2.3"
+    "recharts": "^3.10.1"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.1.14",
     "@types/express": "^4.17.21",
     "@types/katex": "^0.16.8",
     "@types/node": "^22.14.0",
-    "autoprefixer": "^10.4.21",
+    "@vitejs/plugin-react": "^5.0.4",
     "esbuild": "^0.25.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
