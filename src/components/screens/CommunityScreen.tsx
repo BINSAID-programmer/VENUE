@@ -4787,7 +4787,7 @@ export const CommunityScreen: React.FC<CommunityScreenProps> = ({
           CREATE / EDIT RICH COMMUNITY POST MODAL (STAGE 11C-D)
          ===================================================================== */}
       {postModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="w-full max-w-lg rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-white">
@@ -5257,7 +5257,7 @@ export const CommunityScreen: React.FC<CommunityScreenProps> = ({
           DELETE POST CONFIRMATION MODAL
          ===================================================================== */}
       {deletingPostId && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl space-y-4">
             <h3 className="text-base font-bold text-white">Delete Discussion Post?</h3>
             <p className="text-xs text-slate-400 leading-relaxed">

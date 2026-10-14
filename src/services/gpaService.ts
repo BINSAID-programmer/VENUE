@@ -7,6 +7,7 @@ import {
   query,
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
+import { authenticatedFetch } from './apiClient';
 import { StudentResult, StudentProfile, CumulativeGpaSummary } from '../types';
 import {
   isValidGrade,
@@ -125,7 +126,7 @@ export async function getStudentResults(providedUid?: string): Promise<StudentRe
 
   // 3. Fallback to server persistence API if available
   try {
-    const res = await fetch(`/api/student/results/${encodeURIComponent(uid)}`);
+    const res = await authenticatedFetch(`/api/student/results/${encodeURIComponent(uid)}`);
     if (res.ok) {
       const payload = await res.json();
       if (payload.success && Array.isArray(payload.results)) {
@@ -250,7 +251,7 @@ export async function saveStudentResult(
 
   // 4. Mirror to server API for durable offline/mock fallback
   try {
-    await fetch('/api/student/results', {
+    await authenticatedFetch('/api/student/results', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid, result: newResult }),
@@ -291,7 +292,7 @@ export async function deleteStudentResult(
 
   // 3. Mirror delete to server API
   try {
-    await fetch(`/api/student/results/${encodeURIComponent(uid)}/${encodeURIComponent(resultId)}`, {
+    await authenticatedFetch(`/api/student/results/${encodeURIComponent(uid)}/${encodeURIComponent(resultId)}`, {
       method: 'DELETE',
     });
   } catch {

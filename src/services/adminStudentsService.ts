@@ -12,6 +12,7 @@ import {
   getCountFromServer,
 } from 'firebase/firestore';
 import { db, dbDefault, handleFirestoreError, OperationType, auth } from './firebase';
+import { authenticatedFetch } from './apiClient';
 import { adminAuditService } from './adminAuditService';
 import { StudentProfile } from '../types';
 
@@ -138,7 +139,7 @@ class AdminStudentsService {
       params.append('page', String(page));
       params.append('pageSize', String(pageSize));
 
-      const res = await fetch(`/api/admin/students?${params.toString()}`);
+      const res = await authenticatedFetch(`/api/admin/students?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.students)) {
@@ -273,7 +274,7 @@ class AdminStudentsService {
     }
 
     try {
-      const res = await fetch(`/api/student/profile/${encodeURIComponent(uid)}`);
+      const res = await authenticatedFetch(`/api/student/profile/${encodeURIComponent(uid)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.profile) {
@@ -343,7 +344,7 @@ class AdminStudentsService {
       // 2. Sync to server-side durable storage
       let updatedProfile: StudentProfile | undefined;
       try {
-        const res = await fetch(`/api/admin/students/${encodeURIComponent(uid)}/status`, {
+        const res = await authenticatedFetch(`/api/admin/students/${encodeURIComponent(uid)}/status`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status, updatedBy }),
@@ -399,7 +400,7 @@ class AdminStudentsService {
       params.append('regNumber', cleanReg);
       if (currentUid) params.append('currentUid', currentUid);
 
-      const res = await fetch(`/api/admin/students/check-reg-number?${params.toString()}`);
+      const res = await authenticatedFetch(`/api/admin/students/check-reg-number?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         if (data.isUnique === false) {
@@ -537,7 +538,7 @@ class AdminStudentsService {
       // 2. Synchronize with server-side durable storage endpoint
       let updatedProfile: StudentProfile | undefined;
       try {
-        const res = await fetch(`/api/admin/students/${encodeURIComponent(uid)}/academic-placement`, {
+        const res = await authenticatedFetch(`/api/admin/students/${encodeURIComponent(uid)}/academic-placement`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(placement),

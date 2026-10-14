@@ -57,7 +57,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onGoToOnboard
   };
 
   return (
-    <div className="min-h-full flex-1 flex flex-col justify-center p-6 sm:p-8 bg-gradient-to-b from-[#070b14] via-[#091024] to-[#070b14] relative">
+    <div className="min-h-full min-h-screen sm:min-h-full flex-1 flex flex-col justify-center p-6 sm:p-8 bg-gradient-to-b from-[#070b14] via-[#091024] to-[#070b14] relative overflow-y-auto overflow-x-hidden pb-8">
       <div className="w-full max-w-sm mx-auto my-auto">
         {/* Header Branding */}
         <div className="text-center mb-8">
@@ -256,7 +256,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onGoToOnboard
 
       {/* Forgot Password Modal */}
       {forgotModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

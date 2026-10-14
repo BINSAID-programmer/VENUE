@@ -191,7 +191,7 @@ export const VerifyEmailScreen: React.FC<VerifyEmailScreenProps> = ({
   const providerUrl = getEmailProviderUrl();
 
   return (
-    <div className="min-h-full flex-1 flex flex-col justify-between p-5 sm:p-7 bg-gradient-to-b from-[#070b14] via-[#091122] to-[#070b14] text-white">
+    <div className="min-h-full min-h-screen sm:min-h-full flex-1 flex flex-col justify-between p-5 sm:p-7 bg-gradient-to-b from-[#070b14] via-[#091122] to-[#070b14] text-white overflow-y-auto overflow-x-hidden pb-8">
       {/* Top Brand Header */}
       <div className="flex items-center justify-between pt-2 pb-4">
         <div className="flex items-center gap-2.5">

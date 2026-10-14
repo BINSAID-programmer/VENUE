@@ -1,4 +1,5 @@
 import { auth } from './firebase';
+import { authenticatedFetch } from './apiClient';
 import { AnalyticsEventType, AnalyticsFeatureType } from '../types';
 import { studentDashboardService } from './studentDashboardService';
 
@@ -97,7 +98,7 @@ class AnalyticsTrackerService {
     this.queue = [];
 
     try {
-      await fetch('/api/analytics/track', {
+      await authenticatedFetch('/api/analytics/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ events: batch }),

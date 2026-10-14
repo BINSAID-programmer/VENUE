@@ -7,14 +7,31 @@ import { createServer as createViteServer } from 'vite';
 
 import { AUDITED_PROGRAMMES, AUDITED_DEPARTMENTS, AUDITED_ACADEMIC_UNITS } from './src/data/udsmAuditedCatalogue2025';
 import { SAMPLE_COURSES } from './src/data/mockData';
+import {
+  securityHeadersMiddleware,
+  createOptionalAuthMiddleware,
+  createRequireAuthMiddleware,
+  requireRoles,
+  isFirebaseAdminReady,
+  FIREBASE_PROJECT_ID,
+} from './security';
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
 
-app.use(express.json({ limit: '75mb' }));
-app.use(express.urlencoded({ extended: true, limit: '75mb' }));
+app.use(securityHeadersMiddleware);
+
+// Scoped 75MB JSON limits for binary Base64 material uploads and multimodal AI Tutor requests
+const largePayloadJson = express.json({ limit: '75mb' });
+const largePayloadUrlencoded = express.urlencoded({ extended: true, limit: '75mb' });
+app.use('/api/materials/storage/upload', largePayloadJson, largePayloadUrlencoded);
+app.use('/api/tutor', largePayloadJson, largePayloadUrlencoded);
+
+// Standard 5MB JSON limit for all other API routes
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 // Persistent Student Profiles File Storage
 const PROFILES_DIR = path.join(process.cwd(), '.storage');
@@ -594,19 +611,67 @@ function getGeminiClient(): GoogleGenAI {
   return geminiClient;
 }
 
+// Stage 1 Security Foundation: Attach verified req.user when a valid Firebase Bearer token is sent
+app.use(
+  '/api',
+  createOptionalAuthMiddleware((uid: string) => {
+    const profiles = readAllProfiles();
+    return profiles[uid];
+  })
+);
+
 // Health check endpoint
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
     hasGeminiKey: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY'),
+    firebaseAdminReady: isFirebaseAdminReady(),
+    projectId: FIREBASE_PROJECT_ID,
   });
 });
 
-// Student Profile Endpoints (Durable server persistence)
-app.get('/api/student/profile/:uid', (req, res) => {
+// [TEMPORARY STAGE 1 DIAGNOSTIC ENDPOINT — REMOVE AFTER VERIFICATION]
+// Requires a valid Firebase ID token and returns only verified UID, email, role, and owner status.
+const requireAuth = createRequireAuthMiddleware((uid: string) => {
+  const profiles = readAllProfiles();
+  return profiles[uid];
+});
+const requireAuthDiagnostic = requireAuth;
+const requireAdminAuth = [requireAuth, requireRoles(['admin', 'super_admin'])];
+
+function isAuthorizedAdminOrOwner(req: express.Request): boolean {
+  return Boolean(
+    req.user &&
+      (req.user.isOwner || req.user.role === 'super_admin' || req.user.role === 'admin')
+  );
+}
+
+app.get('/api/auth/whoami', requireAuthDiagnostic, (req, res) => {
+  return res.json({
+    authenticated: true,
+    uid: req.user?.uid,
+    email: req.user?.email || null,
+    emailVerified: Boolean(req.user?.emailVerified),
+    role: req.user?.role,
+    isOwner: Boolean(req.user?.isOwner),
+  });
+});
+
+// Student Profile Endpoints (Durable server persistence — Stage 2 Hardened)
+app.get('/api/student/profile/:uid', requireAuth, (req, res) => {
   const { uid } = req.params;
   if (!uid) {
     return res.status(400).json({ success: false, error: 'UID is required' });
+  }
+  if (!req.user) {
+    return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Authentication required.' });
+  }
+  if (req.user.uid !== uid && !isAuthorizedAdminOrOwner(req)) {
+    return res.status(403).json({
+      success: false,
+      error: 'FORBIDDEN',
+      message: 'Access denied: You can only view your own student profile.',
+    });
   }
   const profiles = readAllProfiles();
   const profile = profiles[uid];
@@ -616,12 +681,23 @@ app.get('/api/student/profile/:uid', (req, res) => {
   return res.json({ success: true, profile });
 });
 
-app.get('/api/student/profile/by-email/:email', (req, res) => {
+app.get('/api/student/profile/by-email/:email', requireAuth, (req, res) => {
   try {
     const rawEmail = req.params.email;
     const email = decodeURIComponent(rawEmail).toLowerCase().trim();
     if (!email) {
       return res.status(400).json({ success: false, error: 'Email is required' });
+    }
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Authentication required.' });
+    }
+    const callerEmail = (req.user.email || '').toLowerCase().trim();
+    if ((!callerEmail || callerEmail !== email) && !isAuthorizedAdminOrOwner(req)) {
+      return res.status(403).json({
+        success: false,
+        error: 'FORBIDDEN',
+        message: 'Access denied: You can only query your own profile by email.',
+      });
     }
     const profiles = readAllProfiles();
     // Prefer real Firebase Auth UIDs (not synthetic uid_* hashes), and specifically Faz9X1kqMZWkujTMKYaRfvM4jvw1 for the owner
@@ -647,21 +723,36 @@ app.get('/api/student/profile/by-email/:email', (req, res) => {
   }
 });
 
-app.post('/api/student/profile', (req, res) => {
+app.post('/api/student/profile', requireAuth, (req, res) => {
   try {
-    const { uid, profile } = req.body;
-    if (!uid || !profile) {
-      return res.status(400).json({ success: false, error: 'UID and profile payload are required' });
+    const { uid: requestedUid, profile } = req.body;
+    if (!profile || typeof profile !== 'object') {
+      return res.status(400).json({ success: false, error: 'Profile payload is required' });
     }
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Authentication required.' });
+    }
+
+    const isAdminCaller = isAuthorizedAdminOrOwner(req);
+    if (requestedUid && requestedUid !== req.user.uid && !isAdminCaller) {
+      return res.status(403).json({
+        success: false,
+        error: 'FORBIDDEN',
+        message: 'Access denied: You can only update your own student profile.',
+      });
+    }
+
+    const uid = isAdminCaller && requestedUid ? String(requestedUid).trim() : req.user.uid;
     const profiles = readAllProfiles();
     const existing = profiles[uid] || {};
-    const isOwner =
+    const isTargetOwner =
       uid === 'Faz9X1kqMZWkujTMKYaRfvM4jvw1' ||
-      (profile.email || existing.email || '').toLowerCase().trim() === 'binsaid679@gmail.com';
+      (req.user.uid === uid && req.user.isOwner) ||
+      (existing.email || '').toLowerCase().trim() === 'binsaid679@gmail.com';
 
-    // Stage 9B Security Hardening:
+    // Stage 9B & Stage 2 Security Hardening:
     // 1. If existing student account is inactive (and not verified platform owner), reject profile modification
-    if (!isOwner && (existing.status === 'inactive' || existing.accountStatus === 'inactive')) {
+    if (!isTargetOwner && (existing.status === 'inactive' || existing.accountStatus === 'inactive')) {
       return res.status(403).json({
         success: false,
         error: 'Access Denied: Your student account is currently inactive and cannot modify profile records.',
@@ -670,7 +761,10 @@ app.post('/api/student/profile', (req, res) => {
 
     // 2. Prevent student self-promotion, role tampering, or status tampering via student profile endpoint
     const safeRole = existing.role || 'student';
-    const safeStatus = isOwner ? 'active' : (existing.status || existing.accountStatus || 'active');
+    const safeStatus = isTargetOwner ? 'active' : (existing.status || existing.accountStatus || 'active');
+    const safeEmail =
+      existing.email ||
+      (req.user.uid === uid && req.user.email ? req.user.email : profile.email || '');
 
     // 3. Once academic placement is completed on the server, protect institutional placement fields from arbitrary client overwrite
     // (Authorized admin placement changes use /api/admin/students/:uid/academic-placement)
@@ -685,6 +779,7 @@ app.post('/api/student/profile', (req, res) => {
       ...existing,
       ...profile,
       uid,
+      email: safeEmail,
       role: safeRole,
       status: safeStatus,
       accountStatus: safeStatus,
@@ -712,6 +807,9 @@ app.post('/api/student/profile', (req, res) => {
       updatedAt: new Date().toISOString(),
     };
     delete updated.permissions;
+    delete updated.isOwner;
+    delete updated.superAdmin;
+    delete updated.admin;
 
     profiles[uid] = updated;
     writeAllProfiles(profiles);
@@ -1070,12 +1168,22 @@ app.post('/api/admin/students/:uid/academic-placement', (req, res) => {
   }
 });
 
-// Student Course Results Endpoints (Database-backed GPA results)
-app.get('/api/student/results/:uid', (req, res) => {
+// Student Course Results Endpoints (Database-backed GPA results — Stage 2 Hardened)
+app.get('/api/student/results/:uid', requireAuth, (req, res) => {
   try {
     const { uid } = req.params;
     if (!uid) {
       return res.status(400).json({ success: false, error: 'UID is required' });
+    }
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Authentication required.' });
+    }
+    if (req.user.uid !== uid && !isAuthorizedAdminOrOwner(req)) {
+      return res.status(403).json({
+        success: false,
+        error: 'FORBIDDEN',
+        message: 'Access denied: You can only view your own GPA and academic results.',
+      });
     }
     const allResults = readAllResults();
     const results = allResults[uid] || [];
@@ -1163,12 +1271,22 @@ app.get('/api/announcements', (req, res) => {
   }
 });
 
-// 1B. Announcement Reads Tracking (Stage 7B Scalable Read State)
-app.get('/api/announcements/reads/:userId', (req, res) => {
+// 1B. Announcement Reads Tracking (Stage 7B Scalable Read State — Stage 2 Hardened)
+app.get('/api/announcements/reads/:userId', requireAuth, (req, res) => {
   try {
     const { userId } = req.params;
     if (!userId) {
       return res.status(400).json({ success: false, error: 'User ID is required' });
+    }
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Authentication required.' });
+    }
+    if (req.user.uid !== userId && !isAuthorizedAdminOrOwner(req)) {
+      return res.status(403).json({
+        success: false,
+        error: 'FORBIDDEN',
+        message: 'Access denied: You can only read your own announcement read-state.',
+      });
     }
     const allReads = readAllAnnouncementReads();
     const userReadIds = Object.values(allReads)
@@ -1181,19 +1299,31 @@ app.get('/api/announcements/reads/:userId', (req, res) => {
   }
 });
 
-app.post('/api/announcements/reads', (req, res) => {
+app.post('/api/announcements/reads', requireAuth, (req, res) => {
   try {
-    const { userId, announcementId } = req.body;
-    if (!userId || !announcementId) {
-      return res.status(400).json({ success: false, error: 'userId and announcementId are required' });
+    const { userId: requestedUserId, announcementId } = req.body;
+    if (!announcementId || typeof announcementId !== 'string' || !announcementId.trim()) {
+      return res.status(400).json({ success: false, error: 'announcementId is required' });
     }
-    const readId = `${userId}_${announcementId}`;
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Authentication required.' });
+    }
+    if (requestedUserId && requestedUserId !== req.user.uid && !isAuthorizedAdminOrOwner(req)) {
+      return res.status(403).json({
+        success: false,
+        error: 'FORBIDDEN',
+        message: 'Access denied: You can only mark announcements as read for your own account.',
+      });
+    }
+    const verifiedUserId = req.user.uid;
+    const cleanAnnouncementId = announcementId.trim();
+    const readId = `${verifiedUserId}_${cleanAnnouncementId}`;
     const allReads = readAllAnnouncementReads();
     if (!allReads[readId]) {
       allReads[readId] = {
         id: readId,
-        userId,
-        announcementId,
+        userId: verifiedUserId,
+        announcementId: cleanAnnouncementId,
         readAt: new Date().toISOString(),
       };
       writeAllAnnouncementReads(allReads);
@@ -2497,25 +2627,42 @@ app.delete('/api/materials/metadata/:id', (req, res) => {
   }
 });
 
-app.post('/api/student/results', (req, res) => {
+app.post('/api/student/results', requireAuth, (req, res) => {
   try {
-    const { uid, result } = req.body;
-    if (!uid || !result || !result.courseId) {
-      return res.status(400).json({ success: false, error: 'UID and valid course result are required' });
+    const { uid: requestedUid, result } = req.body;
+    if (!result || !result.courseId) {
+      return res.status(400).json({ success: false, error: 'Valid course result is required' });
     }
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Authentication required.' });
+    }
+    const isAdminCaller = isAuthorizedAdminOrOwner(req);
+    if (requestedUid && requestedUid !== req.user.uid && !isAdminCaller) {
+      return res.status(403).json({
+        success: false,
+        error: 'FORBIDDEN',
+        message: 'Access denied: You can only save GPA results for your own student account.',
+      });
+    }
+    const uid = isAdminCaller && requestedUid ? String(requestedUid).trim() : req.user.uid;
+    const sanitizedResult = {
+      ...result,
+      uid,
+      studentUid: uid,
+    };
     const allResults = readAllResults();
     const userResults = allResults[uid] || [];
     const existingIndex = userResults.findIndex(
       (r: any) =>
-        r.id === result.id ||
-        (r.courseId === result.courseId &&
-          r.semester === result.semester &&
-          r.academicYear === result.academicYear)
+        r.id === sanitizedResult.id ||
+        (r.courseId === sanitizedResult.courseId &&
+          r.semester === sanitizedResult.semester &&
+          r.academicYear === sanitizedResult.academicYear)
     );
     if (existingIndex >= 0) {
-      userResults[existingIndex] = { ...userResults[existingIndex], ...result };
+      userResults[existingIndex] = { ...userResults[existingIndex], ...sanitizedResult };
     } else {
-      userResults.push(result);
+      userResults.push(sanitizedResult);
     }
     allResults[uid] = userResults;
     writeAllResults(allResults);
@@ -2525,11 +2672,21 @@ app.post('/api/student/results', (req, res) => {
   }
 });
 
-app.delete('/api/student/results/:uid/:resultId', (req, res) => {
+app.delete('/api/student/results/:uid/:resultId', requireAuth, (req, res) => {
   try {
     const { uid, resultId } = req.params;
     if (!uid || !resultId) {
       return res.status(400).json({ success: false, error: 'UID and resultId are required' });
+    }
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Authentication required.' });
+    }
+    if (req.user.uid !== uid && !isAuthorizedAdminOrOwner(req)) {
+      return res.status(403).json({
+        success: false,
+        error: 'FORBIDDEN',
+        message: 'Access denied: You can only delete GPA results from your own student account.',
+      });
     }
     const allResults = readAllResults();
     const userResults = allResults[uid] || [];
@@ -4154,16 +4311,15 @@ When an image is provided, transcribe the question accurately, inspect any handw
       parts: currentParts,
     });
 
-    // Try candidate models in order: gemini-2.5-flash, gemini-2.5-flash-lite, gemini-3.1-flash-lite, gemini-flash-latest
+    // Try candidate models in order: gemini-3.8-flash, gemini-3.1-flash-lite, gemini-flash-latest
     const candidateModels = [
-      'gemini-2.5-flash',
-      'gemini-2.5-flash-lite',
+      'gemini-3.8-flash',
       'gemini-3.1-flash-lite',
       'gemini-flash-latest',
     ];
     let lastError: any = null;
     let responseText = '';
-    let selectedModel = 'gemini-2.5-flash';
+    let selectedModel = 'gemini-3.8-flash';
     let usageMetadata: any = null;
 
     for (const modelName of candidateModels) {
@@ -4834,15 +4990,14 @@ Begin with Section 1 of ${totalSecNum}: state the clear learning objective for t
     });
 
     const candidateModels = [
-      'gemini-2.5-flash',
-      'gemini-2.5-flash-lite',
+      'gemini-3.8-flash',
       'gemini-3.1-flash-lite',
       'gemini-flash-latest',
     ];
 
     let lastError: any = null;
     let responseText = '';
-    let selectedModel = 'gemini-2.5-flash';
+    let selectedModel = 'gemini-3.8-flash';
     let usageMetadata: any = null;
 
     for (const modelName of candidateModels) {
@@ -5514,14 +5669,13 @@ ${
     };
 
     const candidateModels = [
-      'gemini-2.5-flash',
-      'gemini-2.5-flash-lite',
+      'gemini-3.8-flash',
       'gemini-3.1-flash-lite',
       'gemini-flash-latest',
     ];
 
     let responseText = '';
-    let selectedModel = 'gemini-2.5-flash';
+    let selectedModel = 'gemini-3.8-flash';
     let usageMetadata: any = null;
     let lastError: any = null;
 
@@ -5862,8 +6016,7 @@ app.post('/api/tutor/practice', async (req, res) => {
         : 'intermediate';
 
     const candidateModels = [
-      'gemini-2.5-flash',
-      'gemini-2.5-flash-lite',
+      'gemini-3.8-flash',
       'gemini-3.1-flash-lite',
       'gemini-flash-latest',
     ];
@@ -6970,8 +7123,7 @@ ${
     }`;
 
     const candidateModels = [
-      'gemini-2.5-flash',
-      'gemini-2.5-flash-lite',
+      'gemini-3.8-flash',
       'gemini-3.1-flash-lite',
       'gemini-flash-latest',
     ];
@@ -7225,7 +7377,7 @@ ${cardPayload.formulaBlock ? `Formula: ${cardPayload.formulaBlock}` : ''}
 ${cardPayload.variableMeaning ? `Variables: ${cardPayload.variableMeaning}` : ''}`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.8-flash',
         contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
         config: {
           systemInstruction,
@@ -7412,7 +7564,7 @@ ${materialsPromptBlock}
 ${summaryPromptBlock}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
       config: {
         systemInstruction,
@@ -7498,17 +7650,13 @@ ${summaryPromptBlock}`;
     try {
       const promptTokens = Math.ceil((systemInstruction.length + userPrompt.length) / 4);
       const completionTokens = Math.ceil(rawText.length / 4);
-      appendAiUsageLog({
-        id: `ai_fc_${Date.now()}`,
-        userId: studentId || 'student_user',
-        modelId: 'gemini-2.5-flash',
-        feature: 'ai_flashcards',
-        courseContext,
+      recordAiUsage({
+        userUid: studentId || 'student_user',
+        modelId: 'gemini-3.8-flash',
         promptTokens,
         completionTokens,
         totalTokens: promptTokens + completionTokens,
         status: 'success',
-        timestamp: new Date().toISOString(),
         approxCostUsd: Number(((promptTokens * 0.00000015) + (completionTokens * 0.0000006)).toFixed(6)),
       });
     } catch {}
@@ -7667,38 +7815,53 @@ app.post('/api/tutor/generate-image', async (req, res) => {
 const analyticsCache = new Map<string, { overview: any; timestamp: number }>();
 const ANALYTICS_CACHE_TTL = 30000;
 
-// POST /api/analytics/track: Client-side event tracking receiver (batched & non-blocking)
-app.post('/api/analytics/track', (req, res) => {
+// POST /api/analytics/track: Client-side event tracking receiver (batched & non-blocking — Stage 2 Hardened)
+app.post('/api/analytics/track', requireAuth, (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Authentication required.' });
+    }
     const rawEvents = req.body.events || (req.body.eventType ? [req.body] : []);
     if (!Array.isArray(rawEvents) || rawEvents.length === 0) {
       return res.json({ success: true, count: 0 });
     }
 
+    const boundedEvents = rawEvents.slice(0, 50);
+    const verifiedUserId = req.user.uid;
+    const verifiedUserRole =
+      req.user.isOwner || req.user.role === 'super_admin' || req.user.role === 'admin'
+        ? 'admin'
+        : req.user.role === 'lecturer'
+        ? 'lecturer'
+        : 'student';
+
     const currentEvents = readAllAnalyticsEvents();
-    for (const evt of rawEvents) {
-      if (!evt.eventType || !evt.feature) continue;
+    let acceptedCount = 0;
+    for (const evt of boundedEvents) {
+      if (!evt || typeof evt.eventType !== 'string' || typeof evt.feature !== 'string') continue;
+      if (!evt.eventType.trim() || !evt.feature.trim()) continue;
       currentEvents.push({
         id: evt.id || `evt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-        eventType: evt.eventType,
-        feature: evt.feature,
-        userId: evt.userId || 'student_user',
-        userRole: evt.userRole || 'student',
-        timestamp: evt.timestamp || new Date().toISOString(),
-        metadata: evt.metadata || {},
+        eventType: evt.eventType.trim().slice(0, 64),
+        feature: evt.feature.trim().slice(0, 64),
+        userId: verifiedUserId,
+        userRole: verifiedUserRole,
+        timestamp: new Date().toISOString(),
+        metadata: evt.metadata && typeof evt.metadata === 'object' ? evt.metadata : {},
       });
+      acceptedCount++;
     }
 
     writeAllAnalyticsEvents(currentEvents);
     // Invalidate analytics overview cache on new events
     analyticsCache.clear();
-    return res.json({ success: true, count: rawEvents.length });
+    return res.json({ success: true, count: acceptedCount });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err?.message || 'Failed to track events' });
   }
 });
 
-app.get('/api/admin/analytics/overview', (req, res) => {
+app.get('/api/admin/analytics/overview', ...requireAdminAuth, (req, res) => {
   try {
     const range = (req.query.range as string) || '30d';
     const roleFilter = (req.query.role as string) || 'all';
@@ -8126,7 +8289,7 @@ app.get('/api/admin/analytics/overview', (req, res) => {
       } else {
         errorCount++;
       }
-      const model = log.modelId || 'gemini-2.5-flash';
+      const model = log.modelId || 'gemini-3.8-flash';
       modelDistribution[model] = (modelDistribution[model] || 0) + 1;
     }
 
@@ -8165,7 +8328,7 @@ app.get('/api/admin/analytics/overview', (req, res) => {
       id: l.id,
       userUid: l.userUid || 'student_user',
       timestamp: l.timestamp,
-      modelId: l.modelId || 'gemini-2.5-flash',
+      modelId: l.modelId || 'gemini-3.8-flash',
       promptTokens: l.promptTokens,
       completionTokens: l.completionTokens,
       totalTokens: l.totalTokens,
@@ -8654,6 +8817,12 @@ CRITICAL ANTI-FABRICATION & EPISTEMIC HONESTY RULES (STAGE 11B SECTIONS 20, 21, 
     }
     contents.push({ role: 'user', parts: [{ text: cleanQuestion }] });
 
+    const candidateModels = [
+      'gemini-3.8-flash',
+      'gemini-3.1-flash-lite',
+      'gemini-flash-latest',
+    ];
+
     let responseText = '';
     let selectedModel = candidateModels[0];
     let usageMetadata: any = null;
@@ -9136,9 +9305,7 @@ app.post('/api/community/ai', async (req, res) => {
 
     const ai = getGeminiClient();
     const candidateModels = [
-      'gemini-2.5-flash',
       'gemini-3.8-flash',
-      'gemini-2.5-flash-lite',
       'gemini-3.1-flash-lite',
       'gemini-flash-latest',
     ];

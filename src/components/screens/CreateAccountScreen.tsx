@@ -135,7 +135,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   };
 
   return (
-    <div className="min-h-full flex-1 flex flex-col justify-between p-5 sm:p-7 bg-gradient-to-b from-[#070b14] via-[#091122] to-[#070b14]">
+    <div className="min-h-full min-h-screen sm:min-h-full flex-1 flex flex-col justify-between p-5 sm:p-7 bg-gradient-to-b from-[#070b14] via-[#091122] to-[#070b14] overflow-y-auto overflow-x-hidden pb-8">
       {/* Top Header */}
       <div className="pt-2">
         <div className="flex items-center gap-2 mb-2">

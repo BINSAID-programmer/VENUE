@@ -257,16 +257,56 @@ html.theme-deep-violet,
   --venue-scrollbar-thumb: rgba(133, 94, 199, 0.35);
 }
 
-/* Base body styles driven by design variables */
+/* Base body and root styles supporting natural vertical scrolling on mobile */
 @layer base {
+  html {
+    min-height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: auto;
+  }
+
   body {
+    min-height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: auto;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     background-color: var(--venue-bg-page);
     color: var(--venue-text-primary);
-    overflow-x: hidden;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
+
+  #root {
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
+
+/* Touch momentum scrolling defaults */
+.custom-scrollbar,
+.venue-device-frame,
+.venue-device-outer,
+[class*="overflow-y-auto"] {
+  -webkit-overflow-scrolling: touch;
+}
+
 
 /* Custom scrollbar driven by active theme variables */
 ::-webkit-scrollbar {

@@ -7,6 +7,7 @@ import {
   VERIFIED_OWNER_EMAIL,
   isVerifiedOwnerAccount,
 } from './firebase';
+import { authenticatedFetch } from './apiClient';
 import { AdminUserRecord, AdminPlatformStats, UserRole } from '../types';
 
 export function normalizeAdminRole(rawRole: unknown): UserRole {
@@ -323,7 +324,7 @@ class AdminAuthService {
           if (userCount > 0) {
             finalStudCount = userCount;
           } else {
-            const res = await fetch('/api/admin/students?pageSize=1');
+            const res = await authenticatedFetch('/api/admin/students?pageSize=1');
             if (res.ok) {
               const d = await res.json();
               if (d.success && typeof d.total === 'number') {

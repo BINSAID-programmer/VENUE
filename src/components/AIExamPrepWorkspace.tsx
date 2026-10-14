@@ -1556,7 +1556,7 @@ export const AIExamPrepWorkspace: React.FC<AIExamPrepWorkspaceProps> = ({
 
         {/* Submission Safety Confirmation Modal (Section 13) */}
         {showSubmitConfirmModal && (
-          <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
             <div className="bg-white rounded-2xl max-w-md w-full p-5 border border-slate-200 shadow-xl space-y-4">
               <div className="flex items-start gap-3">
                 <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">

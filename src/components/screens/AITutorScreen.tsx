@@ -1237,7 +1237,7 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({
 
   return (
     <div
-      className="venue-ai-tutor-white flex flex-col min-h-[calc(100vh-124px)] sm:h-[780px] w-full bg-white text-slate-900 rounded-none sm:rounded-2xl overflow-hidden border-0 sm:border sm:border-slate-200/90 shadow-none sm:shadow-xs"
+      className="venue-ai-tutor-white flex flex-col min-h-[calc(100vh-124px)] min-h-[calc(100dvh-124px)] sm:h-[780px] w-full bg-white text-slate-900 rounded-none sm:rounded-2xl sm:overflow-hidden border-0 sm:border sm:border-slate-200/90 shadow-none sm:shadow-xs"
       onDragOver={(e) => {
         e.preventDefault();
         setIsDragging(true);
@@ -2478,7 +2478,7 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({
       {/* Lightbox Modal for Full-Resolution Image Viewing */}
       {expandedImage && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
           onClick={() => setExpandedImage(null)}
         >
           <div

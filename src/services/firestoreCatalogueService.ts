@@ -11,7 +11,7 @@ import {
   DocumentSnapshot,
   QueryConstraint,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, dbDefault } from './firebase';
 import {
   UniversityRecord,
   AcademicUnitRecord,
@@ -92,6 +92,58 @@ export class FirestoreCatalogueService {
   private isBootstrapping = false;
 
   /**
+   * Safe database fallback helper: tries configured primary database (db) first,
+   * and falls back to dbDefault ((default) Firestore database) when primary is empty
+   * or fails with a recoverable error such as resource-exhausted.
+   */
+  private async queryCollectionWithFallback(
+    collectionName: string,
+    constraints: QueryConstraint[]
+  ) {
+    let lastError: unknown = null;
+    for (const targetDb of [db, dbDefault]) {
+      if (!targetDb) continue;
+      try {
+        const colRef = collection(targetDb, collectionName);
+        const q = query(colRef, ...constraints);
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          return snapshot;
+        }
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    if (lastError) {
+      throw lastError;
+    }
+    return null;
+  }
+
+  private async getDocumentWithFallback(
+    collectionName: string,
+    docId: string
+  ) {
+    let lastError: unknown = null;
+    for (const targetDb of [db, dbDefault]) {
+      if (!targetDb) continue;
+      try {
+        const docRef = doc(targetDb, collectionName, docId);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          return snap;
+        }
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    if (lastError) {
+      throw lastError;
+    }
+    return null;
+  }
+
+  /**
    * 1. UNIVERSITIES
    * Fetch paginated universities list
    */
@@ -112,11 +164,12 @@ export class FirestoreCatalogueService {
         constraints.push(startAfter(options.lastDoc));
       }
 
-      const colRef = collection(db, FIRESTORE_COLLECTIONS.UNIVERSITIES);
-      const q = query(colRef, ...constraints);
-      const snapshot = await getDocs(q);
+      const snapshot = await this.queryCollectionWithFallback(
+        FIRESTORE_COLLECTIONS.UNIVERSITIES,
+        constraints
+      );
 
-      if (!snapshot.empty) {
+      if (snapshot && !snapshot.empty) {
         const docs = snapshot.docs;
         const hasMore = docs.length > pageSize;
         const slice = hasMore ? docs.slice(0, pageSize) : docs;
@@ -150,9 +203,11 @@ export class FirestoreCatalogueService {
     const cleanId = universityId.toLowerCase().trim();
 
     try {
-      const docRef = doc(db, FIRESTORE_COLLECTIONS.UNIVERSITIES, cleanId);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
+      const snap = await this.getDocumentWithFallback(
+        FIRESTORE_COLLECTIONS.UNIVERSITIES,
+        cleanId
+      );
+      if (snap && snap.exists()) {
         return snap.data() as UniversityRecord;
       }
     } catch (err) {
@@ -183,11 +238,12 @@ export class FirestoreCatalogueService {
         constraints.push(startAfter(options.lastDoc));
       }
 
-      const colRef = collection(db, FIRESTORE_COLLECTIONS.ACADEMIC_UNITS);
-      const q = query(colRef, ...constraints);
-      const snapshot = await getDocs(q);
+      const snapshot = await this.queryCollectionWithFallback(
+        FIRESTORE_COLLECTIONS.ACADEMIC_UNITS,
+        constraints
+      );
 
-      if (!snapshot.empty) {
+      if (snapshot && !snapshot.empty) {
         const docs = snapshot.docs;
         const hasMore = docs.length > pageSize;
         const slice = hasMore ? docs.slice(0, pageSize) : docs;
@@ -247,12 +303,15 @@ export class FirestoreCatalogueService {
   }> {
     let existingMap = new Map<string, AcademicUnitRecord>();
     try {
-      const existingSnap = await getDocs(
-        query(collection(db, FIRESTORE_COLLECTIONS.ACADEMIC_UNITS), where('universityId', '==', 'udsm'))
+      const existingSnap = await this.queryCollectionWithFallback(
+        FIRESTORE_COLLECTIONS.ACADEMIC_UNITS,
+        [where('universityId', '==', 'udsm')]
       );
-      existingSnap.forEach((docSnap) => {
-        existingMap.set(docSnap.id, docSnap.data() as AcademicUnitRecord);
-      });
+      if (existingSnap) {
+        existingSnap.forEach((docSnap) => {
+          existingMap.set(docSnap.id, docSnap.data() as AcademicUnitRecord);
+        });
+      }
     } catch (err) {
       console.warn('Failed to fetch existing units from Firestore for audit:', err);
     }
@@ -314,9 +373,11 @@ export class FirestoreCatalogueService {
     const cleanId = academicUnitId.toLowerCase().trim();
 
     try {
-      const docRef = doc(db, FIRESTORE_COLLECTIONS.ACADEMIC_UNITS, cleanId);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
+      const snap = await this.getDocumentWithFallback(
+        FIRESTORE_COLLECTIONS.ACADEMIC_UNITS,
+        cleanId
+      );
+      if (snap && snap.exists()) {
         return snap.data() as AcademicUnitRecord;
       }
     } catch (err) {
@@ -347,11 +408,12 @@ export class FirestoreCatalogueService {
         constraints.push(startAfter(options.lastDoc));
       }
 
-      const colRef = collection(db, FIRESTORE_COLLECTIONS.DEPARTMENTS);
-      const q = query(colRef, ...constraints);
-      const snapshot = await getDocs(q);
+      const snapshot = await this.queryCollectionWithFallback(
+        FIRESTORE_COLLECTIONS.DEPARTMENTS,
+        constraints
+      );
 
-      if (!snapshot.empty) {
+      if (snapshot && !snapshot.empty) {
         const docs = snapshot.docs;
         const hasMore = docs.length > pageSize;
         const slice = hasMore ? docs.slice(0, pageSize) : docs;
@@ -390,9 +452,11 @@ export class FirestoreCatalogueService {
     const cleanId = departmentId.toLowerCase().trim();
 
     try {
-      const docRef = doc(db, FIRESTORE_COLLECTIONS.DEPARTMENTS, cleanId);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
+      const snap = await this.getDocumentWithFallback(
+        FIRESTORE_COLLECTIONS.DEPARTMENTS,
+        cleanId
+      );
+      if (snap && snap.exists()) {
         return snap.data() as DepartmentRecord;
       }
     } catch (err) {
@@ -424,11 +488,12 @@ export class FirestoreCatalogueService {
         constraints.push(startAfter(options.lastDoc));
       }
 
-      const colRef = collection(db, FIRESTORE_COLLECTIONS.PROGRAMMES);
-      const q = query(colRef, ...constraints);
-      const snapshot = await getDocs(q);
+      const snapshot = await this.queryCollectionWithFallback(
+        FIRESTORE_COLLECTIONS.PROGRAMMES,
+        constraints
+      );
 
-      if (!snapshot.empty) {
+      if (snapshot && !snapshot.empty) {
         const docs = snapshot.docs;
         const hasMore = docs.length > pageSize;
         const slice = hasMore ? docs.slice(0, pageSize) : docs;
@@ -479,11 +544,12 @@ export class FirestoreCatalogueService {
         constraints.push(startAfter(options.lastDoc));
       }
 
-      const colRef = collection(db, FIRESTORE_COLLECTIONS.PROGRAMMES);
-      const q = query(colRef, ...constraints);
-      const snapshot = await getDocs(q);
+      const snapshot = await this.queryCollectionWithFallback(
+        FIRESTORE_COLLECTIONS.PROGRAMMES,
+        constraints
+      );
 
-      if (!snapshot.empty) {
+      if (snapshot && !snapshot.empty) {
         const docs = snapshot.docs;
         const hasMore = docs.length > pageSize;
         const slice = hasMore ? docs.slice(0, pageSize) : docs;
@@ -513,9 +579,11 @@ export class FirestoreCatalogueService {
     const cleanId = programmeId.toLowerCase().trim();
 
     try {
-      const docRef = doc(db, FIRESTORE_COLLECTIONS.PROGRAMMES, cleanId);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
+      const snap = await this.getDocumentWithFallback(
+        FIRESTORE_COLLECTIONS.PROGRAMMES,
+        cleanId
+      );
+      if (snap && snap.exists()) {
         return snap.data() as ProgrammeRecord;
       }
     } catch (err) {
@@ -534,11 +602,12 @@ export class FirestoreCatalogueService {
     const cleanUniId = universityId.toLowerCase().trim();
 
     try {
-      const colRef = collection(db, FIRESTORE_COLLECTIONS.ACADEMIC_YEARS);
-      const q = query(colRef, where('universityId', '==', cleanUniId));
-      const snapshot = await getDocs(q);
+      const snapshot = await this.queryCollectionWithFallback(
+        FIRESTORE_COLLECTIONS.ACADEMIC_YEARS,
+        [where('universityId', '==', cleanUniId)]
+      );
 
-      if (!snapshot.empty) {
+      if (snapshot && !snapshot.empty) {
         return snapshot.docs.map((d) => d.data() as AcademicYearRecord);
       }
     } catch (err) {
@@ -601,11 +670,12 @@ export class FirestoreCatalogueService {
         constraints.push(startAfter(params.lastDoc));
       }
 
-      const colRef = collection(db, FIRESTORE_COLLECTIONS.COURSES);
-      const q = query(colRef, ...constraints);
-      const snapshot = await getDocs(q);
+      const snapshot = await this.queryCollectionWithFallback(
+        FIRESTORE_COLLECTIONS.COURSES,
+        constraints
+      );
 
-      if (!snapshot.empty) {
+      if (snapshot && !snapshot.empty) {
         const docs = snapshot.docs;
         const hasMore = docs.length > pageSize;
         const slice = hasMore ? docs.slice(0, pageSize) : docs;
@@ -648,11 +718,12 @@ export class FirestoreCatalogueService {
     const pageSize = options?.pageSize || 100;
 
     try {
-      const colRef = collection(db, FIRESTORE_COLLECTIONS.COURSES);
-      const q = query(colRef, where('programmeId', '==', cleanProgId), limit(pageSize));
-      const snapshot = await getDocs(q);
+      const snapshot = await this.queryCollectionWithFallback(
+        FIRESTORE_COLLECTIONS.COURSES,
+        [where('programmeId', '==', cleanProgId), limit(pageSize)]
+      );
 
-      if (!snapshot.empty) {
+      if (snapshot && !snapshot.empty) {
         const items = snapshot.docs.map((d) => d.data() as CourseRecord);
         return { items, lastDoc: null, hasMore: false, total: items.length };
       }
@@ -672,9 +743,11 @@ export class FirestoreCatalogueService {
     const cleanId = courseId.toLowerCase().trim();
 
     try {
-      const docRef = doc(db, FIRESTORE_COLLECTIONS.COURSES, cleanId);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
+      const snap = await this.getDocumentWithFallback(
+        FIRESTORE_COLLECTIONS.COURSES,
+        cleanId
+      );
+      if (snap && snap.exists()) {
         return snap.data() as CourseRecord;
       }
     } catch (err) {

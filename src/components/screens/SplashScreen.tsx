@@ -17,7 +17,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onContinue }) => {
   return (
     <div
       onClick={onContinue}
-      className="min-h-full flex-1 flex flex-col justify-between p-6 sm:p-8 bg-gradient-to-b from-[#070b14] via-[#0b1329] to-[#070b14] relative overflow-hidden text-center cursor-pointer select-none"
+      className="min-h-full min-h-screen sm:min-h-full flex-1 flex flex-col justify-between p-6 sm:p-8 bg-gradient-to-b from-[#070b14] via-[#0b1329] to-[#070b14] relative overflow-y-auto overflow-x-hidden text-center cursor-pointer select-none pb-8"
     >
       {/* Background Ambient Glow Orbs */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-72 h-72 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />

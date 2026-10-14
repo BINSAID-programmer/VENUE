@@ -28,7 +28,7 @@ export const DeviceWrapper: React.FC<DeviceWrapperProps> = ({ children, fullWidt
 
   if (fullWidth) {
     return (
-      <div className="min-h-screen w-full bg-slate-950 text-slate-100 antialiased font-sans selection:bg-indigo-600 selection:text-white">
+      <div className="min-h-screen min-h-[100dvh] h-auto w-full overflow-y-auto bg-slate-950 text-slate-100 antialiased font-sans selection:bg-indigo-600 selection:text-white">
         {children}
       </div>
     );
@@ -36,7 +36,7 @@ export const DeviceWrapper: React.FC<DeviceWrapperProps> = ({ children, fullWidt
 
   return (
     <div
-      className={`min-h-screen flex flex-col items-center justify-start p-0 sm:py-6 sm:px-4 selection:bg-blue-600 selection:text-white relative transition-colors duration-200 venue-device-outer ${
+      className={`min-h-screen min-h-[100dvh] h-auto w-full flex flex-col items-center justify-start p-0 sm:py-6 sm:px-4 selection:bg-blue-600 selection:text-white relative transition-colors duration-200 overflow-y-auto venue-device-outer ${
         isDark ? 'bg-[#04070e]' : 'bg-[#e5e7eb]'
       }`}
     >
@@ -85,7 +85,7 @@ export const DeviceWrapper: React.FC<DeviceWrapperProps> = ({ children, fullWidt
 
       {/* Main Container */}
       <div
-        className={`w-full transition-all duration-300 venue-device-frame ${
+        className={`w-full min-h-screen min-h-[100dvh] h-auto transition-all duration-300 venue-device-frame ${
           deviceMode === 'mobile-frame'
             ? `max-w-[430px] sm:min-h-[860px] sm:max-h-[920px] sm:rounded-[44px] sm:border-[8px] relative sm:overflow-hidden flex flex-col ${
                 isDark
@@ -131,7 +131,7 @@ export const DeviceWrapper: React.FC<DeviceWrapperProps> = ({ children, fullWidt
         )}
 
         {/* Inner Scrollable Screen Content */}
-        <div className="flex-1 flex flex-col overflow-y-auto relative custom-scrollbar pb-20">
+        <div className="flex-1 w-full min-h-0 flex flex-col overflow-y-auto relative custom-scrollbar pb-20">
           {children}
         </div>
       </div>

@@ -119,7 +119,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onGoToSignu
   };
 
   return (
-    <div className="min-h-full flex-1 flex flex-col justify-between p-5 sm:p-7 bg-gradient-to-b from-[#070b14] via-[#091122] to-[#070b14]">
+    <div className="min-h-full min-h-screen sm:min-h-full flex-1 flex flex-col justify-between p-5 sm:p-7 bg-gradient-to-b from-[#070b14] via-[#091122] to-[#070b14] overflow-y-auto overflow-x-hidden pb-8">
       {/* Top Header */}
       <div className="pt-2">
         <div className="flex items-center gap-2 mb-2">
@@ -281,7 +281,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onGoToSignu
 
       {/* Real Firebase Forgot Password Modal */}
       {forgotModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl space-y-4">
             <div>
               <h3 className="text-base font-bold text-white">Reset VENUE Password</h3>

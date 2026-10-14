@@ -136,6 +136,58 @@ class CourseCurriculumService {
   }
 
   /**
+   * Safe database fallback helper: tries configured primary database (db) first,
+   * and falls back to dbDefault ((default) Firestore database) when primary is empty
+   * or fails with a recoverable error such as resource-exhausted.
+   */
+  private async queryCollectionWithFallback(
+    collectionName: string,
+    constraints: QueryConstraint[]
+  ) {
+    let lastError: unknown = null;
+    for (const targetDb of [db, dbDefault]) {
+      if (!targetDb) continue;
+      try {
+        const colRef = collection(targetDb, collectionName);
+        const q = query(colRef, ...constraints);
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          return snapshot;
+        }
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    if (lastError) {
+      throw lastError;
+    }
+    return null;
+  }
+
+  private async getDocumentWithFallback(
+    collectionName: string,
+    docId: string
+  ) {
+    let lastError: unknown = null;
+    for (const targetDb of [db, dbDefault]) {
+      if (!targetDb) continue;
+      try {
+        const docRef = doc(targetDb, collectionName, docId);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          return snap;
+        }
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    if (lastError) {
+      throw lastError;
+    }
+    return null;
+  }
+
+  /**
    * Pre-indexes official prospectus course records by composite term key
    * to guarantee instant offline fallback without scanning thousands of records repeatedly.
    */
@@ -216,12 +268,59 @@ class CourseCurriculumService {
   public normalizeProgrammeId(programmeId?: string): string {
     if (!programmeId) return '';
     const clean = programmeId.toLowerCase().trim();
-    if (clean === 'math-stats-math' || clean === 'udsm-bsc-math-stats') return 'math-stats';
-    if (clean === 'udsm-bsc-cs') return 'bsc-cs';
+    if (
+      clean === 'math-stats-math' ||
+      clean === 'udsm-bsc-math-stats' ||
+      clean === 'bsc-math-stats' ||
+      clean === 'bsc_math_stats' ||
+      clean === 'udsm_bsc_math_stats' ||
+      clean === 'udsm_prog_bsc_math_stats'
+    ) {
+      return 'math-stats';
+    }
+    if (
+      clean === 'udsm-bsc-cs' ||
+      clean === 'bsc_cs' ||
+      clean === 'udsm_bsc_cs' ||
+      clean === 'udsm_prog_bsc_cs'
+    ) {
+      return 'bsc-cs';
+    }
+    if (
+      clean === 'actuarial' ||
+      clean === 'bsc_actuarial' ||
+      clean === 'udsm_bsc-actuarial' ||
+      clean === 'udsm_prog_bsc_actuarial'
+    ) {
+      return 'bsc-actuarial';
+    }
+    if (
+      clean === 'telecom' ||
+      clean === 'bsc_te' ||
+      clean === 'bsc_telecom' ||
+      clean === 'udsm_prog_bsc_te'
+    ) {
+      return 'bsc-telecom';
+    }
+    if (
+      clean === 'ba_econ' ||
+      clean === 'ba-econ' ||
+      clean === 'udsm_prog_ba_econ'
+    ) {
+      return 'ba-economics';
+    }
     if (clean === 'udsm-bcom-acc') return 'bcom-accounting';
     if (clean === 'udsm-llb') return 'llb';
     if (clean === 'udsm-md') return 'doctor-medicine';
-    if (clean === 'barch' || clean === 'udsm-barch' || clean === 'udsm-b-arch') return 'b-arch';
+    if (
+      clean === 'barch' ||
+      clean === 'udsm-barch' ||
+      clean === 'udsm-b-arch' ||
+      clean === 'b_arch' ||
+      clean === 'udsm_b-arch'
+    ) {
+      return 'b-arch';
+    }
     if (clean === 'udsm-bsc-qs') return 'bsc-qs';
     return clean;
   }
@@ -239,8 +338,8 @@ class CourseCurriculumService {
    *
    * Core scalable query for VENUE:
    * - Queries Firestore specifically by (programmeId, yearOfStudy, semester)
-   * - Scoped by departmentId to prevent cross-department contamination
-   * - Uses in-memory cache to prevent duplicate fetches
+   * - Scoped by departmentId and universityId to prevent cross-contamination
+   * - Uses in-memory cache to prevent duplicate fetches unless bypassCache === true
    * - Returns 'CURRICULUM DATA MISSING — DO NOT INFER' when curriculum is not yet published
    * - NEVER falls back to Mathematics & Statistics for other programmes!
    */
@@ -253,6 +352,8 @@ class CourseCurriculumService {
     universityId?: string;
     userId?: string;
     pageSize?: number;
+    bypassCache?: boolean;
+    academicYear?: string;
   }): Promise<{
     courses: CourseRecord[];
     source: 'firestore' | 'cache' | 'catalogue_fallback';
@@ -264,16 +365,18 @@ class CourseCurriculumService {
     const rawProgId = params.programmeId || '';
     const cleanProgId = this.normalizeProgrammeId(rawProgId);
     const cleanDeptId = (params.departmentId || '').toLowerCase().trim();
+    const cleanUniId = (params.universityId || 'udsm').toLowerCase().trim();
+    const cleanAcadYear = (params.academicYear || 'current').toLowerCase().trim();
 
     if (!cleanProgId || !yearOfStudy || !semester) {
       return { courses: [], source: 'cache', verified: false };
     }
 
-    // Scoped cache key to isolate by programme, department, year, semester
-    const cacheKey = `${cleanProgId}_${cleanDeptId || 'all'}_${yearOfStudy}_${semester}`;
+    // Scoped cache key to isolate by university, normalized programme, department, academicYear, yearOfStudy, semester
+    const cacheKey = `${cleanUniId}_${cleanProgId}_${cleanDeptId || 'all'}_${cleanAcadYear}_y${yearOfStudy}_s${semester}`;
 
-    // 1. Check in-memory cache
-    if (this.termCoursesCache.has(cacheKey)) {
+    // 1. Check in-memory cache (bypassed if bypassCache === true)
+    if (!params.bypassCache && this.termCoursesCache.has(cacheKey)) {
       const cached = this.termCoursesCache.get(cacheKey) || [];
       return {
         courses: cached,
@@ -284,9 +387,8 @@ class CourseCurriculumService {
       };
     }
 
-    // 2. Query Firestore with indexed constraints
+    // 2. Query Firestore with indexed constraints (primary db first, then dbDefault on recoverable error/empty)
     try {
-      const colRef = collection(db, FIRESTORE_COURSE_COLLECTION);
       const constraints: QueryConstraint[] = [
         where('programmeId', '==', cleanProgId),
         where('yearOfStudy', '==', Number(yearOfStudy)),
@@ -294,10 +396,12 @@ class CourseCurriculumService {
         limit(params.pageSize || 50),
       ];
 
-      const q = query(colRef, ...constraints);
-      const snapshot = await getDocs(q);
+      const snapshot = await this.queryCollectionWithFallback(
+        FIRESTORE_COURSE_COLLECTION,
+        constraints
+      );
 
-      if (!snapshot.empty) {
+      if (snapshot && !snapshot.empty) {
         let firestoreCourses: CourseRecord[] = snapshot.docs.map((d) => {
           const data = d.data() as CourseRecord;
           return {
@@ -311,7 +415,7 @@ class CourseCurriculumService {
           };
         });
 
-        // Cache the result
+        // Cache the authoritative Firestore result
         this.termCoursesCache.set(cacheKey, firestoreCourses);
         return {
           courses: firestoreCourses,
@@ -339,8 +443,9 @@ class CourseCurriculumService {
       active: true,
     }));
 
-    // Cache the fallback result for fast subsequent accesses
-    this.termCoursesCache.set(cacheKey, standardized);
+    // Do NOT cache degraded/empty fallback results as authoritative data.
+    // If bypassCache is requested or if courses are missing/degraded, do not poison termCoursesCache.
+    // This allows subsequent requests to immediately query authoritative Firestore once available.
 
     const isMissing = standardized.length === 0;
     return {
@@ -373,8 +478,8 @@ class CourseCurriculumService {
 
     if (!progMeta) {
       try {
-        const pSnap = await getDoc(doc(db, 'programmes', cleanId));
-        if (pSnap.exists()) {
+        const pSnap = await this.getDocumentWithFallback('programmes', cleanId);
+        if (pSnap && pSnap.exists()) {
           progMeta = pSnap.data() as any;
         }
       } catch (err) {
@@ -447,9 +552,8 @@ class CourseCurriculumService {
     const cleanId = courseId.toLowerCase().trim();
 
     try {
-      const docRef = doc(db, FIRESTORE_COURSE_COLLECTION, cleanId);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
+      const snap = await this.getDocumentWithFallback(FIRESTORE_COURSE_COLLECTION, cleanId);
+      if (snap && snap.exists()) {
         const data = snap.data() as CourseRecord;
         return {
           ...data,
@@ -771,36 +875,37 @@ class CourseCurriculumService {
       codeToIds.set(cleanCode, existingIds);
     }
 
-    // A. Fetch Real Lecturer Course Assignments from Firestore (both dbDefault and db)
+    // A. Fetch Real Lecturer Course Assignments from Firestore (using safe fallback helper)
     try {
-      const dbsToCheck = [dbDefault, db].filter(Boolean);
       const assignmentsById = new Map<string, any>();
       const lecturersById = new Map<string, any>();
 
-      for (const targetDb of dbsToCheck) {
-        try {
-          const lcaSnap = await getDocs(query(collection(targetDb, 'lecturer_courses'), limit(300)));
+      try {
+        const lcaSnap = await this.queryCollectionWithFallback('lecturer_courses', [limit(300)]);
+        if (lcaSnap) {
           lcaSnap.forEach((d) => {
             const data = d.data();
             if (data && data.status !== 'inactive' && data.lecturerId) {
               assignmentsById.set(d.id, { id: d.id, ...data });
             }
           });
-        } catch {
-          // continue
         }
+      } catch {
+        // continue
+      }
 
-        try {
-          const lecSnap = await getDocs(query(collection(targetDb, 'lecturers'), limit(300)));
+      try {
+        const lecSnap = await this.queryCollectionWithFallback('lecturers', [limit(300)]);
+        if (lecSnap) {
           lecSnap.forEach((d) => {
             const data = d.data();
             if (data && data.status === 'active' && data.fullName) {
               lecturersById.set(d.id, { id: d.id, ...data });
             }
           });
-        } catch {
-          // continue
         }
+      } catch {
+        // continue
       }
 
       assignmentsById.forEach((assign) => {
@@ -854,21 +959,20 @@ class CourseCurriculumService {
 
     // B. Fetch Real Uploaded Materials from Firestore & Backend Metadata Endpoint
     try {
-      const dbsToCheck = [dbDefault, db].filter(Boolean);
       const rawMaterialsById = new Map<string, any>();
 
-      for (const targetDb of dbsToCheck) {
-        try {
-          const matSnap = await getDocs(query(collection(targetDb, 'materials'), limit(500)));
+      try {
+        const matSnap = await this.queryCollectionWithFallback('materials', [limit(500)]);
+        if (matSnap) {
           matSnap.forEach((d) => {
             const data = d.data();
             if (data) {
               rawMaterialsById.set(d.id, { id: d.id, ...data });
             }
           });
-        } catch {
-          // continue
         }
+      } catch {
+        // continue
       }
 
       try {

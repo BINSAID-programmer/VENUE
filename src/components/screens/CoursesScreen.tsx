@@ -972,7 +972,7 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
     const credits = Number(course.credits) || 12;
 
     return (
-      <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
         <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5 shadow-2xl animate-fadeIn relative">
           {/* Close button */}
           <button

@@ -1706,7 +1706,7 @@ export const LecturerWorkspace: React.FC<LecturerWorkspaceProps> = ({
 
       {/* Edit Profile Modal (Stage 5B) */}
       {isEditingProfile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
           <div
             className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100"
             onClick={(e) => e.stopPropagation()}

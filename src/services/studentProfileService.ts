@@ -1,5 +1,6 @@
 import { StudentProfile } from '../types';
 import { db, dbDefault, auth, storage, isVerifiedOwnerAccount } from './firebase';
+import { authenticatedFetch } from './apiClient';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { updateProfile, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
@@ -183,7 +184,7 @@ export async function updateStudentPersonalProfile(
 
   // 2. Save persistently to server storage
   try {
-    const res = await fetch('/api/student/profile', {
+    const res = await authenticatedFetch('/api/student/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid: targetUid, profile: merged }),
@@ -402,7 +403,7 @@ export async function loadStudentProfile(uid: string, email?: string): Promise<S
 
     // 2. Try server-side persistent endpoint by UID
     if (targetUid) {
-      const res = await fetch(`/api/student/profile/${encodeURIComponent(targetUid)}`);
+      const res = await authenticatedFetch(`/api/student/profile/${encodeURIComponent(targetUid)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.profile) {
@@ -424,7 +425,7 @@ export async function loadStudentProfile(uid: string, email?: string): Promise<S
     // 3. Try server-side persistent endpoint by Email
     if (email) {
       const cleanEmail = email.toLowerCase().trim();
-      const resByEmail = await fetch(`/api/student/profile/by-email/${encodeURIComponent(cleanEmail)}`);
+      const resByEmail = await authenticatedFetch(`/api/student/profile/by-email/${encodeURIComponent(cleanEmail)}`);
       if (resByEmail.ok) {
         const data = await resByEmail.json();
         if (data.success && data.profile) {
@@ -551,11 +552,19 @@ export async function saveStudentProfile(profile: StudentProfile): Promise<Stude
 
   // Cache in localStorage for immediate optimistic UI rendering
   // Stage 9B Security Hardening: Strip any unauthorized role escalation or administrative permission injection
+  const rawRole = (enrichedProfile as any).role;
   const safeStudentProfile: StudentProfile = {
     ...enrichedProfile,
-    role: enrichedProfile.role === 'super_admin' || enrichedProfile.role === 'university_admin' || enrichedProfile.role === 'college_admin' || enrichedProfile.role === 'department_moderator' || enrichedProfile.role === 'lecturer'
-      ? 'student'
-      : (enrichedProfile.role || 'student'),
+    ...({
+      role:
+        rawRole === 'super_admin' ||
+        rawRole === 'university_admin' ||
+        rawRole === 'college_admin' ||
+        rawRole === 'department_moderator' ||
+        rawRole === 'lecturer'
+          ? 'student'
+          : rawRole || 'student',
+    } as any),
   };
   delete (safeStudentProfile as any).permissions;
 
@@ -571,7 +580,7 @@ export async function saveStudentProfile(profile: StudentProfile): Promise<Stude
 
   // Save to server persistent API
   try {
-    const res = await fetch('/api/student/profile', {
+    const res = await authenticatedFetch('/api/student/profile', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

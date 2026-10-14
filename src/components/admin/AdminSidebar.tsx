@@ -98,7 +98,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   ];
 
   const sidebarContent = (
-    <div className="flex h-full flex-col justify-between bg-slate-950/95 border-r border-slate-800/80 p-4">
+    <div className="flex h-full min-h-0 flex-col justify-between bg-slate-950/95 border-r border-slate-800/80 p-4 overflow-y-auto">
       {/* Brand & Platform Header */}
       <div>
         <div className="flex items-center justify-between pb-5 border-b border-slate-800/80">

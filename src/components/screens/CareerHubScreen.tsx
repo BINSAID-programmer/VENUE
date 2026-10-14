@@ -1424,7 +1424,7 @@ export const CareerHubScreen: React.FC<CareerHubScreenProps> = ({
           MODAL 1: STUDENT CAREER PREFERENCES (Section 29)
          ==================================================================== */}
       {isPrefModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <div>
@@ -1564,7 +1564,7 @@ export const CareerHubScreen: React.FC<CareerHubScreenProps> = ({
           MODAL 2: REPORT AI CAREER ADVISOR RESPONSE (Section 37 Play Store Safety)
          ==================================================================== */}
       {reportingMessage && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-white flex items-center gap-1.5">

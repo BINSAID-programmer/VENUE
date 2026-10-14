@@ -5,6 +5,7 @@ import {
   getCountFromServer,
 } from 'firebase/firestore';
 import { db, dbDefault } from './firebase';
+import { authenticatedFetch } from './apiClient';
 import {
   AdminAdvancedAnalytics,
   AnalyticsDateRange,
@@ -85,7 +86,7 @@ class AdminAnalyticsService {
       });
       if (forceRefresh) params.append('refresh', 'true');
 
-      const res = await fetch(`/api/admin/analytics/overview?${params.toString()}`);
+      const res = await authenticatedFetch(`/api/admin/analytics/overview?${params.toString()}`);
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.overview) {

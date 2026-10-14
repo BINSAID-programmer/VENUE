@@ -12,6 +12,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { db, dbDefault, auth } from './firebase';
+import { authenticatedFetch } from './apiClient';
 import { adminAuditService } from './adminAuditService';
 import {
   AnnouncementRecord,
@@ -339,7 +340,7 @@ class AnnouncementsService {
       if (userContext?.yearOfStudy) params.append('yearOfStudy', String(userContext.yearOfStudy));
       if (userContext?.semester) params.append('semester', String(userContext.semester));
 
-      const res = await fetch(`/api/announcements?${params.toString()}`);
+      const res = await authenticatedFetch(`/api/announcements?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.announcements)) {
@@ -746,7 +747,7 @@ class AnnouncementsService {
 
     // 1. Try server endpoint
     try {
-      const res = await fetch(`/api/announcements/reads/${userId}`);
+      const res = await authenticatedFetch(`/api/announcements/reads/${encodeURIComponent(userId)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.readAnnouncementIds)) {
@@ -801,7 +802,7 @@ class AnnouncementsService {
 
     // 1. Server write
     try {
-      fetch('/api/announcements/reads', {
+      authenticatedFetch('/api/announcements/reads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, announcementId }),

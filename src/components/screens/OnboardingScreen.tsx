@@ -334,7 +334,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   };
 
   return (
-    <div className="min-h-full flex-1 flex flex-col justify-between p-4 sm:p-7 bg-gradient-to-b from-[#070b14] via-[#091122] to-[#070b14] relative">
+    <div className="min-h-full min-h-screen sm:min-h-full flex-1 flex flex-col justify-between p-4 sm:p-7 bg-gradient-to-b from-[#070b14] via-[#091122] to-[#070b14] relative overflow-y-auto overflow-x-hidden pb-8">
       {/* Top Stepper Navigation */}
       <div>
         <div className="flex items-center justify-between mb-3">

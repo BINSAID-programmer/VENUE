@@ -42,6 +42,7 @@ import { courseCurriculumService } from './services/courseCurriculumService';
 import { degreeProgrammeService } from './services/degreeProgrammeService';
 import { studentDashboardService } from './services/studentDashboardService';
 import { communityService } from './services/communityService';
+import { verifyCurrentSessionWhoAmI } from './services/apiClient';
 
 // Layout Components
 import { DeviceWrapper } from './components/layout/DeviceWrapper';
@@ -82,6 +83,8 @@ import { LecturerGuard } from './components/lecturer';
 import { lecturerAuthService } from './services/lecturerAuthService';
 import { ThemeProvider } from './context/ThemeContext';
 import { ShieldAlert, CheckCircle2, AlertTriangle } from 'lucide-react';
+// [TEMPORARY STAGE 1 DIAGNOSTIC PANEL — REMOVE AFTER VERIFICATION]
+import { TempAuthDiagnosticPanel } from './components/TempAuthDiagnosticPanel';
 
 export const App: React.FC = () => {
   // Navigation State
@@ -303,6 +306,9 @@ export const App: React.FC = () => {
       if (!isMounted) return;
       if (firebaseUser) {
         try {
+          // [TEMPORARY STAGE 1 DIAGNOSTIC — REMOVE AFTER VERIFICATION]
+          verifyCurrentSessionWhoAmI().catch(() => {});
+
           const uid = firebaseUser.uid;
           const email = firebaseUser.email || '';
           const isVerified = Boolean(firebaseUser.emailVerified);
@@ -870,7 +876,7 @@ export const App: React.FC = () => {
       )}
 
       {/* Screen Router View */}
-      <main className="flex-1 w-full relative">
+      <main className="flex-1 w-full min-h-0 relative">
         {/* Step 1: Splash Screen */}
         {currentScreen === 'splash' && (
           <SplashScreen onContinue={() => handleNavigate('welcome')} />
@@ -1313,7 +1319,7 @@ export const App: React.FC = () => {
 
       {/* Stage 6D: Inactive Account Interactive Access Notice Modal */}
       {showInactiveNoticeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
           <div className="relative w-full max-w-md bg-slate-900 border border-rose-500/30 rounded-3xl p-6 shadow-2xl space-y-4">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center shrink-0">
@@ -1365,6 +1371,9 @@ export const App: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* [TEMPORARY STAGE 1 DIAGNOSTIC PANEL — REMOVE AFTER VERIFICATION] */}
+      <TempAuthDiagnosticPanel />
     </DeviceWrapper>
   </ThemeProvider>
   );

@@ -321,7 +321,7 @@ export const ScholarshipsScreen: React.FC<ScholarshipsScreenProps> = ({
 
       {/* Detailed Eligibility & Required Documents Modal */}
       {selectedItem && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="w-full max-w-lg max-h-[88vh] overflow-y-auto rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl space-y-4">
             <div className="flex items-start justify-between gap-3">
               <div>

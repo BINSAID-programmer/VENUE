@@ -202,7 +202,7 @@ export const FinancialPlannerScreen: React.FC<FinancialPlannerScreenProps> = ({
 
       {/* Modal to add transaction */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl">
             <h3 className="text-base font-bold text-white mb-3">Record Expense</h3>
 

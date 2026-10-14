@@ -81,7 +81,7 @@ export const StudentMaterialDetailModal: React.FC<StudentMaterialDetailModalProp
   return (
     <>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto"
         onClick={onClose}
       >
         <div
