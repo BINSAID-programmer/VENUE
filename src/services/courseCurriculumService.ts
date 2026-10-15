@@ -128,6 +128,9 @@ class CourseCurriculumService {
   // Set of programme IDs with verified courses
   private verifiedProgrammeIds = new Set<string>();
 
+  // Set of all known canonical programme IDs from audited catalogue
+  private knownProgrammeIds = new Set<string>();
+
   private isBootstrapping = false;
   private isBootstrapped = false;
 
@@ -192,137 +195,316 @@ class CourseCurriculumService {
    * to guarantee instant offline fallback without scanning thousands of records repeatedly.
    */
   private indexAuditedCatalogue() {
+    this.knownProgrammeIds = new Set([
+      ...UDSM_PROGRAMMES.map((p) => p.id.toLowerCase().trim()),
+      ...AUDITED_PROGRAMMES.map((p) => p.id.toLowerCase().trim()),
+    ]);
+
     for (const rec of UDSM_VERIFIED_COURSES) {
-      const pId = rec.programmeId.toLowerCase().trim();
+      const rawPid = rec.programmeId.toLowerCase().trim();
+      const normPid = this.normalizeProgrammeId(rawPid);
       const y = Number(rec.yearOfStudy);
       const s = Number(rec.semester);
 
-      this.verifiedProgrammeIds.add(pId);
+      this.verifiedProgrammeIds.add(rawPid);
+      this.verifiedProgrammeIds.add(normPid);
 
-      const key = `${pId}_${y}_${s}`;
-      const list = this.officialRecordsByTerm.get(key) || [];
-      if (!list.some((existing) => existing.code.replace(/\s+/g, '') === rec.code.replace(/\s+/g, ''))) {
-        list.push(rec);
-      }
-      this.officialRecordsByTerm.set(key, list);
-
-      // Support alias mappings (e.g. math-stats <-> udsm-bsc-math-stats)
-      if (pId === 'udsm-bsc-math-stats') {
-        const aliasKey = `math-stats_${y}_${s}`;
-        const aliasList = this.officialRecordsByTerm.get(aliasKey) || [];
-        if (!aliasList.some((e) => e.code.replace(/\s+/g, '') === rec.code.replace(/\s+/g, ''))) {
-          aliasList.push(rec);
+      for (const pId of new Set([rawPid, normPid])) {
+        const key = `${pId}_${y}_${s}`;
+        const list = this.officialRecordsByTerm.get(key) || [];
+        if (!list.some((existing) => existing.code.replace(/\s+/g, '') === rec.code.replace(/\s+/g, ''))) {
+          list.push(rec);
         }
-        this.officialRecordsByTerm.set(aliasKey, aliasList);
-      }
-      if (pId === 'udsm-bsc-cs') {
-        const aliasKey = `bsc-cs_${y}_${s}`;
-        const aliasList = this.officialRecordsByTerm.get(aliasKey) || [];
-        if (!aliasList.some((e) => e.code.replace(/\s+/g, '') === rec.code.replace(/\s+/g, ''))) {
-          aliasList.push(rec);
-        }
-        this.officialRecordsByTerm.set(aliasKey, aliasList);
+        this.officialRecordsByTerm.set(key, list);
       }
     }
 
     // Also index official audited programme courses for comprehensive offline and fallback coverage
     for (const pc of UDSM_PROGRAMME_COURSES) {
-      const pId = pc.programmeId.toLowerCase().trim();
+      const rawPid = pc.programmeId.toLowerCase().trim();
+      const normPid = this.normalizeProgrammeId(rawPid);
       const y = Number(pc.yearOfStudy);
       const s = Number(pc.semester);
-      if (!pId || !y || !s) continue;
+      if (!rawPid || !y || !s) continue;
 
-      this.verifiedProgrammeIds.add(pId);
-      const key = `${pId}_${y}_${s}`;
-      const list = this.officialRecordsByTerm.get(key) || [];
+      this.verifiedProgrammeIds.add(rawPid);
+      this.verifiedProgrammeIds.add(normPid);
+
       const cleanCode = pc.code.replace(/\s+/g, '');
-      if (!list.some((existing) => existing.code.replace(/\s+/g, '') === cleanCode)) {
-        list.push({
-          id: pc.id,
-          code: pc.code,
-          courseCode: pc.code,
-          title: pc.title,
-          courseName: pc.title,
-          credits: Number(pc.credits) || 12,
-          yearOfStudy: y,
-          semester: s,
-          courseType: pc.status || 'Core',
-          status: pc.status || 'Core',
-          programmeId: pId,
-          departmentId: pc.departmentId,
-          academicUnitId: pc.academicUnitId,
-          universityId: pc.universityId || 'udsm',
-          verified: true,
-          active: true,
-          source: pc.source,
-          sourceType: pc.sourceType || 'official_prospectus',
-        } as CourseRecord);
+      const record: CourseRecord = {
+        id: pc.id,
+        code: pc.code,
+        courseCode: pc.code,
+        title: pc.title,
+        courseName: pc.title,
+        credits: Number(pc.credits) || 12,
+        yearOfStudy: y,
+        semester: s,
+        courseType: pc.status || 'Core',
+        status: pc.status || 'Core',
+        programmeId: normPid || rawPid,
+        departmentId: pc.departmentId,
+        academicUnitId: pc.academicUnitId,
+        universityId: pc.universityId || 'udsm',
+        verified: true,
+        active: true,
+        source: pc.source,
+        sourceType: pc.sourceType || 'official_prospectus',
+      } as CourseRecord;
+
+      for (const pId of new Set([rawPid, normPid])) {
+        const key = `${pId}_${y}_${s}`;
+        const list = this.officialRecordsByTerm.get(key) || [];
+        if (!list.some((existing) => existing.code.replace(/\s+/g, '') === cleanCode)) {
+          list.push(record);
+        }
+        this.officialRecordsByTerm.set(key, list);
       }
-      this.officialRecordsByTerm.set(key, list);
     }
   }
 
   /**
-   * Normalize programme identifier to support legacy and canonical formats
+   * Checks whether a programme ID is recognized in the official catalogue
    */
-  public normalizeProgrammeId(programmeId?: string): string {
-    if (!programmeId) return '';
-    const clean = programmeId.toLowerCase().trim();
-    if (
-      clean === 'math-stats-math' ||
-      clean === 'udsm-bsc-math-stats' ||
-      clean === 'bsc-math-stats' ||
-      clean === 'bsc_math_stats' ||
-      clean === 'udsm_bsc_math_stats' ||
-      clean === 'udsm_prog_bsc_math_stats'
-    ) {
-      return 'math-stats';
+  public isKnownProgrammeId(programmeId?: string): boolean {
+    if (!programmeId) return false;
+    const lower = programmeId.toLowerCase().trim();
+    return this.knownProgrammeIds.has(lower);
+  }
+
+  /**
+   * Normalize programme identifier to support legacy and canonical formats
+   * without merging distinct degree programmes.
+   */
+  public normalizeProgrammeId(programmeId?: string, programmeName?: string): string {
+    if (!programmeId && !programmeName) return '';
+    const clean = (programmeId || '').toLowerCase().trim();
+
+    // Specific known alias mappings to canonical programme IDs
+    const aliasMap: Record<string, string> = {
+      // Mathematics & Statistics
+      'math-stats-math': 'math-stats',
+      'udsm-bsc-math-stats': 'math-stats',
+      'bsc-math-stats': 'math-stats',
+      'bsc_math_stats': 'math-stats',
+      'udsm_bsc_math_stats': 'math-stats',
+      'udsm_prog_bsc_math_stats': 'math-stats',
+      'math_stats': 'math-stats',
+      'bsc-math-and-stats': 'math-stats',
+
+      // Computer Science
+      'udsm-bsc-cs': 'bsc-cs',
+      'bsc_cs': 'bsc-cs',
+      'udsm_bsc_cs': 'bsc-cs',
+      'udsm_prog_bsc_cs': 'bsc-cs',
+      'bsc-computer-science': 'bsc-cs',
+      'bsc_computer_science': 'bsc-cs',
+      'computer-science': 'bsc-cs',
+
+      // Actuarial Science
+      'actuarial': 'bsc-actuarial',
+      'bsc_actuarial': 'bsc-actuarial',
+      'udsm_bsc-actuarial': 'bsc-actuarial',
+      'udsm_prog_bsc_actuarial': 'bsc-actuarial',
+      'udsm-bsc-actuarial': 'bsc-actuarial',
+      'bsc-actuarial-science': 'bsc-actuarial',
+
+      // Telecommunications Engineering
+      'telecom': 'bsc-telecom',
+      'bsc_te': 'bsc-telecom',
+      'bsc_telecom': 'bsc-telecom',
+      'bsc-te': 'bsc-telecom',
+      'udsm_prog_bsc_te': 'bsc-telecom',
+      'udsm-bsc-te': 'bsc-telecom',
+      'udsm-bsc-telecom': 'bsc-telecom',
+      'udsm_bsc_telecom': 'bsc-telecom',
+
+      // Economics
+      'ba_econ': 'ba-economics',
+      'ba-econ': 'ba-economics',
+      'udsm_prog_ba_econ': 'ba-economics',
+      'udsm-ba-econ': 'ba-economics',
+      'udsm-ba-economics': 'ba-economics',
+      'ba_economics': 'ba-economics',
+
+      // Economics and Statistics
+      'ba_econ_stat': 'ba-econ-stats',
+      'ba_econ_stats': 'ba-econ-stats',
+      'ba-econ-stat': 'ba-econ-stats',
+      'udsm_prog_ba_econ_stat': 'ba-econ-stats',
+      'udsm-ba-econ-stats': 'ba-econ-stats',
+
+      // Statistics (BSc)
+      'bsc_stats': 'bsc-stats',
+      'udsm-bsc-stats': 'bsc-stats',
+      'udsm_bsc_stats': 'bsc-stats',
+      'udsm_prog_bsc_stats': 'bsc-stats',
+      'bsc-statistics': 'bsc-stats',
+
+      // Accounting
+      'udsm-bcom-acc': 'bcom-accounting',
+      'bcom_acc': 'bcom-accounting',
+      'bcom-acc': 'bcom-accounting',
+      'udsm_bcom_acc': 'bcom-accounting',
+      'udsm_prog_bcom_acc': 'bcom-accounting',
+      'bcom_accounting': 'bcom-accounting',
+      'udsm-bcom-accounting': 'bcom-accounting',
+
+      // Law
+      'udsm-llb': 'llb',
+      'udsm_llb': 'llb',
+      'bachelor-of-laws': 'llb',
+
+      // Doctor of Medicine
+      'udsm-md': 'doctor-medicine',
+      'md': 'doctor-medicine',
+      'doctor_medicine': 'doctor-medicine',
+      'udsm-doctor-medicine': 'doctor-medicine',
+      'udsm_md': 'doctor-medicine',
+
+      // Architecture
+      'barch': 'b-arch',
+      'udsm-barch': 'b-arch',
+      'udsm-b-arch': 'b-arch',
+      'b_arch': 'b-arch',
+      'udsm_b-arch': 'b-arch',
+
+      // Quantity Surveying
+      'udsm-bsc-qs': 'bsc-qs',
+      'bsc_qs': 'bsc-qs',
+      'udsm_bsc_qs': 'bsc-qs',
+
+      // Civil Engineering
+      'bsc_civil': 'bsc-civil',
+      'udsm-bsc-civil': 'bsc-civil',
+      'udsm_bsc_civil': 'bsc-civil',
+      'udsm_prog_bsc_civil': 'bsc-civil',
+
+      // Mechanical Engineering
+      'bsc_mech': 'bsc-mech',
+      'udsm-bsc-mech': 'bsc-mech',
+      'udsm_bsc_mech': 'bsc-mech',
+      'udsm_prog_bsc_mech': 'bsc-mech',
+
+      // Electrical Engineering
+      'bsc_elec_eng': 'bsc-elec-eng',
+      'bsc-ee': 'bsc-elec-eng',
+      'udsm-bsc-ee': 'bsc-elec-eng',
+      'udsm-bsc-elec-eng': 'bsc-elec-eng',
+
+      // Business Information Technology
+      'bsc_bit': 'bsc-bit',
+      'udsm-bsc-bit': 'bsc-bit',
+      'udsm_bsc_bit': 'bsc-bit',
+      'udsm_prog_bsc_bit': 'bsc-bit',
+
+      // Computer Engineering & IT
+      'bsc_ceit': 'bsc-ceit',
+      'udsm-bsc-ceit': 'bsc-ceit',
+      'udsm_bsc_ceit': 'bsc-ceit',
+      'udsm_prog_bsc_ceit': 'bsc-ceit',
+
+      // Electronic Science & Communication
+      'bsc_esc': 'bsc-esc',
+      'bsc_es': 'bsc-esc',
+      'bsc-es': 'bsc-esc',
+      'udsm-bsc-esc': 'bsc-esc',
+      'udsm_prog_bsc_es': 'bsc-esc',
+      'udsm_prog_bsc_esc': 'bsc-esc',
+
+      // Molecular Biology & Biotechnology
+      'bsc_mol_bio': 'bsc-mol-bio',
+      'bsc-mbb': 'bsc-mol-bio',
+      'bsc_mbb': 'bsc-mol-bio',
+      'udsm_prog_bsc_mbb': 'bsc-mol-bio',
+      'udsm-bsc-mol-bio': 'bsc-mol-bio',
+      'udsm-bsc-mbb': 'bsc-mol-bio',
+
+      // BSc with Education
+      'bsc_ed': 'bsc-ed',
+      'udsm-bsc-ed': 'bsc-ed',
+      'udsm_bsc_ed': 'bsc-ed',
+      'udsm_prog_bsc_ed': 'bsc-ed',
+    };
+
+    if (clean && aliasMap[clean]) {
+      return aliasMap[clean];
     }
-    if (
-      clean === 'udsm-bsc-cs' ||
-      clean === 'bsc_cs' ||
-      clean === 'udsm_bsc_cs' ||
-      clean === 'udsm_prog_bsc_cs'
-    ) {
-      return 'bsc-cs';
+
+    // Strip prefix udsm_prog_, udsm-, udsm_ only if it leads to a known programme or alias
+    if (clean) {
+      const stripped = clean.replace(/^(udsm[-_]prog[-_]|udsm[-_])/, '').replace(/_/g, '-');
+      if (aliasMap[stripped]) {
+        return aliasMap[stripped];
+      }
+      if (this.isKnownProgrammeId(stripped)) {
+        return stripped;
+      }
     }
-    if (
-      clean === 'actuarial' ||
-      clean === 'bsc_actuarial' ||
-      clean === 'udsm_bsc-actuarial' ||
-      clean === 'udsm_prog_bsc_actuarial'
-    ) {
-      return 'bsc-actuarial';
+
+    if (clean && this.isKnownProgrammeId(clean)) {
+      return clean;
     }
-    if (
-      clean === 'telecom' ||
-      clean === 'bsc_te' ||
-      clean === 'bsc_telecom' ||
-      clean === 'udsm_prog_bsc_te'
-    ) {
-      return 'bsc-telecom';
+
+    // Try to resolve from programmeName if programmeId is absent or unresolvable
+    if (programmeName) {
+      const cleanName = programmeName.toLowerCase().trim();
+      const fromAudited = AUDITED_PROGRAMMES.find(
+        (p) =>
+          p.name.toLowerCase() === cleanName ||
+          (p.shortName && p.shortName.toLowerCase() === cleanName) ||
+          p.id.toLowerCase() === cleanName
+      );
+      if (fromAudited) return fromAudited.id;
+
+      const fromProspectus = UDSM_PROGRAMMES.find(
+        (p) =>
+          p.name.toLowerCase() === cleanName ||
+          (p.shortName && p.shortName.toLowerCase() === cleanName) ||
+          p.id.toLowerCase() === cleanName
+      );
+      if (fromProspectus) return fromProspectus.id;
     }
-    if (
-      clean === 'ba_econ' ||
-      clean === 'ba-econ' ||
-      clean === 'udsm_prog_ba_econ'
-    ) {
-      return 'ba-economics';
-    }
-    if (clean === 'udsm-bcom-acc') return 'bcom-accounting';
-    if (clean === 'udsm-llb') return 'llb';
-    if (clean === 'udsm-md') return 'doctor-medicine';
-    if (
-      clean === 'barch' ||
-      clean === 'udsm-barch' ||
-      clean === 'udsm-b-arch' ||
-      clean === 'b_arch' ||
-      clean === 'udsm_b-arch'
-    ) {
-      return 'b-arch';
-    }
-    if (clean === 'udsm-bsc-qs') return 'bsc-qs';
+
     return clean;
+  }
+
+  /**
+   * Constructs an isolated cache key based on all parameters affecting course results:
+   * - university ID
+   * - canonical/resolved programme ID
+   * - academic year
+   * - semester (and year of study)
+   *
+   * Includes programme name slug only if the programmeId could not be resolved to a known
+   * canonical ID and programmeName materially distinguishes the record.
+   */
+  public buildTermCoursesCacheKey(params: {
+    universityId?: string;
+    programmeId: string;
+    academicYear?: string;
+    yearOfStudy: number;
+    semester: number;
+    programmeName?: string;
+  }): string {
+    const cleanUniId = (params.universityId || 'udsm').toLowerCase().trim();
+    const cleanProgId = this.normalizeProgrammeId(params.programmeId, params.programmeName);
+    const cleanAcadYear = (params.academicYear || 'current').toLowerCase().trim();
+    const y = Number(params.yearOfStudy);
+    const s = Number(params.semester);
+
+    let nameSlug = '';
+    if (params.programmeName && !this.isKnownProgrammeId(cleanProgId)) {
+      const sanitizedName = params.programmeName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      if (sanitizedName && sanitizedName !== cleanProgId) {
+        nameSlug = `_pn-${sanitizedName}`;
+      }
+    }
+
+    return `${cleanUniId}_${cleanProgId}_${cleanAcadYear}_y${y}_s${s}${nameSlug}`;
   }
 
   /**
@@ -338,10 +520,13 @@ class CourseCurriculumService {
    *
    * Core scalable query for VENUE:
    * - Queries Firestore specifically by (programmeId, yearOfStudy, semester)
-   * - Scoped by departmentId and universityId to prevent cross-contamination
+   * - Scoped by universityId and academicYear to prevent cross-contamination
    * - Uses in-memory cache to prevent duplicate fetches unless bypassCache === true
+   * - When bypassCache === true, skips all cache lookups (including post-alias resolution)
+   *   and clears any stale cached entry for the key
    * - Returns 'CURRICULUM DATA MISSING — DO NOT INFER' when curriculum is not yet published
-   * - NEVER falls back to Mathematics & Statistics for other programmes!
+   * - Deduplicates courses by normalized course code
+   * - Does NOT cache degraded or empty fallback results as authoritative data
    */
   async getCoursesByProgrammeAndTerm(params: {
     programmeId: string;
@@ -354,6 +539,7 @@ class CourseCurriculumService {
     pageSize?: number;
     bypassCache?: boolean;
     academicYear?: string;
+    programmeName?: string;
   }): Promise<{
     courses: CourseRecord[];
     source: 'firestore' | 'cache' | 'catalogue_fallback';
@@ -362,9 +548,8 @@ class CourseCurriculumService {
     statusMessage?: string;
   }> {
     const { yearOfStudy, semester } = params;
-    const rawProgId = params.programmeId || '';
-    const cleanProgId = this.normalizeProgrammeId(rawProgId);
-    const cleanDeptId = (params.departmentId || '').toLowerCase().trim();
+    const rawProgId = (params.programmeId || '').trim();
+    const cleanProgId = this.normalizeProgrammeId(rawProgId, params.programmeName);
     const cleanUniId = (params.universityId || 'udsm').toLowerCase().trim();
     const cleanAcadYear = (params.academicYear || 'current').toLowerCase().trim();
 
@@ -372,11 +557,20 @@ class CourseCurriculumService {
       return { courses: [], source: 'cache', verified: false };
     }
 
-    // Scoped cache key to isolate by university, normalized programme, department, academicYear, yearOfStudy, semester
-    const cacheKey = `${cleanUniId}_${cleanProgId}_${cleanDeptId || 'all'}_${cleanAcadYear}_y${yearOfStudy}_s${semester}`;
+    // Build canonical cache key isolating university, canonical programme ID, academic year, yearOfStudy, semester
+    const cacheKey = this.buildTermCoursesCacheKey({
+      universityId: cleanUniId,
+      programmeId: cleanProgId,
+      academicYear: cleanAcadYear,
+      yearOfStudy: Number(yearOfStudy),
+      semester: Number(semester),
+      programmeName: params.programmeName,
+    });
 
-    // 1. Check in-memory cache (bypassed if bypassCache === true)
-    if (!params.bypassCache && this.termCoursesCache.has(cacheKey)) {
+    // 1. If bypassCache is requested, skip all in-memory cache lookups and invalidate stale cache entry
+    if (params.bypassCache) {
+      this.termCoursesCache.delete(cacheKey);
+    } else if (this.termCoursesCache.has(cacheKey)) {
       const cached = this.termCoursesCache.get(cacheKey) || [];
       return {
         courses: cached,
@@ -402,7 +596,7 @@ class CourseCurriculumService {
       );
 
       if (snapshot && !snapshot.empty) {
-        let firestoreCourses: CourseRecord[] = snapshot.docs.map((d) => {
+        const firestoreCourses: CourseRecord[] = snapshot.docs.map((d) => {
           const data = d.data() as CourseRecord;
           return {
             ...data,
@@ -415,10 +609,21 @@ class CourseCurriculumService {
           };
         });
 
+        // Deduplicate courses by normalized course code to prevent duplicate entries
+        const seenCodes = new Set<string>();
+        const uniqueCourses: CourseRecord[] = [];
+        for (const c of firestoreCourses) {
+          const codeKey = normalizeCourseCode(c.courseCode || c.code || c.id);
+          if (!seenCodes.has(codeKey)) {
+            seenCodes.add(codeKey);
+            uniqueCourses.push(c);
+          }
+        }
+
         // Cache the authoritative Firestore result
-        this.termCoursesCache.set(cacheKey, firestoreCourses);
+        this.termCoursesCache.set(cacheKey, uniqueCourses);
         return {
-          courses: firestoreCourses,
+          courses: uniqueCourses,
           source: 'firestore',
           verified: true,
         };
@@ -433,18 +638,26 @@ class CourseCurriculumService {
       this.officialRecordsByTerm.get(`${rawProgId}_${yearOfStudy}_${semester}`) ||
       [];
 
-    // Ensure credits and fields are standardized
-    const standardized = fallbackCourses.map((c) => ({
-      ...c,
-      credits: Number(c.credits) || 12,
-      yearOfStudy: Number(c.yearOfStudy),
-      semester: Number(c.semester),
-      courseType: c.courseType || c.status || 'Core',
-      active: true,
-    }));
+    // Ensure credits and fields are standardized and deduplicated
+    const seenCodes = new Set<string>();
+    const standardized: CourseRecord[] = [];
+    for (const c of fallbackCourses) {
+      const codeKey = normalizeCourseCode(c.courseCode || c.code || c.id);
+      if (!seenCodes.has(codeKey)) {
+        seenCodes.add(codeKey);
+        standardized.push({
+          ...c,
+          credits: Number(c.credits) || 12,
+          yearOfStudy: Number(c.yearOfStudy),
+          semester: Number(c.semester),
+          courseType: c.courseType || c.status || 'Core',
+          active: true,
+        });
+      }
+    }
 
     // Do NOT cache degraded/empty fallback results as authoritative data.
-    // If bypassCache is requested or if courses are missing/degraded, do not poison termCoursesCache.
+    // If bypassCache was requested or if courses are missing/degraded, do not poison termCoursesCache.
     // This allows subsequent requests to immediately query authoritative Firestore once available.
 
     const isMissing = standardized.length === 0;
@@ -463,12 +676,27 @@ class CourseCurriculumService {
    * Retrieves all courses for all study years and semesters of a programme.
    * Dynamically resolves the programme duration (e.g. 3, 4, 5 years) and gathers
    * courses for Year 1 Sem 1, Year 1 Sem 2, Year 2 Sem 1... Year N Sem 2.
+   * Supports bypassCache, academicYear, and universityId options.
    */
-  async getProgrammeCurriculumRoadmap(programmeId: string): Promise<ProgrammeCurriculumSummary> {
-    const cleanId = this.normalizeProgrammeId(programmeId);
+  async getProgrammeCurriculumRoadmap(
+    programmeId: string,
+    options?: {
+      bypassCache?: boolean;
+      academicYear?: string;
+      universityId?: string;
+      departmentId?: string;
+      programmeName?: string;
+    }
+  ): Promise<ProgrammeCurriculumSummary> {
+    const cleanId = this.normalizeProgrammeId(programmeId, options?.programmeName);
+    const cleanUniId = (options?.universityId || 'udsm').toLowerCase().trim();
+    const cleanAcadYear = (options?.academicYear || 'current').toLowerCase().trim();
+    const summaryCacheKey = `${cleanUniId}_${cleanId}_${cleanAcadYear}`;
 
-    if (this.programmeSummaryCache.has(cleanId)) {
-      return this.programmeSummaryCache.get(cleanId)!;
+    if (options?.bypassCache) {
+      this.programmeSummaryCache.delete(summaryCacheKey);
+    } else if (this.programmeSummaryCache.has(summaryCacheKey)) {
+      return this.programmeSummaryCache.get(summaryCacheKey)!;
     }
 
     // Find programme metadata to determine duration
@@ -488,10 +716,10 @@ class CourseCurriculumService {
     }
 
     const durationYears = progMeta?.durationYears || 3;
-    const programmeName = progMeta?.name || 'Academic Degree Programme';
-    const universityId = progMeta?.universityId || 'udsm';
+    const programmeName = progMeta?.name || options?.programmeName || 'Academic Degree Programme';
+    const universityId = progMeta?.universityId || cleanUniId;
     const academicUnitId = progMeta?.academicUnitId;
-    const departmentId = progMeta?.departmentId;
+    const departmentId = options?.departmentId || progMeta?.departmentId;
 
     const terms: CurriculumTermCourses[] = [];
     let totalCredits = 0;
@@ -506,6 +734,9 @@ class CourseCurriculumService {
           departmentId,
           academicUnitId,
           universityId,
+          academicYear: cleanAcadYear,
+          bypassCache: options?.bypassCache,
+          programmeName,
         });
 
         const termCredits = courses.reduce((acc, curr) => acc + (Number(curr.credits) || 0), 0);
@@ -540,7 +771,9 @@ class CourseCurriculumService {
       source: OFFICIAL_SOURCE_UDSM_PROSPECTUS_2025_2026,
     };
 
-    this.programmeSummaryCache.set(cleanId, summary);
+    if (totalCourses > 0) {
+      this.programmeSummaryCache.set(summaryCacheKey, summary);
+    }
     return summary;
   }
 
