@@ -253,7 +253,7 @@ export const CommunityScreen: React.FC<CommunityScreenProps> = ({
   const [blockedUids, setBlockedUids] = useState<Set<string>>(new Set());
   const [mutedUserUids, setMutedUserUids] = useState<Set<string>>(new Set());
   const [mutedCommunityIds, setMutedCommunityIds] = useState<Set<string>>(new Set());
-  const [safetyPrivacyModalOpen, setSafetyPrivacyModalOpen] = useState<boolean>(false);
+  const [privacyModalOpen, setPrivacyModalOpen] = useState<boolean>(false);
   const [communityReadStates, setCommunityReadStates] = useState<Record<string, string>>({});
   const [selectedPostTypeFilter, setSelectedPostTypeFilter] = useState<string>('ALL');
 

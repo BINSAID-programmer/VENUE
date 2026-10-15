@@ -10285,6 +10285,34 @@ app.post('/api/community/ai/feedback', (req, res) => {
 });
 
 
+// PWA Service Worker & Manifest Handlers
+app.get('/sw.js', (_req, res) => {
+  const swPath =
+    process.env.NODE_ENV === 'production'
+      ? path.join(process.cwd(), 'dist', 'sw.js')
+      : path.join(process.cwd(), 'public', 'sw.js');
+  if (fs.existsSync(swPath)) {
+    res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+    res.setHeader('Service-Worker-Allowed', '/');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    return res.sendFile(swPath);
+  }
+  return res.status(404).send('Service worker not found');
+});
+
+app.get('/manifest.json', (_req, res) => {
+  const manifestPath =
+    process.env.NODE_ENV === 'production'
+      ? path.join(process.cwd(), 'dist', 'manifest.json')
+      : path.join(process.cwd(), 'public', 'manifest.json');
+  if (fs.existsSync(manifestPath)) {
+    res.setHeader('Content-Type', 'application/manifest+json; charset=UTF-8');
+    res.setHeader('Cache-Control', 'no-cache');
+    return res.sendFile(manifestPath);
+  }
+  return res.status(404).json({ error: 'Manifest not found' });
+});
+
 async function startServer() {
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {
@@ -10295,7 +10323,20 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    app.use(
+      express.static(distPath, {
+        setHeaders: (res, filePath) => {
+          if (filePath.endsWith('sw.js')) {
+            res.setHeader('Service-Worker-Allowed', '/');
+            res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          } else if (filePath.endsWith('manifest.json')) {
+            res.setHeader('Content-Type', 'application/manifest+json; charset=UTF-8');
+            res.setHeader('Cache-Control', 'no-cache');
+          }
+        },
+      })
+    );
     app.get('*', (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
