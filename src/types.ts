@@ -2647,7 +2647,7 @@ export interface RealCommunityComment {
   updatedAt: string;
   likeCount: number;
   reactionCounts?: Record<string, number>;
-  status: 'active' | 'deleted' | 'hidden';
+  status: 'active' | 'deleted' | 'hidden' | 'removed';
 }
 
 export interface CommunityLikeRecord {
@@ -2671,22 +2671,125 @@ export type CommunityReportCategory =
   | 'Harassment or abusive behavior'
   | 'Academic dishonesty / exam leak'
   | 'Off-topic or inappropriate content'
-  | 'Other';
+  | 'Other'
+  | 'spam'
+  | 'harassment'
+  | 'bullying'
+  | 'hate_abusive'
+  | 'sexual_inappropriate'
+  | 'scam_fraud'
+  | 'impersonation'
+  | 'academic_misconduct'
+  | 'dangerous_content'
+  | 'other';
+
+export type CommunityReportStatus =
+  | 'pending'
+  | 'under_review'
+  | 'reviewed'
+  | 'resolved'
+  | 'dismissed';
+
+export type CommunityReportTargetType =
+  | 'post'
+  | 'comment'
+  | 'message'
+  | 'image'
+  | 'file'
+  | 'profile'
+  | 'study_group'
+  | 'community'
+  | 'poll'
+  | 'event'
+  | 'lecturer_announcement';
+
+export type CommunityReportActionTaken =
+  | 'none'
+  | 'dismissed'
+  | 'content_removed'
+  | 'user_warned'
+  | 'user_restricted'
+  | 'user_banned';
 
 export interface CommunityReportRecord {
   reportId: string;
   reporterUid: string;
   reporterName?: string;
-  targetType: 'post' | 'comment' | 'message' | 'lecturer_announcement';
+  targetType: CommunityReportTargetType;
   targetId: string;
   targetAuthorUid?: string;
   targetExcerpt: string;
   communityId?: string;
+  communityName?: string;
   conversationId?: string;
   category: CommunityReportCategory;
+  reason?: string;
   details?: string;
-  status: 'pending' | 'reviewed' | 'resolved';
+  description?: string;
+  reportedUserUid?: string;
+  reportedUserName?: string;
+  status: CommunityReportStatus;
+  actionTaken?: CommunityReportActionTaken;
+  resolutionNote?: string;
+  reviewedByUid?: string;
+  reviewedByName?: string;
+  reviewedAt?: string;
   createdAt: string;
+  updatedAt?: string;
+}
+
+export type CommunityRestrictionType =
+  | 'posting_restricted'
+  | 'messaging_restricted'
+  | 'file_upload_restricted'
+  | 'voice_note_restricted'
+  | 'study_group_creation_restricted'
+  | 'temporary_suspension';
+
+export type CommunityRestrictionScope = 'single_community' | 'all_communities';
+
+export interface CommunityUserRestrictionRecord {
+  restrictionId: string;
+  targetUid: string;
+  targetName: string;
+  restrictionType: CommunityRestrictionType;
+  scope: CommunityRestrictionScope;
+  communityId?: string;
+  communityName?: string;
+  reason: string;
+  issuedByUid: string;
+  issuedByName: string;
+  issuedAt: string;
+  expiresAt?: string | null;
+  active: boolean;
+  reportId?: string;
+  updatedAt?: string;
+}
+
+export interface CommunityBanRecord {
+  banId: string;
+  targetUid: string;
+  targetName: string;
+  targetType: 'community' | 'group_chat';
+  targetScopeId: string;
+  targetNameLabel: string;
+  reason: string;
+  issuedByUid: string;
+  issuedByName: string;
+  issuedAt: string;
+  active: boolean;
+  reportId?: string;
+  updatedAt?: string;
+}
+
+export interface UserCommunityPrivacySettings {
+  userId: string;
+  allowDirectMessagesFrom: 'same_university' | 'everyone' | 'lecturers_only' | 'none';
+  allowStudyGroupInvitesFrom: 'same_university' | 'everyone' | 'none';
+  showOnlineStatus: boolean;
+  showLastActiveStatus: boolean;
+  profileVisibilityScope: 'university' | 'programme_only' | 'minimal';
+  updatedAt: string;
 }
 
 export type ChatConversationType = 'direct' | 'community_group' | 'private_group';

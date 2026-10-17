@@ -836,7 +836,7 @@ export const CommunityModerationQueuePanel: React.FC<{
         lecturer,
         lecturerAssignments,
       });
-      onNotify('Reported content soft-removed and recorded in Audit Logs.');
+      onNotify('Reported content soft-removed.');
       await loadModerationData();
     } catch (err: any) {
       onNotify(err?.message || 'Could not remove content.');
@@ -863,7 +863,7 @@ export const CommunityModerationQueuePanel: React.FC<{
         profile,
         lecturer,
       });
-      onNotify('Formal safety warning sent and logged.');
+      onNotify('Formal safety warning sent.');
       await loadModerationData();
     } catch (err: any) {
       onNotify(err?.message || 'Could not warn user.');
@@ -899,7 +899,7 @@ export const CommunityModerationQueuePanel: React.FC<{
         profile,
         lecturer,
       });
-      onNotify('User privileges restricted for 48 hours and logged in Audit Logs.');
+      onNotify('User privileges restricted for 48 hours.');
       await loadModerationData();
     } catch (err: any) {
       onNotify(err?.message || 'Failed to apply restriction.');
@@ -931,7 +931,7 @@ export const CommunityModerationQueuePanel: React.FC<{
         profile,
         lecturer,
       });
-      onNotify('User banned from this community space and logged.');
+      onNotify('User banned from this community space.');
       await loadModerationData();
     } catch (err: any) {
       onNotify(err?.message || 'Could not ban user.');
@@ -982,7 +982,7 @@ export const CommunityModerationQueuePanel: React.FC<{
       setRestrictTargetUid('');
       setRestrictTargetName('');
       setRestrictReason('');
-      onNotify('User restriction applied and recorded in Audit Logs.');
+      onNotify('User restriction applied.');
       await loadModerationData();
     } catch (err: any) {
       onNotify(err?.message || 'Failed to restrict user.');

@@ -1404,6 +1404,7 @@ export const CommunityScreen: React.FC<CommunityScreenProps> = ({
   const handleModeratorSoftRemove = async (input: {
     targetType: 'post' | 'comment' | 'message';
     targetId: string;
+    postId?: string;
     conversationId?: string;
     communityId?: string;
     reason?: string;
@@ -1437,11 +1438,45 @@ export const CommunityScreen: React.FC<CommunityScreenProps> = ({
           )
         );
       }
-      showToast('Content removed by moderation and logged in Audit Trail.');
+      if (input.targetType === 'comment' && input.postId) {
+        const postId = input.postId;
+        setCommentsByPost((prev) => ({
+          ...prev,
+          [postId]: (prev[postId] || []).map((c) =>
+            c.commentId === input.targetId ? { ...c, status: 'removed' as const } : c
+          ),
+        }));
+      }
+      showToast('Content removed by moderation.');
     } catch (err: any) {
       showToast(err?.message || 'Moderator removal failed.');
     }
   };
+
+  const handleModeratorRemovePost = (post: RealCommunityPost) =>
+    handleModeratorSoftRemove({
+      targetType: 'post',
+      targetId: post.postId,
+      communityId: post.communityId,
+    });
+
+  const handleModeratorRemoveComment = (commentId: string, postId: string) => {
+    const post = posts.find((p) => p.postId === postId);
+    return handleModeratorSoftRemove({
+      targetType: 'comment',
+      targetId: commentId,
+      postId,
+      communityId: post?.communityId,
+    });
+  };
+
+  const handleModeratorRemoveChatMessage = (messageId: string) =>
+    handleModeratorSoftRemove({
+      targetType: 'message',
+      targetId: messageId,
+      conversationId: activeConversation?.conversationId,
+      communityId: activeConversation?.communityId,
+    });
 
   // Share / Copy Post Link
   const handleSharePost = async (post: RealCommunityPost) => {
@@ -1522,36 +1557,6 @@ export const CommunityScreen: React.FC<CommunityScreenProps> = ({
       showToast('Comment deleted.');
     } catch (err: any) {
       showToast(err?.message || 'Failed to delete comment.');
-    }
-  };
-
-  // Submit Report
-  const handleSubmitReport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!reportTarget) return;
-    setSubmittingReport(true);
-    try {
-      await communityService.submitReport({
-        targetType: reportTarget.targetType,
-        targetId: reportTarget.targetId,
-        targetAuthorUid: reportTarget.targetAuthorUid,
-        targetExcerpt: reportTarget.targetExcerpt,
-        communityId: reportTarget.communityId,
-        conversationId: reportTarget.conversationId,
-        category: reportCategory,
-        details: reportDetails,
-        profile,
-      });
-      setReportSuccess(true);
-      setTimeout(() => {
-        setReportTarget(null);
-        setReportSuccess(false);
-        setReportDetails('');
-      }, 1500);
-    } catch (err: any) {
-      showToast(err?.message || 'Failed to submit report.');
-    } finally {
-      setSubmittingReport(false);
     }
   };
 
@@ -2180,13 +2185,13 @@ export const CommunityScreen: React.FC<CommunityScreenProps> = ({
                 profile,
                 lecturer: lecturerRecord,
               });
-              showToast(`Study group "${created.name}" created!`);
-              if (created.conversationId) {
-                const conv = conversations.find((c) => c.conversationId === created.conversationId);
-                if (conv) {
-                  setActiveConversation(conv);
-                  setActiveTab('chat');
-                }
+              showToast(`Study group "${created.group.name}" created!`);
+              if (created.conversation) {
+                const conv =
+                  conversations.find((c) => c.conversationId === created.conversation.conversationId) ||
+                  created.conversation;
+                setActiveConversation(conv);
+                setActiveTab('chat');
               }
             } catch (err: any) {
               showToast(err?.message || 'Could not create study group.');

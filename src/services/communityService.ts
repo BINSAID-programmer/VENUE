@@ -12,6 +12,7 @@ import {
   limit,
   startAfter,
   increment,
+  deleteField,
   onSnapshot,
   DocumentSnapshot,
   Unsubscribe,
@@ -64,6 +65,8 @@ import {
   CommunityRestrictionType,
   CommunityUserRestrictionRecord,
   UserCommunityPrivacySettings,
+  CommunityBanRecord,
+  CommunityReportActionTaken,
   CommunityAISummaryScope,
   CommunityAISourceReference,
   CommunityAIDiscussionSummary,
@@ -1468,6 +1471,7 @@ class CommunityService {
     mentions?: string[];
     mentionNames?: string[];
   }): Promise<RealCommunityPost> {
+    await this.assertNotRestricted('posting', { communityId: input.community.communityId });
     if (input.community.isOfficialAnnouncementOnly) {
       const isOwner = isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email);
       if (!isOwner && !input.lecturer) {
@@ -1834,6 +1838,7 @@ class CommunityService {
     profile?: StudentProfile | null;
     lecturer?: LecturerRecord | null;
   }): Promise<RealCommunityComment> {
+    await this.assertNotRestricted('posting', {});
     const identity = this.getAuthenticatedIdentity(input.profile, input.lecturer);
     const cleanContent = input.content.trim().slice(0, 3000);
     if (!cleanContent) {
@@ -2764,6 +2769,517 @@ class CommunityService {
     }
   }
 
+  // ============================================================================
+  // SAFETY, PRIVACY & MODERATION (Stage 11C-E)
+  // Document shapes follow firestore.rules: community_reports,
+  // community_user_restrictions, community_bans, user_community_privacy_settings.
+  // ============================================================================
+
+  private moderationStateCache = new Map<
+    string,
+    { ts: number; restrictions: CommunityUserRestrictionRecord[]; bans: CommunityBanRecord[] }
+  >();
+
+  private isModeratorActor(profile?: StudentProfile | null, lecturer?: LecturerRecord | null): boolean {
+    const user = auth.currentUser;
+    if (!user) return false;
+    if (isVerifiedOwnerAccount(user.uid, user.email || profile?.email)) return true;
+    return Boolean(lecturer && lecturer.status === 'active');
+  }
+
+  private assertModerator(profile?: StudentProfile | null, lecturer?: LecturerRecord | null) {
+    if (!this.isModeratorActor(profile, lecturer)) {
+      throw new Error('Only lecturers or platform admins can perform moderation actions.');
+    }
+  }
+
+  private async loadModerationState(uid: string) {
+    const cached = this.moderationStateCache.get(uid);
+    if (cached && Date.now() - cached.ts < 60000) return cached;
+    let restrictions: CommunityUserRestrictionRecord[] = [];
+    let bans: CommunityBanRecord[] = [];
+    try {
+      const rs = await getDocs(
+        query(collection(db, COMMUNITY_COLLECTIONS.USER_RESTRICTIONS), where('targetUid', '==', uid), limit(50))
+      );
+      restrictions = rs.docs.map((d) => d.data() as CommunityUserRestrictionRecord);
+    } catch {
+      // fail open: never block normal users because of a read error
+    }
+    try {
+      const bs = await getDocs(
+        query(collection(db, COMMUNITY_COLLECTIONS.COMMUNITY_BANS), where('targetUid', '==', uid), limit(50))
+      );
+      bans = bs.docs.map((d) => d.data() as CommunityBanRecord);
+    } catch {
+      // fail open
+    }
+    const entry = { ts: Date.now(), restrictions, bans };
+    this.moderationStateCache.set(uid, entry);
+    return entry;
+  }
+
+  private async assertNotRestricted(
+    kind: 'posting' | 'messaging',
+    scope: { communityId?: string; conversationId?: string }
+  ): Promise<void> {
+    const user = auth.currentUser;
+    if (!user) return;
+    if (isVerifiedOwnerAccount(user.uid, user.email)) return;
+    const state = await this.loadModerationState(user.uid);
+    const now = Date.now();
+    const active = state.restrictions.filter(
+      (r) =>
+        r.active &&
+        (!r.expiresAt || new Date(r.expiresAt).getTime() > now) &&
+        (r.scope === 'all_communities' || !r.communityId || r.communityId === scope.communityId)
+    );
+    if (active.some((r) => r.restrictionType === 'temporary_suspension')) {
+      throw new Error('Your community access is temporarily suspended by a moderator.');
+    }
+    const blockedType = kind === 'posting' ? 'posting_restricted' : 'messaging_restricted';
+    if (active.some((r) => r.restrictionType === blockedType)) {
+      throw new Error(
+        kind === 'posting'
+          ? 'Posting is temporarily restricted on your account by a moderator.'
+          : 'Chat messaging is temporarily restricted on your account by a moderator.'
+      );
+    }
+    const scopeIds = [scope.communityId, scope.conversationId].filter(Boolean) as string[];
+    if (state.bans.some((b) => b.active && scopeIds.includes(b.targetScopeId))) {
+      throw new Error('You have been banned from this space by a moderator.');
+    }
+  }
+
+  async getUserPrivacySettings(userId: string): Promise<UserCommunityPrivacySettings> {
+    const defaults: UserCommunityPrivacySettings = {
+      userId,
+      allowDirectMessagesFrom: 'same_university',
+      allowStudyGroupInvitesFrom: 'same_university',
+      showOnlineStatus: true,
+      showLastActiveStatus: true,
+      profileVisibilityScope: 'university',
+      updatedAt: '',
+    };
+    if (!userId || !auth.currentUser) return defaults;
+    try {
+      const snap = await getDoc(doc(db, COMMUNITY_COLLECTIONS.PRIVACY_SETTINGS, userId));
+      if (snap.exists()) {
+        return { ...defaults, ...(snap.data() as Partial<UserCommunityPrivacySettings>), userId };
+      }
+    } catch {
+      // fall through to defaults
+    }
+    return defaults;
+  }
+
+  async saveUserPrivacySettings(
+    settings: UserCommunityPrivacySettings
+  ): Promise<UserCommunityPrivacySettings> {
+    const currentUser = auth.currentUser;
+    if (!currentUser) throw new Error('Authentication required.');
+    const saved: UserCommunityPrivacySettings = {
+      ...settings,
+      userId: currentUser.uid,
+      updatedAt: new Date().toISOString(),
+    };
+    try {
+      await setDoc(doc(db, COMMUNITY_COLLECTIONS.PRIVACY_SETTINGS, currentUser.uid), saved, { merge: true });
+      return saved;
+    } catch (error) {
+      handleFirestoreError(
+        error,
+        OperationType.WRITE,
+        `${COMMUNITY_COLLECTIONS.PRIVACY_SETTINGS}/${currentUser.uid}`
+      );
+    }
+  }
+
+  async submitSafetyReport(input: {
+    targetType: CommunityReportTargetType;
+    targetId: string;
+    reportedUserUid?: string;
+    reportedUserName?: string;
+    targetExcerpt: string;
+    communityId?: string;
+    communityName?: string;
+    conversationId?: string;
+    category: CommunityReportCategory;
+    reason?: string;
+    details?: string;
+    profile?: StudentProfile | null;
+    lecturer?: LecturerRecord | null;
+  }): Promise<CommunityReportRecord> {
+    const identity = this.getAuthenticatedIdentity(input.profile, input.lecturer);
+    const reportId = `rep_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const record: CommunityReportRecord = {
+      reportId,
+      reporterUid: identity.uid,
+      reporterName: identity.name,
+      targetType: input.targetType,
+      targetId: input.targetId,
+      targetAuthorUid: input.reportedUserUid || '',
+      reportedUserUid: input.reportedUserUid || '',
+      reportedUserName: input.reportedUserName || '',
+      targetExcerpt: (input.targetExcerpt || '').slice(0, 300),
+      communityId: input.communityId || '',
+      communityName: input.communityName || '',
+      conversationId: input.conversationId || '',
+      category: input.category,
+      reason: (input.reason || '').slice(0, 120),
+      details: (input.details || '').trim().slice(0, 1000),
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+    try {
+      await setDoc(doc(db, COMMUNITY_COLLECTIONS.REPORTS, reportId), record);
+      return record;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, `${COMMUNITY_COLLECTIONS.REPORTS}/${reportId}`);
+    }
+  }
+
+  async getModerationReportsQueue(params: {
+    statusFilter?: CommunityReportStatus | 'all';
+    authorizedCourseCodes?: string[];
+    isPlatformAdmin?: boolean;
+  }): Promise<CommunityReportRecord[]> {
+    if (!auth.currentUser) return [];
+    const colRef = collection(db, COMMUNITY_COLLECTIONS.REPORTS);
+    const q =
+      params.statusFilter && params.statusFilter !== 'all'
+        ? query(colRef, where('status', '==', params.statusFilter), limit(200))
+        : query(colRef, limit(300));
+    const snap = await getDocs(q);
+    let list = snap.docs.map((d) => {
+      const data = d.data() as CommunityReportRecord;
+      return { ...data, reportId: data.reportId || d.id };
+    });
+    if (!params.isPlatformAdmin) {
+      const slugs = (params.authorizedCourseCodes || [])
+        .map((c) => sanitizeIdSegment(c))
+        .filter(Boolean);
+      if (slugs.length === 0) return [];
+      list = list.filter(
+        (r) => r.communityId && slugs.some((slug) => (r.communityId as string).endsWith(`_${slug}`))
+      );
+    }
+    return list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  }
+
+  async updateSafetyReportStatus(input: {
+    reportId: string;
+    status: CommunityReportStatus;
+    actionTaken?: CommunityReportActionTaken;
+    resolutionNote?: string;
+    profile?: StudentProfile | null;
+    lecturer?: LecturerRecord | null;
+  }): Promise<void> {
+    this.assertModerator(input.profile, input.lecturer);
+    const identity = this.getAuthenticatedIdentity(input.profile, input.lecturer);
+    const nowIso = new Date().toISOString();
+    try {
+      await updateDoc(doc(db, COMMUNITY_COLLECTIONS.REPORTS, input.reportId), {
+        status: input.status,
+        actionTaken: input.actionTaken || 'none',
+        resolutionNote: (input.resolutionNote || '').slice(0, 500),
+        reviewedByUid: identity.uid,
+        reviewedByName: identity.name,
+        reviewedAt: nowIso,
+        updatedAt: nowIso,
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `${COMMUNITY_COLLECTIONS.REPORTS}/${input.reportId}`);
+    }
+  }
+
+  private async resolveReportBestEffort(
+    reportId: string | undefined,
+    actionTaken: CommunityReportActionTaken,
+    note: string,
+    profile?: StudentProfile | null,
+    lecturer?: LecturerRecord | null
+  ) {
+    if (!reportId) return;
+    try {
+      await this.updateSafetyReportStatus({ reportId, status: 'resolved', actionTaken, resolutionNote: note, profile, lecturer });
+    } catch {
+      // the moderation action itself already succeeded
+    }
+  }
+
+  async removeContentByModerator(input: {
+    targetType: 'post' | 'poll' | 'event' | 'comment' | 'message' | 'study_group';
+    targetId: string;
+    conversationId?: string;
+    communityId?: string;
+    reason?: string;
+    reportId?: string;
+    profile?: StudentProfile | null;
+    lecturer?: LecturerRecord | null;
+    lecturerAssignments?: LecturerCourseAssignment[];
+  }): Promise<void> {
+    this.assertModerator(input.profile, input.lecturer);
+    const identity = this.getAuthenticatedIdentity(input.profile, input.lecturer);
+    const user = auth.currentUser;
+    const isPlatformAdmin = isVerifiedOwnerAccount(user?.uid, user?.email || input.profile?.email);
+
+    // A lecturer may only moderate course spaces they are assigned to.
+    if (!isPlatformAdmin && input.communityId && input.communityId.startsWith('comm_course_')) {
+      const slugs = (input.lecturerAssignments || []).map((a) => sanitizeIdSegment(a.courseCode));
+      if (!slugs.some((slug) => slug && input.communityId!.endsWith(`_${slug}`))) {
+        throw new Error('You can only moderate course spaces you are assigned to.');
+      }
+    }
+
+    const nowIso = new Date().toISOString();
+    const reason = (input.reason || 'Removed by moderator').slice(0, 300);
+    const moderation = {
+      status: 'removed',
+      moderatedByUid: identity.uid,
+      moderatedByName: identity.name,
+      moderationReason: reason,
+      moderatedAt: nowIso,
+    };
+
+    let path = '';
+    try {
+      if (input.targetType === 'comment') {
+        path = `${COMMUNITY_COLLECTIONS.COMMENTS}/${input.targetId}`;
+        await updateDoc(doc(db, COMMUNITY_COLLECTIONS.COMMENTS, input.targetId), {
+          ...moderation,
+          updatedAt: nowIso,
+        });
+      } else if (input.targetType === 'message') {
+        if (!input.conversationId) throw new Error('Conversation is required to remove a chat message.');
+        path = `${COMMUNITY_COLLECTIONS.CONVERSATIONS}/${input.conversationId}/${COMMUNITY_COLLECTIONS.MESSAGES}/${input.targetId}`;
+        await updateDoc(
+          doc(
+            db,
+            COMMUNITY_COLLECTIONS.CONVERSATIONS,
+            input.conversationId,
+            COMMUNITY_COLLECTIONS.MESSAGES,
+            input.targetId
+          ),
+          {
+            ...moderation,
+            text: 'This message was removed by a moderator.',
+            messageType: 'text',
+            imageUrl: '',
+            fileUrl: '',
+            fileName: '',
+            voiceUrl: '',
+            extractedLinks: [],
+            linkPreview: null,
+            pinned: false,
+            updatedAt: nowIso,
+          }
+        );
+      } else if (input.targetType === 'study_group') {
+        path = `${COMMUNITY_COLLECTIONS.STUDY_GROUPS}/${input.targetId}`;
+        await updateDoc(doc(db, COMMUNITY_COLLECTIONS.STUDY_GROUPS, input.targetId), {
+          ...moderation,
+          updatedAt: nowIso,
+        });
+      } else {
+        path = `${COMMUNITY_COLLECTIONS.POSTS}/${input.targetId}`;
+        await updateDoc(doc(db, COMMUNITY_COLLECTIONS.POSTS, input.targetId), {
+          ...moderation,
+          updatedAt: nowIso,
+        });
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith('Conversation is required')) throw error;
+      handleFirestoreError(error, OperationType.UPDATE, path);
+    }
+
+    await this.resolveReportBestEffort(input.reportId, 'content_removed', reason, input.profile, input.lecturer);
+  }
+
+  async warnReportedUser(input: {
+    targetUid: string;
+    targetName?: string;
+    warningMessage: string;
+    reportId?: string;
+    profile?: StudentProfile | null;
+    lecturer?: LecturerRecord | null;
+  }): Promise<void> {
+    this.assertModerator(input.profile, input.lecturer);
+    if (!input.targetUid) throw new Error('Target user is required.');
+    await this.createInAppNotification({
+      recipientUid: input.targetUid,
+      title: 'Community guidelines warning',
+      message: input.warningMessage,
+      category: 'community',
+    });
+    await this.resolveReportBestEffort(input.reportId, 'user_warned', input.warningMessage, input.profile, input.lecturer);
+  }
+
+  async getActiveUserRestrictions(): Promise<CommunityUserRestrictionRecord[]> {
+    if (!auth.currentUser) return [];
+    try {
+      const snap = await getDocs(
+        query(collection(db, COMMUNITY_COLLECTIONS.USER_RESTRICTIONS), where('active', '==', true), limit(200))
+      );
+      const now = Date.now();
+      return snap.docs
+        .map((d) => d.data() as CommunityUserRestrictionRecord)
+        .filter((r) => !r.expiresAt || new Date(r.expiresAt).getTime() > now)
+        .sort((a, b) => (b.issuedAt || '').localeCompare(a.issuedAt || ''));
+    } catch {
+      return [];
+    }
+  }
+
+  async setCommunityUserRestriction(input: {
+    targetUid: string;
+    targetName?: string;
+    restrictionType: CommunityRestrictionType;
+    scope: 'single_community' | 'all_communities';
+    communityId?: string;
+    communityName?: string;
+    reason: string;
+    durationHours?: number;
+    active: boolean;
+    reportId?: string;
+    profile?: StudentProfile | null;
+    lecturer?: LecturerRecord | null;
+  }): Promise<CommunityUserRestrictionRecord> {
+    this.assertModerator(input.profile, input.lecturer);
+    const identity = this.getAuthenticatedIdentity(input.profile, input.lecturer);
+    if (!input.targetUid) throw new Error('Target user is required.');
+    const scopePart = input.scope === 'single_community' ? sanitizeIdSegment(input.communityId || '') : 'all';
+    const restrictionId = `rstr_${sanitizeIdSegment(input.targetUid)}_${scopePart}_${input.restrictionType}`.slice(0, 120);
+    const nowIso = new Date().toISOString();
+    const hours = Number(input.durationHours) || 0;
+    const record: CommunityUserRestrictionRecord = {
+      restrictionId,
+      targetUid: input.targetUid,
+      targetName: (input.targetName || 'Member').slice(0, 100),
+      restrictionType: input.restrictionType,
+      scope: input.scope,
+      communityId: input.communityId || '',
+      communityName: input.communityName || '',
+      reason: (input.reason || '').slice(0, 300),
+      issuedByUid: identity.uid,
+      issuedByName: identity.name,
+      issuedAt: nowIso,
+      expiresAt: input.active && hours > 0 ? new Date(Date.now() + hours * 3600000).toISOString() : null,
+      active: input.active,
+      reportId: input.reportId || '',
+      updatedAt: nowIso,
+    };
+    try {
+      await setDoc(doc(db, COMMUNITY_COLLECTIONS.USER_RESTRICTIONS, restrictionId), record, { merge: true });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `${COMMUNITY_COLLECTIONS.USER_RESTRICTIONS}/${restrictionId}`);
+    }
+    this.moderationStateCache.delete(input.targetUid);
+    this.createInAppNotification({
+      recipientUid: input.targetUid,
+      title: input.active ? 'Community restriction applied' : 'Community restriction lifted',
+      message: input.active
+        ? `A moderator restricted part of your community access: ${record.reason}`
+        : 'A moderator restored your community privileges.',
+      category: 'community',
+    }).catch(() => {});
+    if (input.active) {
+      await this.resolveReportBestEffort(input.reportId, 'user_restricted', record.reason, input.profile, input.lecturer);
+    }
+    return record;
+  }
+
+  async setCommunityOrGroupBan(input: {
+    targetUid: string;
+    targetName?: string;
+    targetType: 'community' | 'group_chat';
+    targetScopeId: string;
+    targetNameLabel?: string;
+    reason: string;
+    active: boolean;
+    reportId?: string;
+    profile?: StudentProfile | null;
+    lecturer?: LecturerRecord | null;
+  }): Promise<CommunityBanRecord> {
+    this.assertModerator(input.profile, input.lecturer);
+    const identity = this.getAuthenticatedIdentity(input.profile, input.lecturer);
+    if (!input.targetUid || !input.targetScopeId) throw new Error('Target user and space are required.');
+    const banId = `ban_${sanitizeIdSegment(input.targetUid)}_${sanitizeIdSegment(input.targetScopeId)}`.slice(0, 120);
+    const nowIso = new Date().toISOString();
+    const record: CommunityBanRecord = {
+      banId,
+      targetUid: input.targetUid,
+      targetName: (input.targetName || 'Member').slice(0, 100),
+      targetType: input.targetType,
+      targetScopeId: input.targetScopeId,
+      targetNameLabel: (input.targetNameLabel || '').slice(0, 120),
+      reason: (input.reason || '').slice(0, 300),
+      issuedByUid: identity.uid,
+      issuedByName: identity.name,
+      issuedAt: nowIso,
+      active: input.active,
+      reportId: input.reportId || '',
+      updatedAt: nowIso,
+    };
+    try {
+      await setDoc(doc(db, COMMUNITY_COLLECTIONS.COMMUNITY_BANS, banId), record, { merge: true });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `${COMMUNITY_COLLECTIONS.COMMUNITY_BANS}/${banId}`);
+    }
+    this.moderationStateCache.delete(input.targetUid);
+    if (input.active) {
+      await this.resolveReportBestEffort(input.reportId, 'user_banned', record.reason, input.profile, input.lecturer);
+    }
+    return record;
+  }
+
+  async leavePrivateGroupChat(conversationId: string): Promise<void> {
+    const currentUser = auth.currentUser;
+    if (!currentUser || !conversationId) throw new Error('Authentication required.');
+    const uid = currentUser.uid;
+    const ref = doc(db, COMMUNITY_COLLECTIONS.CONVERSATIONS, conversationId);
+    const path = `${COMMUNITY_COLLECTIONS.CONVERSATIONS}/${conversationId}`;
+
+    let conv: RealChatConversation | null = null;
+    try {
+      const snap = await getDoc(ref);
+      conv = snap.exists() ? (snap.data() as RealChatConversation) : null;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.GET, path);
+    }
+    if (!conv) throw new Error('This group no longer exists.');
+    if (conv.type !== 'private_group') throw new Error('Only private groups can be left.');
+    if (!conv.participantIds.includes(uid)) return;
+
+    const remaining = conv.participantIds.filter((id) => id !== uid);
+    const adminUids = (conv.adminUids || []).filter((id) => id !== uid);
+    const updates: Record<string, any> = {
+      participantIds: remaining,
+      adminUids,
+      [`participants.${uid}`]: deleteField(),
+      [`memberRoles.${uid}`]: deleteField(),
+      [`unreadCountByUser.${uid}`]: deleteField(),
+      [`lastReadAtByUser.${uid}`]: deleteField(),
+      updatedAt: new Date().toISOString(),
+    };
+    if (conv.ownerUid === uid && remaining.length > 0) {
+      const nextOwner = adminUids.find((id) => remaining.includes(id)) || remaining[0];
+      updates.ownerUid = nextOwner;
+      updates.adminUids = Array.from(new Set([...adminUids, nextOwner]));
+      updates[`memberRoles.${nextOwner}`] = 'owner';
+      updates[`participants.${nextOwner}.groupRole`] = 'owner';
+    }
+    try {
+      await updateDoc(ref, updates);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
+    }
+  }
+
+  async getCommentsForPost(postId: string): Promise<RealCommunityComment[]> {
+    return this.getPostComments(postId, 30);
+  }
+
   async getBlockedUserUids(userId: string): Promise<Set<string>> {
     if (!userId || !auth.currentUser) return new Set();
     try {
@@ -3611,6 +4127,10 @@ class CommunityService {
     profile?: StudentProfile | null;
     lecturer?: LecturerRecord | null;
   }): Promise<RealChatMessage> {
+    await this.assertNotRestricted('messaging', {
+      communityId: input.conversation.communityId,
+      conversationId: input.conversation.conversationId,
+    });
     const identity = this.getAuthenticatedIdentity(input.profile, input.lecturer);
     const cleanText = input.text.trim().slice(0, 4000);
     const resolvedFileUrl =
