@@ -602,7 +602,16 @@ export const CommunityScreen: React.FC<CommunityScreenProps> = ({
     let isMounted = true;
     setLoadingOfficialAnnouncements(true);
     announcementsService
-      .getStudentAnnouncements(profile, currentUserUid)
+      .getPublishedAnnouncements(40, undefined, undefined, {
+        userId: currentUserUid,
+        role: 'student',
+        universityId: profile?.universityId,
+        academicUnitId: profile?.academicUnitId,
+        departmentId: profile?.departmentId,
+        programmeId: profile?.programmeId,
+        yearOfStudy: profile?.yearOfStudy,
+        semester: profile?.semester,
+      })
       .then((list) => {
         if (!isMounted) return;
         setOfficialAnnouncements(list);

@@ -73,6 +73,7 @@ import { ScholarshipsScreen } from './components/screens/ScholarshipsScreen';
 import { CareerHubScreen } from './components/screens/CareerHubScreen';
 import { UniversityHubScreen } from './components/screens/UniversityHubScreen';
 import { CommunityScreen } from './components/screens/CommunityScreen';
+import { ScreenErrorBoundary } from './components/common/ScreenErrorBoundary';
 import { ProfileScreen } from './components/screens/ProfileScreen';
 import { EditProfileScreen } from './components/screens/EditProfileScreen';
 import { FinancialPlannerScreen } from './components/screens/FinancialPlannerScreen';
@@ -1235,17 +1236,19 @@ export const App: React.FC = () => {
 
         {/* Core Dashboard Card: Community */}
         {currentScreen === 'community' && (
-          <CommunityScreen
-            posts={communityPosts}
-            profile={profile}
-            courses={courses}
-            onAddPost={handleAddCommunityPost}
-            onNavigateToProfile={() =>
-              handleNavigate(
-                !profile.universityId || !profile.programmeId ? 'onboarding' : 'edit-profile'
-              )
-            }
-          />
+          <ScreenErrorBoundary screenName="Community">
+            <CommunityScreen
+              posts={communityPosts}
+              profile={profile}
+              courses={courses}
+              onAddPost={handleAddCommunityPost}
+              onNavigateToProfile={() =>
+                handleNavigate(
+                  !profile.universityId || !profile.programmeId ? 'onboarding' : 'edit-profile'
+                )
+              }
+            />
+          </ScreenErrorBoundary>
         )}
 
         {/* Core Dashboard Card: Financial Planner */}

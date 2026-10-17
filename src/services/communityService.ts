@@ -4500,6 +4500,114 @@ class CommunityService {
     }
   }
 
+  // ============================================================================
+  // MUTE USERS & COMMUNITIES (document shapes match firestore.rules:
+  // user_muted_users.mutedUids and user_muted_communities.mutedCommunityIds)
+  // ============================================================================
+
+  async getMutedUserUids(userId: string): Promise<Set<string>> {
+    if (!userId || !auth.currentUser) return new Set();
+    try {
+      const snap = await getDoc(doc(db, COMMUNITY_COLLECTIONS.MUTED_USERS, userId));
+      if (snap.exists()) {
+        const list = snap.data()?.mutedUids;
+        if (Array.isArray(list)) return new Set(list);
+      }
+      return new Set();
+    } catch {
+      return new Set();
+    }
+  }
+
+  async getMutedCommunityIds(userId: string): Promise<Set<string>> {
+    if (!userId || !auth.currentUser) return new Set();
+    try {
+      const snap = await getDoc(doc(db, COMMUNITY_COLLECTIONS.MUTED_COMMUNITIES, userId));
+      if (snap.exists()) {
+        const list = snap.data()?.mutedCommunityIds;
+        if (Array.isArray(list)) return new Set(list);
+      }
+      return new Set();
+    } catch {
+      return new Set();
+    }
+  }
+
+  async toggleMuteUser(targetUid: string, _targetName?: string): Promise<{ muted: boolean }> {
+    const currentUser = auth.currentUser;
+    if (!currentUser || !targetUid) throw new Error('Authentication required.');
+    if (targetUid === currentUser.uid) throw new Error('You cannot mute yourself.');
+    const docRef = doc(db, COMMUNITY_COLLECTIONS.MUTED_USERS, currentUser.uid);
+
+    try {
+      const currentSet = await this.getMutedUserUids(currentUser.uid);
+      let muted = false;
+      if (currentSet.has(targetUid)) {
+        currentSet.delete(targetUid);
+      } else {
+        if (currentSet.size >= 200) {
+          throw new Error('Muted users limit reached.');
+        }
+        currentSet.add(targetUid);
+        muted = true;
+      }
+
+      await setDoc(
+        docRef,
+        {
+          userId: currentUser.uid,
+          mutedUids: Array.from(currentSet),
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+      return { muted };
+    } catch (error) {
+      handleFirestoreError(
+        error,
+        OperationType.WRITE,
+        `${COMMUNITY_COLLECTIONS.MUTED_USERS}/${currentUser.uid}`
+      );
+    }
+  }
+
+  async toggleMuteCommunity(communityId: string): Promise<{ muted: boolean }> {
+    const currentUser = auth.currentUser;
+    if (!currentUser || !communityId) throw new Error('Authentication required.');
+    const docRef = doc(db, COMMUNITY_COLLECTIONS.MUTED_COMMUNITIES, currentUser.uid);
+
+    try {
+      const currentSet = await this.getMutedCommunityIds(currentUser.uid);
+      let muted = false;
+      if (currentSet.has(communityId)) {
+        currentSet.delete(communityId);
+      } else {
+        if (currentSet.size >= 200) {
+          throw new Error('Muted communities limit reached.');
+        }
+        currentSet.add(communityId);
+        muted = true;
+      }
+
+      await setDoc(
+        docRef,
+        {
+          userId: currentUser.uid,
+          mutedCommunityIds: Array.from(currentSet),
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+      return { muted };
+    } catch (error) {
+      handleFirestoreError(
+        error,
+        OperationType.WRITE,
+        `${COMMUNITY_COLLECTIONS.MUTED_COMMUNITIES}/${currentUser.uid}`
+      );
+    }
+  }
+
   async markConversationRead(conversationId: string): Promise<void> {
     const currentUser = auth.currentUser;
     if (!currentUser || !conversationId) return;
