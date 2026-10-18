@@ -417,9 +417,16 @@ export class FirestoreCatalogueService {
         const docs = snapshot.docs;
         const hasMore = docs.length > pageSize;
         const slice = hasMore ? docs.slice(0, pageSize) : docs;
+        const seenIds = new Set<string>();
         const items = slice
-          .map((d) => d.data() as DepartmentRecord)
-          .filter((d) => !d.archived && d.status !== 'archived' && d.active !== false);
+          .map((d) => ({ id: d.id, ...(d.data() as any) } as DepartmentRecord))
+          .filter((d) => {
+            if (d.archived || d.status === 'archived' || d.active === false) return false;
+            const id = (d.id || '').toLowerCase().trim();
+            if (!id || seenIds.has(id)) return false;
+            seenIds.add(id);
+            return true;
+          });
         const lastDoc = slice.length > 0 ? slice[slice.length - 1] : null;
 
         return { items, lastDoc, hasMore };

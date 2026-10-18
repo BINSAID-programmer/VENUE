@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   FolderKanban,
   ArrowRight,
@@ -34,6 +34,17 @@ export const DepartmentList: React.FC<DepartmentListProps> = ({
   const [editingDept, setEditingDept] = useState<DepartmentRecord | null>(null);
   const [deletingDept, setDeletingDept] = useState<DepartmentRecord | null>(null);
 
+  // Deduplicate departments by id to guarantee unique React keys
+  const uniqueDepartments = useMemo(() => {
+    const seen = new Set<string>();
+    return departments.filter((dept) => {
+      const id = (dept?.id || '').trim().toLowerCase();
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }, [departments]);
+
   return (
     <div className="space-y-6">
       {/* Unit Context Banner */}
@@ -47,7 +58,7 @@ export const DepartmentList: React.FC<DepartmentListProps> = ({
           </div>
           <h3 className="text-lg font-bold text-white">{unit.name}</h3>
           <p className="text-xs text-slate-400">
-            Select a department below or manage existing department records ({departments.length} departments)
+            Select a department below or manage existing department records ({uniqueDepartments.length} departments)
           </p>
         </div>
 
@@ -62,7 +73,7 @@ export const DepartmentList: React.FC<DepartmentListProps> = ({
 
       {/* Departments Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {departments.map((dept) => {
+        {uniqueDepartments.map((dept) => {
           const isArchived = Boolean(dept.archived || dept.status === 'archived');
           return (
             <div

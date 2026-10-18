@@ -594,22 +594,33 @@ export async function fetchDepartmentsForCollege(collegeId: string): Promise<Aca
     const q = query(collection(db, 'departments'), where('academicUnitId', '==', collegeId));
     const snap = await getDocs(q);
     if (!snap.empty) {
-      return snap.docs.map((doc) => {
+      const map = new Map<string, AcademicDepartment>();
+      snap.docs.forEach((doc) => {
         const d = doc.data();
-        return {
-          id: doc.id,
-          collegeId: d.academicUnitId || d.collegeId || collegeId,
-          universityId: d.universityId || 'udsm',
-          name: d.name,
-          short: d.shortName || d.name,
-        };
+        const id = (d.id || doc.id).toLowerCase().trim();
+        if (!map.has(id)) {
+          map.set(id, {
+            id,
+            collegeId: d.academicUnitId || d.collegeId || collegeId,
+            universityId: d.universityId || 'udsm',
+            name: d.name,
+            short: d.shortName || d.name,
+          });
+        }
       });
+      return Array.from(map.values());
     }
   } catch (e) {
     console.warn('Error fetching departments from Firestore:', e);
   }
   await new Promise((resolve) => setTimeout(resolve, 140));
-  return ACADEMIC_DEPARTMENTS.filter((dept) => dept.collegeId === collegeId);
+  const seen = new Set<string>();
+  return ACADEMIC_DEPARTMENTS.filter((dept) => {
+    if (dept.collegeId !== collegeId) return false;
+    if (seen.has(dept.id)) return false;
+    seen.add(dept.id);
+    return true;
+  });
 }
 
 /**

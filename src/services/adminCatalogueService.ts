@@ -1109,13 +1109,12 @@ class AdminCatalogueService {
     }
 
     const unitAliases = getAcademicUnitAliases(cleanId);
-    const deptsByKey = new Map<string, DepartmentRecord>();
+    const deptsById = new Map<string, DepartmentRecord>();
 
     // 1. Seed from official audited UDSM departments matching any alias of the unit
     for (const d of AUDITED_DEPARTMENTS) {
       if (unitAliases.has((d.academicUnitId || '').toLowerCase().trim())) {
-        const key = d.name.trim().toLowerCase();
-        deptsByKey.set(key, { ...d });
+        deptsById.set(d.id.toLowerCase().trim(), { ...d });
       }
     }
 
@@ -1128,17 +1127,37 @@ class AdminCatalogueService {
         );
         for (const docSnap of docs) {
           const raw = { id: docSnap.id, ...(docSnap.data as any) } as DepartmentRecord;
-          const key = (raw.name || raw.id).trim().toLowerCase();
-          const existing = deptsByKey.get(key);
-          if (existing) {
-            deptsByKey.set(key, {
+          const rawId = (raw.id || docSnap.id).toLowerCase().trim();
+          const rawAliases = getDepartmentAliases(rawId);
+          const rawNameClean = (raw.name || '').trim().toLowerCase();
+
+          // Find if there is an existing department with matching ID, alias, or exact name
+          let matchedKey: string | null = null;
+          if (deptsById.has(rawId)) {
+            matchedKey = rawId;
+          } else {
+            for (const [existingId, existingDept] of deptsById.entries()) {
+              if (
+                rawAliases.has(existingId) ||
+                (existingDept.name && existingDept.name.trim().toLowerCase() === rawNameClean)
+              ) {
+                matchedKey = existingId;
+                break;
+              }
+            }
+          }
+
+          if (matchedKey) {
+            const existing = deptsById.get(matchedKey)!;
+            deptsById.set(matchedKey, {
               ...existing,
               ...raw,
-              id: existing.id, // preserve canonical department ID (e.g. 'dept-math')
+              id: existing.id, // preserve canonical department ID (e.g. 'dept-chem')
+              name: existing.name || raw.name, // preserve canonical name
               academicUnitId: existing.academicUnitId,
             });
           } else {
-            deptsByKey.set(key, raw);
+            deptsById.set(rawId, raw);
           }
         }
       }
@@ -1146,7 +1165,7 @@ class AdminCatalogueService {
       console.warn(`AdminCatalogueService: Error reading departments for unit ${cleanId}:`, err);
     }
 
-    const depts = Array.from(deptsByKey.values());
+    const depts = Array.from(deptsById.values());
     depts.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     this.departmentsByUnitCache.set(cleanId, depts);
     return depts;
@@ -1631,33 +1650,52 @@ class AdminCatalogueService {
       return this.allDepartmentsCache;
     }
 
-    const deptsByKey = new Map<string, DepartmentRecord>();
+    const deptsById = new Map<string, DepartmentRecord>();
     for (const d of AUDITED_DEPARTMENTS) {
-      deptsByKey.set(d.name.trim().toLowerCase(), { ...d });
+      deptsById.set(d.id.toLowerCase().trim(), { ...d });
     }
 
     try {
       const docs = await this.queryBothDatabases('departments');
       for (const d of docs) {
         const raw = { id: d.id, ...(d.data as any) } as DepartmentRecord;
-        const key = (raw.name || raw.id).trim().toLowerCase();
-        const existing = deptsByKey.get(key);
-        if (existing) {
-          deptsByKey.set(key, {
+        const rawId = (raw.id || d.id).toLowerCase().trim();
+        const rawAliases = getDepartmentAliases(rawId);
+        const rawNameClean = (raw.name || '').trim().toLowerCase();
+
+        let matchedKey: string | null = null;
+        if (deptsById.has(rawId)) {
+          matchedKey = rawId;
+        } else {
+          for (const [existingId, existingDept] of deptsById.entries()) {
+            if (
+              rawAliases.has(existingId) ||
+              (existingDept.name && existingDept.name.trim().toLowerCase() === rawNameClean)
+            ) {
+              matchedKey = existingId;
+              break;
+            }
+          }
+        }
+
+        if (matchedKey) {
+          const existing = deptsById.get(matchedKey)!;
+          deptsById.set(matchedKey, {
             ...existing,
             ...raw,
             id: existing.id,
+            name: existing.name || raw.name,
             academicUnitId: existing.academicUnitId,
           });
         } else {
-          deptsByKey.set(key, raw);
+          deptsById.set(rawId, raw);
         }
       }
     } catch (err) {
       console.warn('AdminCatalogueService: Error loading all departments:', err);
     }
 
-    const depts = Array.from(deptsByKey.values());
+    const depts = Array.from(deptsById.values());
     depts.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     this.allDepartmentsCache = depts;
     return depts;

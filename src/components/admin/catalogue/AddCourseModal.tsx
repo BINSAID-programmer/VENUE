@@ -478,11 +478,13 @@ export const AddCourseModal: React.FC<AddCourseModalProps> = ({
                 <option value="">
                   {department ? `${department.name} (Current)` : '-- Select Department --'}
                 </option>
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name} ({d.id})
-                  </option>
-                ))}
+                {departments
+                  .filter((d, idx, arr) => arr.findIndex((x) => x.id === d.id) === idx)
+                  .map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name} ({d.id})
+                    </option>
+                  ))}
               </select>
             </div>
           </div>

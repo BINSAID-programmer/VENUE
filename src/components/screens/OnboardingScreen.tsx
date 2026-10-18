@@ -644,11 +644,13 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                     No departments recorded under this academic unit.
                   </div>
                 ) : (
-                  departments.map((dept) => {
-                    const isSelected = selectedDeptId === dept.id;
-                    return (
-                      <button
-                        key={dept.id}
+                  departments
+                    .filter((dept, idx, arr) => arr.findIndex((d) => d.id === dept.id) === idx)
+                    .map((dept) => {
+                      const isSelected = selectedDeptId === dept.id;
+                      return (
+                        <button
+                          key={dept.id}
                         type="button"
                         onClick={() => {
                           setSelectedDeptId(dept.id);

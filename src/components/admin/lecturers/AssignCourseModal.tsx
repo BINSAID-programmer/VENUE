@@ -375,11 +375,13 @@ export const AssignCourseModal: React.FC<AssignCourseModalProps> = ({
                   className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-rose-500 transition-colors"
                 >
                   <option value="">All Departments</option>
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name}
-                    </option>
-                  ))}
+                  {departments
+                    .filter((d, idx, arr) => arr.findIndex((x) => x.id === d.id) === idx)
+                    .map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
                 </select>
               </div>
 

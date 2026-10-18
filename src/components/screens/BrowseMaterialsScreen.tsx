@@ -451,11 +451,13 @@ export const BrowseMaterialsScreen: React.FC<BrowseMaterialsScreenProps> = ({
                   ? '-- No Departments Available --'
                   : '-- Choose Department --'}
               </option>
-              {departments.map((dept) => (
-                <option key={dept.id} value={dept.id}>
-                  {dept.name}
-                </option>
-              ))}
+              {departments
+                .filter((dept, idx, arr) => arr.findIndex((d) => d.id === dept.id) === idx)
+                .map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
             </select>
           </div>
 

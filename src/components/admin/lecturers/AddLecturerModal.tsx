@@ -354,11 +354,13 @@ export const AddLecturerModal: React.FC<AddLecturerModalProps> = ({
                   {departments.length === 0 ? (
                     <option value="">No Departments</option>
                   ) : (
-                    departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
-                      </option>
-                    ))
+                    departments
+                      .filter((d, idx, arr) => arr.findIndex((x) => x.id === d.id) === idx)
+                      .map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name}
+                        </option>
+                      ))
                   )}
                 </select>
               </div>

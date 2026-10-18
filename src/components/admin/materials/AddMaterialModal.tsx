@@ -709,11 +709,13 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
                     <option value="">No departments available</option>
                   )}
                   {!loadingDepts &&
-                    departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
-                      </option>
-                    ))}
+                    departments
+                      .filter((d, idx, arr) => arr.findIndex((x) => x.id === d.id) === idx)
+                      .map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name}
+                        </option>
+                      ))}
                 </select>
               </div>
 

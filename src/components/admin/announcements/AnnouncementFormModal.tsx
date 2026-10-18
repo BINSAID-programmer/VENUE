@@ -126,10 +126,15 @@ export const AnnouncementFormModal: React.FC<AnnouncementFormModalProps> = ({
 
   const availableDepartments = useMemo(() => {
     if (!selectedAcademicUnitId) return [];
+    const seen = new Set<string>();
     return ACADEMIC_DEPARTMENTS.filter(
-      (dept) =>
-        dept.collegeId === selectedAcademicUnitId &&
-        (!selectedUniversityId || dept.universityId === selectedUniversityId)
+      (dept) => {
+        if (dept.collegeId !== selectedAcademicUnitId) return false;
+        if (selectedUniversityId && dept.universityId !== selectedUniversityId) return false;
+        if (seen.has(dept.id)) return false;
+        seen.add(dept.id);
+        return true;
+      }
     );
   }, [selectedAcademicUnitId, selectedUniversityId]);
 

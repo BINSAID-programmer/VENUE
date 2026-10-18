@@ -854,11 +854,13 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                           ? 'No Departments Found'
                           : 'Select Academic Department...'}
                       </option>
-                      {departments.map((dept) => (
-                        <option key={dept.id} value={dept.id}>
-                          {dept.name}
-                        </option>
-                      ))}
+                      {departments
+                        .filter((dept, idx, arr) => arr.findIndex((d) => d.id === dept.id) === idx)
+                        .map((dept) => (
+                          <option key={dept.id} value={dept.id}>
+                            {dept.name}
+                          </option>
+                        ))}
                     </select>
                     {selectedAcademicUnitId && departments.length === 0 && !isLoadingDepts && (
                       <p className="text-[11px] text-amber-400 italic">

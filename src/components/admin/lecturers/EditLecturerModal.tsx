@@ -329,11 +329,13 @@ export const EditLecturerModal: React.FC<EditLecturerModalProps> = ({
                   disabled={loadingDepts || submitting}
                   className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
                 >
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name}
-                    </option>
-                  ))}
+                  {departments
+                    .filter((d, idx, arr) => arr.findIndex((x) => x.id === d.id) === idx)
+                    .map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
                 </select>
               </div>
             </div>

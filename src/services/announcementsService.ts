@@ -23,6 +23,7 @@ import {
   AnnouncementFilterOptions,
   UserTargetingContext,
   PaginatedAnnouncementsResponse,
+  StudentProfile,
 } from '../types';
 
 export interface AnnouncementFormData {
@@ -393,6 +394,29 @@ class AnnouncementsService {
       console.error('Error fetching published announcements from Firestore:', fsErr);
       return [];
     }
+  }
+
+  /**
+   * Get targeted published announcements for a student based on their profile and academic placement
+   */
+  async getStudentAnnouncements(
+    profile?: StudentProfile | null,
+    userId?: string,
+    limitCount: number = 50
+  ): Promise<AnnouncementRecord[]> {
+    const uid = userId || profile?.uid || auth.currentUser?.uid;
+    const userContext: UserTargetingContext = {
+      userId: uid,
+      role: 'student',
+      universityId: profile?.universityId,
+      academicUnitId: profile?.academicUnitId,
+      departmentId: profile?.departmentId,
+      programmeId: profile?.programmeId,
+      yearOfStudy: profile?.yearOfStudy,
+      semester: profile?.semester,
+    };
+
+    return this.getPublishedAnnouncements(limitCount, undefined, undefined, userContext);
   }
 
   /**

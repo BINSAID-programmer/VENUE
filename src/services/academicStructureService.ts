@@ -1784,11 +1784,16 @@ class AcademicStructureService {
       const snap = await getDocs(q);
 
       if (!snap.empty) {
-        const depts: DepartmentRecord[] = [];
+        const deptsMap = new Map<string, DepartmentRecord>();
         snap.forEach((d) => {
-          depts.push(d.data() as DepartmentRecord);
+          const data = d.data() as DepartmentRecord;
+          const id = (data.id || d.id).toLowerCase().trim();
+          if (!deptsMap.has(id)) {
+            deptsMap.set(id, { ...data, id });
+          }
         });
 
+        const depts = Array.from(deptsMap.values());
         depts.sort((a, b) => a.name.localeCompare(b.name));
         this.departmentsByUnitCache.set(cleanUnitId, depts);
         return depts;
@@ -1798,9 +1803,14 @@ class AcademicStructureService {
     }
 
     // Memory fallback
-    const fallbackDepts = this.allDeptsInMemory.filter(
-      (d) => d.academicUnitId.toLowerCase() === cleanUnitId
-    );
+    const seenFallbackIds = new Set<string>();
+    const fallbackDepts = this.allDeptsInMemory.filter((d) => {
+      if ((d.academicUnitId || '').toLowerCase() !== cleanUnitId) return false;
+      const id = (d.id || '').toLowerCase().trim();
+      if (seenFallbackIds.has(id)) return false;
+      seenFallbackIds.add(id);
+      return true;
+    });
 
     fallbackDepts.sort((a, b) => a.name.localeCompare(b.name));
     this.departmentsByUnitCache.set(cleanUnitId, fallbackDepts);
