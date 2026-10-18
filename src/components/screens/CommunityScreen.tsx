@@ -116,6 +116,7 @@ import {
   InlineAITranslationBlock,
 } from '../community/CommunityAIAssistantModal';
 import { HelpCircle } from 'lucide-react';
+import { ScreenErrorBoundary } from '../common/ScreenErrorBoundary';
 
 interface CommunityScreenProps {
   posts?: CommunityPost[];
@@ -2612,6 +2613,7 @@ export const CommunityScreen: React.FC<CommunityScreenProps> = ({
 
       {/* Full-Screen WhatsApp-Style Live Chat Viewport */}
       {activeConversation && (
+        <ScreenErrorBoundary screenName="Chat">
         <FullScreenWhatsAppChat
           conversation={activeConversation}
           allConversations={conversations}
@@ -2638,6 +2640,7 @@ export const CommunityScreen: React.FC<CommunityScreenProps> = ({
           onModeratorRemoveMessage={handleModeratorRemoveChatMessage}
           showToast={showToast}
         />
+        </ScreenErrorBoundary>
       )}
 
       {/* =====================================================================
