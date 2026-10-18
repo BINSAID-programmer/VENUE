@@ -7,6 +7,7 @@ interface ScreenErrorBoundaryProps {
 
 interface ScreenErrorBoundaryState {
   hasError: boolean;
+  message: string;
 }
 
 /**
@@ -17,10 +18,12 @@ export class ScreenErrorBoundary extends React.Component<
   ScreenErrorBoundaryProps,
   ScreenErrorBoundaryState
 > {
-  state: ScreenErrorBoundaryState = { hasError: false };
+  state: ScreenErrorBoundaryState = { hasError: false, message: '' };
 
-  static getDerivedStateFromError(): ScreenErrorBoundaryState {
-    return { hasError: true };
+  static getDerivedStateFromError(error: unknown): ScreenErrorBoundaryState {
+    const message =
+      error instanceof Error ? `${error.name}: ${error.message}` : String(error ?? 'Unknown error');
+    return { hasError: true, message: message.slice(0, 300) };
   }
 
   componentDidCatch(error: unknown) {
@@ -32,10 +35,15 @@ export class ScreenErrorBoundary extends React.Component<
       return (
         <div className="p-6 text-center text-slate-200">
           <p className="font-semibold mb-1">{this.props.screenName} could not load</p>
-          <p className="text-sm text-slate-400 mb-4">Something went wrong. Please try again.</p>
+          <p className="text-sm text-slate-400 mb-2">Something went wrong. Please try again.</p>
+          {this.state.message && (
+            <p className="text-[11px] font-mono text-slate-500 mb-4 break-words">
+              {this.state.message}
+            </p>
+          )}
           <button
             type="button"
-            onClick={() => this.setState({ hasError: false })}
+            onClick={() => this.setState({ hasError: false, message: '' })}
             className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm"
           >
             Retry
