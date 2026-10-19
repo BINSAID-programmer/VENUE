@@ -1,8 +1,14 @@
+/**
+ * VENUE themes — 8 swappable palettes (4 light + 4 dark).
+ * Colors for the UI live in src/index.css as --venue-* tokens (one block per
+ * theme id). This file holds the metadata and the preview swatches.
+ * To replace a theme: edit its entry here and its token block in index.css.
+ */
+
 export type ThemeMode = 'light' | 'dark';
 
-export type LightThemeId = 'soft-blue' | 'sage' | 'rose' | 'lavender';
-export type DarkThemeId = 'midnight-blue' | 'deep-sage' | 'deep-rose' | 'deep-violet';
-
+export type LightThemeId = 'blue' | 'green' | 'purple' | 'beige';
+export type DarkThemeId = 'dark-blue' | 'dark-teal' | 'dark-purple' | 'dark-gold';
 export type ThemeId = LightThemeId | DarkThemeId;
 
 export interface ThemeSwatches {
@@ -23,150 +29,52 @@ export interface ThemeDefinition {
   pairedThemeId: ThemeId;
 }
 
+const def = (
+  id: ThemeId, name: string, mode: ThemeMode, shortDesc: string, fullDesc: string,
+  pairedThemeId: ThemeId, swatches: ThemeSwatches
+): ThemeDefinition => ({ id, name, mode, shortDesc, fullDesc, swatches, pairedThemeId });
+
 export const LIGHT_THEMES: ThemeDefinition[] = [
-  {
-    id: 'soft-blue',
-    name: 'Soft Blue',
-    mode: 'light',
-    shortDesc: 'Soft blue-gray • Gentle blue',
-    fullDesc: 'Calm academic blue-gray canvas with gentle royal accents and soft neutral cards.',
-    swatches: {
-      page: '#f0f3f8',
-      card: '#ffffff',
-      accent: '#2563eb',
-      text: '#0f172a',
-      border: '#dbe2ec',
-    },
-    pairedThemeId: 'midnight-blue',
-  },
-  {
-    id: 'sage',
-    name: 'Sage',
-    mode: 'light',
-    shortDesc: 'Very light sage • Muted green',
-    fullDesc: 'Restful botanical sage-gray canvas with earthy muted green accents and natural serenity.',
-    swatches: {
-      page: '#f0f4f1',
-      card: '#ffffff',
-      accent: '#2e6945',
-      text: '#111b13',
-      border: '#d1ded4',
-    },
-    pairedThemeId: 'deep-sage',
-  },
-  {
-    id: 'rose',
-    name: 'Rose',
-    mode: 'light',
-    shortDesc: 'Dusty rose • Muted berry',
-    fullDesc: 'Subtle dusty rose-tinted neutral canvas with refined cranberry accents.',
-    swatches: {
-      page: '#f6f1f2',
-      card: '#ffffff',
-      accent: '#9b415a',
-      text: '#201316',
-      border: '#e2d2d6',
-    },
-    pairedThemeId: 'deep-rose',
-  },
-  {
-    id: 'lavender',
-    name: 'Lavender',
-    mode: 'light',
-    shortDesc: 'Lavender-gray • Muted purple',
-    fullDesc: 'Delicate mist-lavender neutral canvas with modern, gentle violet accents.',
-    swatches: {
-      page: '#f3f1f7',
-      card: '#ffffff',
-      accent: '#6c47a6',
-      text: '#191424',
-      border: '#d9d3e5',
-    },
-    pairedThemeId: 'deep-violet',
-  },
+  def('blue', 'Blue', 'light', 'Clean & fresh', 'Clean, bright blue — fresh and easy to read.', 'dark-blue', { page: '#eef4fc', card: '#ffffff', accent: '#2563eb', text: '#0f1b33', border: '#cfdcee' }),
+  def('green', 'Green', 'light', 'Calm & focused', 'Calm natural green — relaxed and focused for long study sessions.', 'dark-teal', { page: '#eef6f0', card: '#ffffff', accent: '#15803d', text: '#0f2418', border: '#c9dfd0' }),
+  def('purple', 'Purple', 'light', 'Modern & creative', 'Modern violet — creative and stylish.', 'dark-purple', { page: '#f4f0fb', card: '#ffffff', accent: '#7c3aed', text: '#1d1233', border: '#d9cdee' }),
+  def('beige', 'Beige & Orange', 'light', 'Warm & friendly', 'Warm beige with orange accents — friendly and welcoming.', 'dark-gold', { page: '#faf4ea', card: '#fffdf8', accent: '#c2410c', text: '#2b1d0e', border: '#e6d8bd' }),
 ];
 
 export const DARK_THEMES: ThemeDefinition[] = [
-  {
-    id: 'midnight-blue',
-    name: 'Midnight Blue',
-    mode: 'dark',
-    shortDesc: 'Deep blue-gray • Muted blue',
-    fullDesc: 'Deep navy-slate neutral canvas with calm, professional azure accents.',
-    swatches: {
-      page: '#0c101a',
-      card: '#131926',
-      accent: '#3b82f6',
-      text: '#f1f5f9',
-      border: '#232f45',
-    },
-    pairedThemeId: 'soft-blue',
-  },
-  {
-    id: 'deep-sage',
-    name: 'Deep Sage',
-    mode: 'dark',
-    shortDesc: 'Deep green-gray • Muted sage',
-    fullDesc: 'Deep pine-charcoal neutral canvas with sophisticated, soft herbal accents.',
-    swatches: {
-      page: '#0d1410',
-      card: '#141e18',
-      accent: '#448a5c',
-      text: '#edf4ef',
-      border: '#263a2f',
-    },
-    pairedThemeId: 'sage',
-  },
-  {
-    id: 'deep-rose',
-    name: 'Deep Rose',
-    mode: 'dark',
-    shortDesc: 'Muted burgundy • Soft rose',
-    fullDesc: 'Deep mulberry-charcoal neutral canvas with soft, non-aggressive dusky rose accents.',
-    swatches: {
-      page: '#140f12',
-      card: '#1f161a',
-      accent: '#b3566f',
-      text: '#f6eff1',
-      border: '#3b2b33',
-    },
-    pairedThemeId: 'rose',
-  },
-  {
-    id: 'deep-violet',
-    name: 'Deep Violet',
-    mode: 'dark',
-    shortDesc: 'Deep violet-gray • Soft purple',
-    fullDesc: 'Deep amethyst-charcoal canvas with muted, modern lavender highlights.',
-    swatches: {
-      page: '#110e1a',
-      card: '#191426',
-      accent: '#855ec7',
-      text: '#f3eff9',
-      border: '#33294c',
-    },
-    pairedThemeId: 'lavender',
-  },
+  def('dark-blue', 'Dark Blue', 'dark', 'Professional', 'Deep navy blue — professional and easy on the eyes.', 'blue', { page: '#0b1220', card: '#121b2e', accent: '#2563eb', text: '#f1f5f9', border: '#263552' }),
+  def('dark-teal', 'Dark Teal', 'dark', 'Calm & modern', 'Deep teal — calm, modern and relaxing at night.', 'green', { page: '#08181a', card: '#0f2427', accent: '#0f766e', text: '#effafa', border: '#1f4044' }),
+  def('dark-purple', 'Dark Purple', 'dark', 'Sleek & creative', 'Deep purple — sleek and creative.', 'purple', { page: '#130d20', card: '#1c1430', accent: '#7c3aed', text: '#f5f0ff', border: '#382a5c' }),
+  def('dark-gold', 'Dark Gold', 'dark', 'Elegant & premium', 'Dark charcoal with amber-gold accents — elegant and premium.', 'beige', { page: '#14100a', card: '#1e1810', accent: '#b45309', text: '#fbf5e9', border: '#40331f' }),
 ];
 
 export const ALL_THEMES: ThemeDefinition[] = [...LIGHT_THEMES, ...DARK_THEMES];
 
-export const THEME_MAP: Record<ThemeId, ThemeDefinition> = ALL_THEMES.reduce(
-  (acc, item) => {
-    acc[item.id] = item;
-    return acc;
-  },
-  {} as Record<ThemeId, ThemeDefinition>
+export const THEME_MAP: Record<string, ThemeDefinition> = ALL_THEMES.reduce(
+  (acc, t) => { acc[t.id] = t; return acc; },
+  {} as Record<string, ThemeDefinition>
 );
 
-export const DEFAULT_LIGHT_THEME: ThemeId = 'soft-blue';
-export const DEFAULT_DARK_THEME: ThemeId = 'midnight-blue';
+export const DEFAULT_LIGHT_THEME: LightThemeId = 'blue';
+export const DEFAULT_DARK_THEME: DarkThemeId = 'dark-blue';
 
-export function getThemeDefinition(id: string | null | undefined): ThemeDefinition {
-  if (id && id in THEME_MAP) {
-    return THEME_MAP[id as ThemeId];
-  }
-  if (id === 'light') return THEME_MAP[DEFAULT_LIGHT_THEME];
-  if (id === 'dark') return THEME_MAP[DEFAULT_DARK_THEME];
+/** Old theme ids → new ids, so saved preferences (localStorage / Firestore) keep working. */
+export const LEGACY_THEME_ALIASES: Record<string, ThemeId> = {
+  'soft-blue': 'blue',
+  'sage': 'green',
+  'lavender': 'purple',
+  'rose': 'beige',
+  'midnight-blue': 'dark-blue',
+  'deep-sage': 'dark-teal',
+  'deep-violet': 'dark-purple',
+  'deep-rose': 'dark-gold',
+  'light': 'blue',
+  'dark': 'dark-blue',
+};
+
+export function getThemeDefinition(id: string): ThemeDefinition {
+  if (THEME_MAP[id]) return THEME_MAP[id];
+  const alias = LEGACY_THEME_ALIASES[id];
+  if (alias) return THEME_MAP[alias];
   return THEME_MAP[DEFAULT_DARK_THEME];
 }

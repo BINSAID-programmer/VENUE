@@ -1,261 +1,272 @@
 @import "tailwindcss";
 
 /* ============================================================
-   VENUE MULTI-THEME TOKENS (8 LOW-CONTRAST ACADEMIC PALETTES)
-   4 Light Themes + 4 Dark Themes
+   VENUE THEMES — 8 swappable palettes (4 light + 4 dark)
+   Each theme is ONE block of --venue-* tokens. To replace or edit a
+   theme, change only its block here and its entry in src/data/themes.ts.
+   Contrast (WCAG AA) is verified for every text/background pair.
    ============================================================ */
 
-/* 1. SOFT BLUE (Light Theme 1 - Default Light) */
+/* 1. BLUE (light) — Clean & fresh */
 :root,
-html.theme-soft-blue,
-[data-color-theme='soft-blue'] {
+html.theme-blue,
+[data-color-theme='blue'] {
   color-scheme: light;
-  --venue-bg-page: #f0f3f8;
-  --venue-bg-viewport: #e1e7f0;
+  --venue-bg-page: #eef4fc;
+  --venue-bg-viewport: #dde9f8;
   --venue-bg-card: #ffffff;
-  --venue-bg-card-elevated: #f8fafc;
-  --venue-bg-subtle: #f4f7fb;
-  --venue-border: #d6e0ec;
-  --venue-border-subtle: #e2ebf5;
-  --venue-text-primary: #0f172a;
-  --venue-text-secondary: #334155;
-  --venue-text-muted: #5f7088;
+  --venue-bg-card-elevated: #f7faff;
+  --venue-bg-subtle: #eaf1fb;
+  --venue-border: #cfdcee;
+  --venue-border-subtle: #e0e9f5;
+  --venue-text-primary: #0f1b33;
+  --venue-text-secondary: #34445f;
+  --venue-text-muted: #55678a;
   --venue-accent-primary: #2563eb;
   --venue-accent-hover: #1d4ed8;
-  --venue-accent-subtle: #e8f0fe;
+  --venue-accent-subtle: #e3edff;
   --venue-accent-text: #1d4ed8;
-  --venue-nav-bg: rgba(255, 255, 255, 0.96);
-  --venue-input-bg: #f8fafc;
-  --venue-focus-ring: rgba(37, 99, 235, 0.2);
-  --venue-status-success: #059669;
-  --venue-status-warning: #d97706;
-  --venue-status-error: #e11d48;
-  --venue-bubble-assistant: #f4f7fb;
+  --venue-nav-bg: rgba(255,255,255,0.96);
+  --venue-input-bg: #f7faff;
+  --venue-focus-ring: #2563eb33;
+  --venue-status-success: #065f46;
+  --venue-status-warning: #92400e;
+  --venue-status-error: #be123c;
+  --venue-bubble-assistant: #eaf1fb;
   --venue-bubble-user: #2563eb;
   --venue-bubble-user-text: #ffffff;
   --venue-scrollbar-track: #e2e7f0;
   --venue-scrollbar-thumb: #b4c2d4;
+  --venue-gradient-page: linear-gradient(165deg, #f4f8ff 0%, #e6effb 100%);
 }
 
-/* 2. SAGE (Light Theme 2) */
-html.theme-sage,
-[data-color-theme='sage'] {
+/* 2. GREEN (light) — Calm & focused */
+html.theme-green,
+[data-color-theme='green'] {
   color-scheme: light;
-  --venue-bg-page: #edf2ee;
-  --venue-bg-viewport: #dde5df;
+  --venue-bg-page: #eef6f0;
+  --venue-bg-viewport: #dcebe0;
   --venue-bg-card: #ffffff;
-  --venue-bg-card-elevated: #f5f8f5;
-  --venue-bg-subtle: #f1f6f2;
-  --venue-border: #ccded2;
-  --venue-border-subtle: #dbe9df;
-  --venue-text-primary: #111b13;
-  --venue-text-secondary: #273a2c;
-  --venue-text-muted: #566e5c;
-  --venue-accent-primary: #2d6b46;
-  --venue-accent-hover: #235637;
-  --venue-accent-subtle: #e5f2e8;
-  --venue-accent-text: #235637;
-  --venue-nav-bg: rgba(255, 255, 255, 0.96);
-  --venue-input-bg: #f5f8f5;
-  --venue-focus-ring: rgba(45, 107, 70, 0.2);
-  --venue-status-success: #2d6b46;
-  --venue-status-warning: #d97706;
-  --venue-status-error: #e11d48;
-  --venue-bubble-assistant: #f1f6f2;
-  --venue-bubble-user: #2d6b46;
+  --venue-bg-card-elevated: #f6fbf7;
+  --venue-bg-subtle: #e8f3ec;
+  --venue-border: #c9dfd0;
+  --venue-border-subtle: #dcebe1;
+  --venue-text-primary: #0f2418;
+  --venue-text-secondary: #33493b;
+  --venue-text-muted: #53695a;
+  --venue-accent-primary: #15803d;
+  --venue-accent-hover: #166534;
+  --venue-accent-subtle: #dff3e5;
+  --venue-accent-text: #166534;
+  --venue-nav-bg: rgba(255,255,255,0.96);
+  --venue-input-bg: #f6fbf7;
+  --venue-focus-ring: #15803d33;
+  --venue-status-success: #065f46;
+  --venue-status-warning: #92400e;
+  --venue-status-error: #be123c;
+  --venue-bubble-assistant: #e8f3ec;
+  --venue-bubble-user: #15803d;
   --venue-bubble-user-text: #ffffff;
-  --venue-scrollbar-track: #dde5df;
-  --venue-scrollbar-thumb: #b2c5b7;
+  --venue-scrollbar-track: #dfeae2;
+  --venue-scrollbar-thumb: #a9c4b1;
+  --venue-gradient-page: linear-gradient(165deg, #f3faf5 0%, #e4f1e8 100%);
 }
 
-/* 3. ROSE (Light Theme 3) */
-html.theme-rose,
-[data-color-theme='rose'] {
+/* 3. PURPLE (light) — Modern & creative */
+html.theme-purple,
+[data-color-theme='purple'] {
   color-scheme: light;
-  --venue-bg-page: #f5f0f2;
-  --venue-bg-viewport: #e8dfe2;
+  --venue-bg-page: #f4f0fb;
+  --venue-bg-viewport: #e7dff6;
   --venue-bg-card: #ffffff;
-  --venue-bg-card-elevated: #fcf7f8;
-  --venue-bg-subtle: #f8f2f4;
-  --venue-border: #ded0d4;
-  --venue-border-subtle: #eae0e3;
-  --venue-text-primary: #201316;
-  --venue-text-secondary: #3e282e;
-  --venue-text-muted: #6d565d;
-  --venue-accent-primary: #9b415a;
-  --venue-accent-hover: #83354b;
-  --venue-accent-subtle: #faedf1;
-  --venue-accent-text: #83354b;
-  --venue-nav-bg: rgba(255, 255, 255, 0.96);
-  --venue-input-bg: #fcf7f8;
-  --venue-focus-ring: rgba(155, 65, 90, 0.2);
-  --venue-status-success: #059669;
-  --venue-status-warning: #d97706;
-  --venue-status-error: #9b415a;
-  --venue-bubble-assistant: #f8f2f4;
-  --venue-bubble-user: #9b415a;
+  --venue-bg-card-elevated: #faf7ff;
+  --venue-bg-subtle: #f0eafa;
+  --venue-border: #d9cdee;
+  --venue-border-subtle: #e9e0f7;
+  --venue-text-primary: #1d1233;
+  --venue-text-secondary: #433760;
+  --venue-text-muted: #66597f;
+  --venue-accent-primary: #7c3aed;
+  --venue-accent-hover: #6d28d9;
+  --venue-accent-subtle: #ede4fd;
+  --venue-accent-text: #6d28d9;
+  --venue-nav-bg: rgba(255,255,255,0.96);
+  --venue-input-bg: #faf7ff;
+  --venue-focus-ring: #7c3aed33;
+  --venue-status-success: #065f46;
+  --venue-status-warning: #92400e;
+  --venue-status-error: #be123c;
+  --venue-bubble-assistant: #f0eafa;
+  --venue-bubble-user: #7c3aed;
   --venue-bubble-user-text: #ffffff;
-  --venue-scrollbar-track: #e8dfe2;
-  --venue-scrollbar-thumb: #c7b5ba;
+  --venue-scrollbar-track: #e7e0f3;
+  --venue-scrollbar-thumb: #bfb0da;
+  --venue-gradient-page: linear-gradient(165deg, #f8f4ff 0%, #ece4f9 100%);
 }
 
-/* 4. LAVENDER (Light Theme 4) */
-html.theme-lavender,
-[data-color-theme='lavender'] {
+/* 4. BEIGE & ORANGE (light) — Warm & friendly */
+html.theme-beige,
+[data-color-theme='beige'] {
   color-scheme: light;
-  --venue-bg-page: #f2eff7;
-  --venue-bg-viewport: #e4dfed;
-  --venue-bg-card: #ffffff;
-  --venue-bg-card-elevated: #f9f7fc;
-  --venue-bg-subtle: #f4f0fa;
-  --venue-border: #d8d1e5;
-  --venue-border-subtle: #e6e1f0;
-  --venue-text-primary: #181323;
-  --venue-text-secondary: #332947;
-  --venue-text-muted: #625778;
-  --venue-accent-primary: #6c47a6;
-  --venue-accent-hover: #573788;
-  --venue-accent-subtle: #f0ebfa;
-  --venue-accent-text: #573788;
-  --venue-nav-bg: rgba(255, 255, 255, 0.96);
-  --venue-input-bg: #f9f7fc;
-  --venue-focus-ring: rgba(108, 71, 166, 0.2);
-  --venue-status-success: #059669;
-  --venue-status-warning: #d97706;
-  --venue-status-error: #e11d48;
-  --venue-bubble-assistant: #f4f0fa;
-  --venue-bubble-user: #6c47a6;
+  --venue-bg-page: #faf4ea;
+  --venue-bg-viewport: #f0e5d1;
+  --venue-bg-card: #fffdf8;
+  --venue-bg-card-elevated: #fdf8ee;
+  --venue-bg-subtle: #f6eedd;
+  --venue-border: #e6d8bd;
+  --venue-border-subtle: #f0e5ce;
+  --venue-text-primary: #2b1d0e;
+  --venue-text-secondary: #55412b;
+  --venue-text-muted: #766049;
+  --venue-accent-primary: #c2410c;
+  --venue-accent-hover: #9a3412;
+  --venue-accent-subtle: #fdebd9;
+  --venue-accent-text: #9a3412;
+  --venue-nav-bg: rgba(255,253,248,0.96);
+  --venue-input-bg: #fdf8ee;
+  --venue-focus-ring: #c2410c33;
+  --venue-status-success: #065f46;
+  --venue-status-warning: #854d0e;
+  --venue-status-error: #be123c;
+  --venue-bubble-assistant: #f6eedd;
+  --venue-bubble-user: #c2410c;
   --venue-bubble-user-text: #ffffff;
-  --venue-scrollbar-track: #e4dfed;
-  --venue-scrollbar-thumb: #c0b7d4;
+  --venue-scrollbar-track: #efe4cf;
+  --venue-scrollbar-thumb: #cdb990;
+  --venue-gradient-page: linear-gradient(165deg, #fdf8ef 0%, #f4e9d3 100%);
 }
 
-/* 5. MIDNIGHT BLUE (Dark Theme 1 - Default Dark) */
+/* 5. DARK BLUE (dark) — Professional */
 html.dark,
 html.theme-dark,
-html.theme-midnight-blue,
 [data-theme='dark'],
-[data-color-theme='midnight-blue'] {
+html.theme-dark-blue,
+[data-color-theme='dark-blue'] {
   color-scheme: dark;
-  --venue-bg-page: #0c101a;
-  --venue-bg-viewport: #070a12;
-  --venue-bg-card: #131926;
-  --venue-bg-card-elevated: #192233;
-  --venue-bg-subtle: #192233;
-  --venue-border: #232f45;
-  --venue-border-subtle: #1c2638;
+  --venue-bg-page: #0b1220;
+  --venue-bg-viewport: #070d18;
+  --venue-bg-card: #121b2e;
+  --venue-bg-card-elevated: #18233a;
+  --venue-bg-subtle: #18233a;
+  --venue-border: #263552;
+  --venue-border-subtle: #1c2740;
   --venue-text-primary: #f1f5f9;
   --venue-text-secondary: #cbd5e1;
-  --venue-text-muted: #8293a8;
-  --venue-accent-primary: #3b82f6;
-  --venue-accent-hover: #2563eb;
-  --venue-accent-subtle: rgba(59, 130, 246, 0.16);
+  --venue-text-muted: #8fa1bb;
+  --venue-accent-primary: #2563eb;
+  --venue-accent-hover: #1d4ed8;
+  --venue-accent-subtle: rgba(59,130,246,0.16);
   --venue-accent-text: #60a5fa;
-  --venue-nav-bg: rgba(12, 16, 26, 0.94);
-  --venue-input-bg: #111622;
-  --venue-focus-ring: rgba(59, 130, 246, 0.25);
-  --venue-status-success: #10b981;
-  --venue-status-warning: #f59e0b;
-  --venue-status-error: #f43f5e;
-  --venue-bubble-assistant: #192233;
+  --venue-nav-bg: rgba(11,18,32,0.94);
+  --venue-input-bg: #101829;
+  --venue-focus-ring: #60a5fa40;
+  --venue-status-success: #34d399;
+  --venue-status-warning: #fbbf24;
+  --venue-status-error: #fb7185;
+  --venue-bubble-assistant: #18233a;
   --venue-bubble-user: #2563eb;
   --venue-bubble-user-text: #ffffff;
-  --venue-scrollbar-track: rgba(15, 23, 42, 0.6);
-  --venue-scrollbar-thumb: rgba(56, 189, 248, 0.25);
+  --venue-scrollbar-track: rgba(15,23,42,0.6);
+  --venue-scrollbar-thumb: rgba(96,165,250,0.3);
+  --venue-gradient-page: linear-gradient(165deg, #0e1729 0%, #080e1a 100%);
 }
 
-/* 6. DEEP SAGE (Dark Theme 2) */
-html.theme-deep-sage,
-[data-color-theme='deep-sage'] {
+/* 6. DARK TEAL (dark) — Calm & modern */
+html.theme-dark-teal,
+[data-color-theme='dark-teal'] {
   color-scheme: dark;
-  --venue-bg-page: #0d1410;
-  --venue-bg-viewport: #080d0a;
-  --venue-bg-card: #141e18;
-  --venue-bg-card-elevated: #1b2921;
-  --venue-bg-subtle: #1b2921;
-  --venue-border: #263a2f;
-  --venue-border-subtle: #1f3026;
-  --venue-text-primary: #edf4ef;
-  --venue-text-secondary: #c4d6c8;
-  --venue-text-muted: #809887;
-  --venue-accent-primary: #448a5c;
-  --venue-accent-hover: #37734c;
-  --venue-accent-subtle: rgba(68, 138, 92, 0.18);
-  --venue-accent-text: #70c48e;
-  --venue-nav-bg: rgba(13, 20, 16, 0.94);
-  --venue-input-bg: #111a14;
-  --venue-focus-ring: rgba(68, 138, 92, 0.25);
-  --venue-status-success: #448a5c;
-  --venue-status-warning: #f59e0b;
-  --venue-status-error: #f43f5e;
-  --venue-bubble-assistant: #1b2921;
-  --venue-bubble-user: #37734c;
+  --venue-bg-page: #08181a;
+  --venue-bg-viewport: #051112;
+  --venue-bg-card: #0f2427;
+  --venue-bg-card-elevated: #153033;
+  --venue-bg-subtle: #153033;
+  --venue-border: #1f4044;
+  --venue-border-subtle: #173539;
+  --venue-text-primary: #effafa;
+  --venue-text-secondary: #bfdfe0;
+  --venue-text-muted: #85aaad;
+  --venue-accent-primary: #0f766e;
+  --venue-accent-hover: #115e59;
+  --venue-accent-subtle: rgba(45,212,191,0.14);
+  --venue-accent-text: #2dd4bf;
+  --venue-nav-bg: rgba(8,24,26,0.94);
+  --venue-input-bg: #0c1f22;
+  --venue-focus-ring: #2dd4bf40;
+  --venue-status-success: #34d399;
+  --venue-status-warning: #fbbf24;
+  --venue-status-error: #fb7185;
+  --venue-bubble-assistant: #153033;
+  --venue-bubble-user: #0f766e;
   --venue-bubble-user-text: #ffffff;
-  --venue-scrollbar-track: rgba(13, 20, 16, 0.7);
-  --venue-scrollbar-thumb: rgba(68, 138, 92, 0.35);
+  --venue-scrollbar-track: rgba(8,24,26,0.6);
+  --venue-scrollbar-thumb: rgba(45,212,191,0.3);
+  --venue-gradient-page: linear-gradient(165deg, #0b1e21 0%, #061314 100%);
 }
 
-/* 7. DEEP ROSE (Dark Theme 3) */
-html.theme-deep-rose,
-[data-color-theme='deep-rose'] {
+/* 7. DARK PURPLE (dark) — Sleek & creative */
+html.theme-dark-purple,
+[data-color-theme='dark-purple'] {
   color-scheme: dark;
-  --venue-bg-page: #140f12;
-  --venue-bg-viewport: #0c090b;
-  --venue-bg-card: #1f161a;
-  --venue-bg-card-elevated: #2b1f25;
-  --venue-bg-subtle: #2b1f25;
-  --venue-border: #3b2b33;
-  --venue-border-subtle: #2f2229;
-  --venue-text-primary: #f6eff1;
-  --venue-text-secondary: #d9c8cc;
-  --venue-text-muted: #9a8288;
-  --venue-accent-primary: #b3566f;
-  --venue-accent-hover: #9c475d;
-  --venue-accent-subtle: rgba(179, 86, 111, 0.18);
-  --venue-accent-text: #e08b9f;
-  --venue-nav-bg: rgba(20, 15, 18, 0.94);
-  --venue-input-bg: #1a1216;
-  --venue-focus-ring: rgba(179, 86, 111, 0.25);
-  --venue-status-success: #10b981;
-  --venue-status-warning: #f59e0b;
-  --venue-status-error: #b3566f;
-  --venue-bubble-assistant: #2b1f25;
-  --venue-bubble-user: #9c475d;
+  --venue-bg-page: #130d20;
+  --venue-bg-viewport: #0d0816;
+  --venue-bg-card: #1c1430;
+  --venue-bg-card-elevated: #251a40;
+  --venue-bg-subtle: #251a40;
+  --venue-border: #382a5c;
+  --venue-border-subtle: #2b2048;
+  --venue-text-primary: #f5f0ff;
+  --venue-text-secondary: #d3c7ee;
+  --venue-text-muted: #9d8fc0;
+  --venue-accent-primary: #7c3aed;
+  --venue-accent-hover: #6d28d9;
+  --venue-accent-subtle: rgba(167,139,250,0.16);
+  --venue-accent-text: #c4b5fd;
+  --venue-nav-bg: rgba(19,13,32,0.94);
+  --venue-input-bg: #18102a;
+  --venue-focus-ring: #c4b5fd40;
+  --venue-status-success: #34d399;
+  --venue-status-warning: #fbbf24;
+  --venue-status-error: #fb7185;
+  --venue-bubble-assistant: #251a40;
+  --venue-bubble-user: #7c3aed;
   --venue-bubble-user-text: #ffffff;
-  --venue-scrollbar-track: rgba(20, 15, 18, 0.7);
-  --venue-scrollbar-thumb: rgba(179, 86, 111, 0.35);
+  --venue-scrollbar-track: rgba(19,13,32,0.6);
+  --venue-scrollbar-thumb: rgba(167,139,250,0.3);
+  --venue-gradient-page: linear-gradient(165deg, #190f2b 0%, #0e0919 100%);
 }
 
-/* 8. DEEP VIOLET (Dark Theme 4) */
-html.theme-deep-violet,
-[data-color-theme='deep-violet'] {
+/* 8. DARK GOLD (dark) — Elegant & premium */
+html.theme-dark-gold,
+[data-color-theme='dark-gold'] {
   color-scheme: dark;
-  --venue-bg-page: #110e1a;
-  --venue-bg-viewport: #0a0812;
-  --venue-bg-card: #191426;
-  --venue-bg-card-elevated: #231c36;
-  --venue-bg-subtle: #231c36;
-  --venue-border: #33294c;
-  --venue-border-subtle: #29203d;
-  --venue-text-primary: #f3eff9;
-  --venue-text-secondary: #d1c8e0;
-  --venue-text-muted: #8e83a7;
-  --venue-accent-primary: #855ec7;
-  --venue-accent-hover: #714dae;
-  --venue-accent-subtle: rgba(133, 94, 199, 0.18);
-  --venue-accent-text: #b091e3;
-  --venue-nav-bg: rgba(17, 14, 26, 0.94);
-  --venue-input-bg: #151121;
-  --venue-focus-ring: rgba(133, 94, 199, 0.25);
-  --venue-status-success: #10b981;
-  --venue-status-warning: #f59e0b;
-  --venue-status-error: #f43f5e;
-  --venue-bubble-assistant: #231c36;
-  --venue-bubble-user: #714dae;
+  --venue-bg-page: #14100a;
+  --venue-bg-viewport: #0d0a06;
+  --venue-bg-card: #1e1810;
+  --venue-bg-card-elevated: #2a2116;
+  --venue-bg-subtle: #2a2116;
+  --venue-border: #40331f;
+  --venue-border-subtle: #31271a;
+  --venue-text-primary: #fbf5e9;
+  --venue-text-secondary: #e0d3b8;
+  --venue-text-muted: #a8977a;
+  --venue-accent-primary: #b45309;
+  --venue-accent-hover: #92400e;
+  --venue-accent-subtle: rgba(251,191,36,0.14);
+  --venue-accent-text: #fbbf24;
+  --venue-nav-bg: rgba(20,16,10,0.94);
+  --venue-input-bg: #191309;
+  --venue-focus-ring: #fbbf2440;
+  --venue-status-success: #34d399;
+  --venue-status-warning: #fbbf24;
+  --venue-status-error: #fb7185;
+  --venue-bubble-assistant: #2a2116;
+  --venue-bubble-user: #b45309;
   --venue-bubble-user-text: #ffffff;
-  --venue-scrollbar-track: rgba(17, 14, 26, 0.7);
-  --venue-scrollbar-thumb: rgba(133, 94, 199, 0.35);
+  --venue-scrollbar-track: rgba(20,16,10,0.6);
+  --venue-scrollbar-thumb: rgba(251,191,36,0.3);
+  --venue-gradient-page: linear-gradient(165deg, #1a140c 0%, #0f0b06 100%);
 }
+
 
 /* Base body and root styles supporting natural vertical scrolling on mobile */
 @layer base {
@@ -282,6 +293,8 @@ html.theme-deep-violet,
     overscroll-behavior-y: auto;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     background-color: var(--venue-bg-page);
+    background-image: var(--venue-gradient-page);
+    background-attachment: fixed;
     color: var(--venue-text-primary);
     transition: background-color 0.2s ease, color 0.2s ease;
   }
