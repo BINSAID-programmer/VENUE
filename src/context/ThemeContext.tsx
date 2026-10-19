@@ -9,6 +9,7 @@ import {
   DARK_THEMES,
   ALL_THEMES,
   THEME_MAP,
+  LEGACY_THEME_ALIASES,
   DEFAULT_LIGHT_THEME,
   DEFAULT_DARK_THEME,
   getThemeDefinition,
@@ -62,6 +63,7 @@ function resolveToThemeId(input: string | null | undefined, systemMode: Resolved
   if (input in THEME_MAP) {
     return input as ThemeId;
   }
+  if (input in LEGACY_THEME_ALIASES) return LEGACY_THEME_ALIASES[input];
   if (input === 'light') return DEFAULT_LIGHT_THEME;
   if (input === 'dark') return DEFAULT_DARK_THEME;
   if (input === 'system') {
@@ -85,8 +87,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode; initialTheme?:
     }
     try {
       const storedId = localStorage.getItem(THEME_ID_STORAGE_KEY);
-      if (storedId && storedId in THEME_MAP) {
-        return storedId as ThemeId;
+      if (storedId && (storedId in THEME_MAP || storedId in LEGACY_THEME_ALIASES)) {
+        return resolveToThemeId(storedId, sysPref);
       }
       const legacyStored = localStorage.getItem(THEME_STORAGE_KEY);
       if (legacyStored) {
@@ -102,8 +104,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode; initialTheme?:
     if (initialTheme) return initialTheme;
     try {
       const storedId = localStorage.getItem(THEME_ID_STORAGE_KEY);
-      if (storedId && storedId in THEME_MAP) {
-        return storedId as ThemeId;
+      if (storedId && (storedId in THEME_MAP || storedId in LEGACY_THEME_ALIASES)) {
+        return resolveToThemeId(storedId, getSystemPreference());
       }
       const legacyStored = localStorage.getItem(THEME_STORAGE_KEY);
       if (legacyStored === 'system' || legacyStored === 'light' || legacyStored === 'dark') {
@@ -153,6 +155,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode; initialTheme?:
 
     // Set attributes for CSS variable styling
     root.setAttribute('data-color-theme', themeId);
+    try {
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', currentDef.swatches.page);
+    } catch { /* ignore */ }
     root.setAttribute('data-theme', mode);
     body.setAttribute('data-color-theme', themeId);
 
@@ -246,7 +251,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode; initialTheme?:
             const localStored = localStorage.getItem(THEME_ID_STORAGE_KEY);
             if (!localStored) {
               setThemeIdState(resolved);
-              setThemeState(remotePref in THEME_MAP ? (remotePref as ThemeId) : resolved);
+              setThemeState(remotePref in THEME_MAP ? (remotePref as ThemeId) : (remotePref in LEGACY_THEME_ALIASES ? LEGACY_THEME_ALIASES[remotePref] : resolved));
             }
             lastSyncedToFirestore.current = remotePref as AppTheme;
           } else {
