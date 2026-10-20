@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 
+import { initPersistence, hydrateFromFirestore, saveStoreFile, flushPersistence, getPersistenceStatus } from './persistence';
 import { AUDITED_PROGRAMMES, AUDITED_DEPARTMENTS, AUDITED_ACADEMIC_UNITS } from './src/data/udsmAuditedCatalogue2025';
 import { SAMPLE_COURSES } from './src/data/mockData';
 import {
@@ -41,6 +42,7 @@ const ANNOUNCEMENTS_FILE = path.join(PROFILES_DIR, 'announcements.json');
 const AI_USAGE_FILE = path.join(PROFILES_DIR, 'ai_usage_logs.json');
 const ANALYTICS_EVENTS_FILE = path.join(PROFILES_DIR, 'analytics_events.json');
 const AUDIT_LOGS_FILE = path.join(PROFILES_DIR, 'audit_logs.json');
+initPersistence(PROFILES_DIR);
 
 // Helper to safely read AI Tutor usage telemetry logs
 function readAiUsageLogs(): any[] {
@@ -160,7 +162,7 @@ function writeAllAnalyticsEvents(events: any[]) {
   try {
     // Keep last 10,000 events to prevent unbounded storage while maintaining rich historical insight
     const bounded = events.length > 10000 ? events.slice(-10000) : events;
-    fs.writeFileSync(ANALYTICS_EVENTS_FILE, JSON.stringify(bounded, null, 2), 'utf-8');
+    saveStoreFile(ANALYTICS_EVENTS_FILE, bounded);
   } catch (err) {
     console.error('Error writing analytics events:', err);
   }
@@ -200,7 +202,7 @@ function recordAiUsage(entry: {
     if (logs.length > 1000) {
       logs.splice(0, logs.length - 1000);
     }
-    fs.writeFileSync(AI_USAGE_FILE, JSON.stringify(logs, null, 2), 'utf-8');
+    saveStoreFile(AI_USAGE_FILE, logs);
   } catch (err) {
     console.error('Failed to record AI usage log:', err);
   }
@@ -230,7 +232,7 @@ function writeAllAuditLogs(logs: any[]) {
   try {
     // Strictly append-only: maintain bounded capacity of 10,000 logs
     const bounded = logs.length > 10000 ? logs.slice(0, 10000) : logs;
-    fs.writeFileSync(AUDIT_LOGS_FILE, JSON.stringify(bounded, null, 2), 'utf-8');
+    saveStoreFile(AUDIT_LOGS_FILE, bounded);
   } catch (err) {
     console.error('Error writing audit logs:', err);
   }
@@ -423,7 +425,7 @@ function readAllAnnouncementReads(): Record<string, any> {
 function writeAllAnnouncementReads(reads: Record<string, any>) {
   ensureStorageDir();
   try {
-    fs.writeFileSync(READS_FILE, JSON.stringify(reads, null, 2), 'utf-8');
+    saveStoreFile(READS_FILE, reads);
   } catch (err) {
     console.error('Error saving announcement reads:', err);
   }
@@ -528,7 +530,7 @@ function readAllAnnouncements(): Record<string, any> {
 function writeAllAnnouncements(announcements: Record<string, any>) {
   ensureStorageDir();
   try {
-    fs.writeFileSync(ANNOUNCEMENTS_FILE, JSON.stringify(announcements, null, 2), 'utf-8');
+    saveStoreFile(ANNOUNCEMENTS_FILE, announcements);
   } catch (err) {
     console.error('Error saving announcements:', err);
   }
@@ -557,7 +559,7 @@ function readAllProfiles(): Record<string, any> {
 function writeAllProfiles(profiles: Record<string, any>) {
   ensureStorageDir();
   try {
-    fs.writeFileSync(PROFILES_FILE, JSON.stringify(profiles, null, 2), 'utf-8');
+    saveStoreFile(PROFILES_FILE, profiles);
   } catch (err) {
     console.error('Error saving student profiles:', err);
   }
@@ -580,7 +582,7 @@ function readAllResults(): Record<string, any[]> {
 function writeAllResults(results: Record<string, any[]>) {
   ensureStorageDir();
   try {
-    fs.writeFileSync(RESULTS_FILE, JSON.stringify(results, null, 2), 'utf-8');
+    saveStoreFile(RESULTS_FILE, results);
   } catch (err) {
     console.error('Error saving student results:', err);
   }
@@ -627,6 +629,7 @@ app.get('/api/health', (_req, res) => {
     hasGeminiKey: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY'),
     firebaseAdminReady: isFirebaseAdminReady(),
     projectId: FIREBASE_PROJECT_ID,
+    persistence: getPersistenceStatus(),
   });
 });
 
@@ -1799,7 +1802,7 @@ function readAllMaterialsMetadata(): Record<string, any> {
 function writeAllMaterialsMetadata(store: Record<string, any>) {
   ensureStorageDir();
   try {
-    fs.writeFileSync(MATERIALS_METADATA_FILE, JSON.stringify(store, null, 2), 'utf-8');
+    saveStoreFile(MATERIALS_METADATA_FILE, store);
   } catch (err) {
     console.error('Error writing materials metadata store:', err);
   }
@@ -10314,6 +10317,14 @@ app.get('/manifest.json', (_req, res) => {
 });
 
 async function startServer() {
+  // Rebuild local JSON stores from Firestore before serving (no-op when not configured)
+  await hydrateFromFirestore();
+  const shutdown = async () => {
+    try { await flushPersistence(); } finally { process.exit(0); }
+  };
+  process.once('SIGTERM', shutdown);
+  process.once('SIGINT', shutdown);
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
