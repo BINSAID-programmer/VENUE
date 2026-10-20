@@ -822,7 +822,7 @@ app.post('/api/student/profile', requireAuth, (req, res) => {
 });
 
 // Admin Student Management Foundation Endpoints (Stage 6A)
-app.get('/api/admin/students', (req, res) => {
+app.get('/api/admin/students', ...requireAdminAuth, (req, res) => {
   try {
     const {
       search,
@@ -928,7 +928,7 @@ app.get('/api/admin/students', (req, res) => {
   }
 });
 
-app.post('/api/admin/students/:uid/status', (req, res) => {
+app.post('/api/admin/students/:uid/status', ...requireAdminAuth, (req, res) => {
   try {
     const { uid } = req.params;
     const { status, updatedBy } = req.body;
@@ -995,7 +995,7 @@ app.post('/api/admin/students/:uid/status', (req, res) => {
 });
 
 // Admin Student Registration Number Duplicate Check (Stage 6C)
-app.get('/api/admin/students/check-reg-number', (req, res) => {
+app.get('/api/admin/students/check-reg-number', ...requireAdminAuth, (req, res) => {
   try {
     const { regNumber, currentUid } = req.query;
     if (!regNumber || typeof regNumber !== 'string' || !regNumber.trim()) {
@@ -1025,7 +1025,7 @@ app.get('/api/admin/students/check-reg-number', (req, res) => {
 });
 
 // Admin Student Academic Placement Update Endpoint (Stage 6C)
-app.post('/api/admin/students/:uid/academic-placement', (req, res) => {
+app.post('/api/admin/students/:uid/academic-placement', ...requireAdminAuth, (req, res) => {
   try {
     const { uid } = req.params;
     if (!uid) {
@@ -1335,7 +1335,7 @@ app.post('/api/announcements/reads', requireAuth, (req, res) => {
 });
 
 // 2. Admin Announcements Stats Summary
-app.get('/api/admin/announcements/stats', (_req, res) => {
+app.get('/api/admin/announcements/stats', ...requireAdminAuth, (_req, res) => {
   try {
     const store = readAllAnnouncements();
     const all = Object.values(store);
@@ -1356,7 +1356,7 @@ app.get('/api/admin/announcements/stats', (_req, res) => {
 });
 
 // 3. Admin Announcements List with Debounced Search, Status/Type/Audience Filter & Pagination
-app.get('/api/admin/announcements', (req, res) => {
+app.get('/api/admin/announcements', ...requireAdminAuth, (req, res) => {
   try {
     const { search, status, type, audience, priority, page = '1', pageSize = '15' } = req.query;
     const store = readAllAnnouncements();
@@ -1424,7 +1424,7 @@ app.get('/api/admin/announcements', (req, res) => {
 });
 
 // 4. Admin Single Announcement Lookup
-app.get('/api/admin/announcements/:id', (req, res) => {
+app.get('/api/admin/announcements/:id', ...requireAdminAuth, (req, res) => {
   try {
     const { id } = req.params;
     const store = readAllAnnouncements();
@@ -1439,7 +1439,7 @@ app.get('/api/admin/announcements/:id', (req, res) => {
 });
 
 // 5. Admin Create Announcement
-app.post('/api/admin/announcements', (req, res) => {
+app.post('/api/admin/announcements', ...requireAdminAuth, (req, res) => {
   try {
     const {
       title,
@@ -1550,7 +1550,7 @@ app.post('/api/admin/announcements', (req, res) => {
 });
 
 // 6. Admin Edit Announcement
-app.put('/api/admin/announcements/:id', (req, res) => {
+app.put('/api/admin/announcements/:id', ...requireAdminAuth, (req, res) => {
   try {
     const { id } = req.params;
     const store = readAllAnnouncements();
@@ -1673,7 +1673,7 @@ app.put('/api/admin/announcements/:id', (req, res) => {
 });
 
 // 7. Admin Archive Announcement
-app.post('/api/admin/announcements/:id/archive', (req, res) => {
+app.post('/api/admin/announcements/:id/archive', ...requireAdminAuth, (req, res) => {
   try {
     const { id } = req.params;
     const store = readAllAnnouncements();
@@ -1717,7 +1717,7 @@ app.post('/api/admin/announcements/:id/archive', (req, res) => {
 });
 
 // 8. Admin Safe Delete Draft Announcement
-app.delete('/api/admin/announcements/:id', (req, res) => {
+app.delete('/api/admin/announcements/:id', ...requireAdminAuth, (req, res) => {
   try {
     const { id } = req.params;
     const store = readAllAnnouncements();
@@ -2093,7 +2093,7 @@ function resolveOrRestoreMaterialFileOnDisk(
   return null;
 }
 
-app.post('/api/materials/storage/upload', (req, res) => {
+app.post('/api/materials/storage/upload', requireAuth, (req, res) => {
   try {
     const { storagePath, materialId, base64Data, mimeType, fileName } = req.body;
     if (!storagePath || !base64Data) {
@@ -2355,7 +2355,7 @@ app.use(
   })
 );
 
-app.delete('/api/materials/file', (req, res) => {
+app.delete('/api/materials/file', requireAuth, requireRoles(['admin', 'super_admin', 'lecturer']), (req, res) => {
   try {
     const rawPath = (req.query.path as string) || (req.body?.path as string);
     if (!rawPath) {
@@ -2528,7 +2528,7 @@ app.get('/api/materials/metadata/:id', (req, res) => {
   }
 });
 
-app.post('/api/materials/metadata', (req, res) => {
+app.post('/api/materials/metadata', requireAuth, requireRoles(['admin', 'super_admin', 'lecturer']), (req, res) => {
   try {
     const payload = req.body;
     if (!payload || typeof payload !== 'object') {
@@ -2584,7 +2584,7 @@ app.post('/api/materials/metadata', (req, res) => {
   }
 });
 
-app.put('/api/materials/metadata/:id', (req, res) => {
+app.put('/api/materials/metadata/:id', requireAuth, requireRoles(['admin', 'super_admin', 'lecturer']), (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body || {};
@@ -2612,7 +2612,7 @@ app.put('/api/materials/metadata/:id', (req, res) => {
   }
 });
 
-app.delete('/api/materials/metadata/:id', (req, res) => {
+app.delete('/api/materials/metadata/:id', requireAuth, requireRoles(['admin', 'super_admin', 'lecturer']), (req, res) => {
   try {
     const { id } = req.params;
     const store = readAllMaterialsMetadata();
@@ -8479,7 +8479,7 @@ app.get('/api/admin/analytics/overview', ...requireAdminAuth, (req, res) => {
 // ============================================================================
 
 // 1. Get paginated audit logs with search and multi-dimensional filters
-app.get('/api/admin/audit-logs', (req, res) => {
+app.get('/api/admin/audit-logs', ...requireAdminAuth, (req, res) => {
   try {
     const {
       search,
@@ -8574,7 +8574,7 @@ app.get('/api/admin/audit-logs', (req, res) => {
 });
 
 // 2. Get Audit Log aggregate statistics
-app.get('/api/admin/audit-logs/stats', (_req, res) => {
+app.get('/api/admin/audit-logs/stats', ...requireAdminAuth, (_req, res) => {
   try {
     const logs = readAllAuditLogs();
     const now = Date.now();
@@ -8632,7 +8632,7 @@ app.get('/api/admin/audit-logs/stats', (_req, res) => {
 });
 
 // 3. Get single audit log record by ID (for inspection modal)
-app.get('/api/admin/audit-logs/:id', (req, res) => {
+app.get('/api/admin/audit-logs/:id', ...requireAdminAuth, (req, res) => {
   try {
     const { id } = req.params;
     const logs = readAllAuditLogs();
@@ -8647,7 +8647,7 @@ app.get('/api/admin/audit-logs/:id', (req, res) => {
 });
 
 // 4. Append-Only Audit Log ingestion endpoint
-app.post('/api/admin/audit-logs', (req, res) => {
+app.post('/api/admin/audit-logs', requireAuth, requireRoles(['admin', 'super_admin', 'lecturer']), (req, res) => {
   try {
     const {
       actorUid,
@@ -8692,14 +8692,14 @@ app.post('/api/admin/audit-logs', (req, res) => {
 });
 
 // Explicitly forbid editing or deleting audit logs (Stage 9A Requirement 4: Append-Only Immutability)
-app.put('/api/admin/audit-logs/:id', (_req, res) => {
+app.put('/api/admin/audit-logs/:id', ...requireAdminAuth, (_req, res) => {
   return res.status(403).json({
     success: false,
     error: 'Audit logs are strictly append-only and immutable. Editing existing audit records is forbidden.',
   });
 });
 
-app.delete('/api/admin/audit-logs/:id', (_req, res) => {
+app.delete('/api/admin/audit-logs/:id', ...requireAdminAuth, (_req, res) => {
   return res.status(403).json({
     success: false,
     error: 'Audit logs are strictly append-only and immutable. Deleting existing audit records is forbidden.',
