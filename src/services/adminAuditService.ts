@@ -23,6 +23,7 @@ import {
   UserRole,
 } from '../types';
 
+import { authenticatedFetch } from './apiClient';
 export interface CreateAuditLogInput {
   action: AuditLogAction | string;
   entityType: AuditLogEntityType | string;
@@ -122,7 +123,7 @@ class AdminAuditService {
 
     // 1. Try sending to trusted server backend first
     try {
-      await fetch('/api/admin/audit-logs', {
+      await authenticatedFetch('/api/admin/audit-logs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry),
@@ -176,7 +177,7 @@ class AdminAuditService {
       if (filters.actorRole && filters.actorRole !== 'all') params.append('actorRole', filters.actorRole);
       if (filters.dateRange && filters.dateRange !== 'all') params.append('dateRange', filters.dateRange);
 
-      const res = await fetch(`/api/admin/audit-logs?${params.toString()}`);
+      const res = await authenticatedFetch(`/api/admin/audit-logs?${params.toString()}`);
       if (res.ok) {
         const json = await res.json();
         if (json.success && Array.isArray(json.logs)) {
@@ -287,7 +288,7 @@ class AdminAuditService {
    */
   async getAuditLogStats(): Promise<AuditLogStats> {
     try {
-      const res = await fetch('/api/admin/audit-logs/stats');
+      const res = await authenticatedFetch('/api/admin/audit-logs/stats');
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.stats) {
@@ -342,7 +343,7 @@ class AdminAuditService {
     if (!id) return null;
 
     try {
-      const res = await fetch(`/api/admin/audit-logs/${id}`);
+      const res = await authenticatedFetch(`/api/admin/audit-logs/${id}`);
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.log) {

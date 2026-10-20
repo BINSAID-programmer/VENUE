@@ -21,6 +21,7 @@ import {
   MaterialDownloadEntitlementResult,
 } from './subscriptionEntitlementService';
 
+import { authenticatedFetch } from './apiClient';
 export interface StudentAcademicContext {
   universityId?: string;
   academicUnitId?: string;
@@ -119,7 +120,7 @@ class StudentMaterialsService {
         params.set('status', 'active');
         if (targetCourseCode) params.set('courseCode', targetCourseCode);
         else if (targetCourseId) params.set('courseId', targetCourseId);
-        const srvRes = await fetch(`/api/materials/metadata?${params.toString()}`, {
+        const srvRes = await authenticatedFetch(`/api/materials/metadata?${params.toString()}`, {
           method: 'GET',
           headers: { Accept: 'application/json' },
         });
@@ -135,7 +136,7 @@ class StudentMaterialsService {
         }
         // If filtering by a specific course and server returned 0 with strict param, also fetch all active materials to match by canonicalCourseId or code alias
         if ((targetCourseCode || targetCourseId) && rawMap.size === 0) {
-          const fallbackSrvRes = await fetch('/api/materials/metadata?status=active', {
+          const fallbackSrvRes = await authenticatedFetch('/api/materials/metadata?status=active', {
             method: 'GET',
             headers: { Accept: 'application/json' },
           });
@@ -378,7 +379,7 @@ class StudentMaterialsService {
 
     // 1. Check persistent server metadata repository first for fast resolution
     try {
-      const res = await fetch(`/api/materials/metadata/${encodeURIComponent(materialId)}`, {
+      const res = await authenticatedFetch(`/api/materials/metadata/${encodeURIComponent(materialId)}`, {
         method: 'GET',
         headers: { Accept: 'application/json' },
       });
@@ -626,7 +627,7 @@ class StudentMaterialsService {
             `materials/${material.universityId || 'udsm'}/${material.courseId || 'general'}/${matId}/${
               material.fileName || manifest.fileName || 'document.pdf'
             }`;
-          fetch('/api/materials/storage/upload', {
+          authenticatedFetch('/api/materials/storage/upload', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

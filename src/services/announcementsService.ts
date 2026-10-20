@@ -228,7 +228,7 @@ class AnnouncementsService {
       params.append('page', String(page));
       params.append('pageSize', String(pageSize));
 
-      const res = await fetch(`/api/admin/announcements?${params.toString()}`);
+      const res = await authenticatedFetch(`/api/admin/announcements?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.announcements)) {
@@ -424,7 +424,7 @@ class AnnouncementsService {
    */
   async getAnnouncementById(id: string): Promise<AnnouncementRecord | null> {
     try {
-      const res = await fetch(`/api/admin/announcements/${id}`);
+      const res = await authenticatedFetch(`/api/admin/announcements/${id}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.announcement) {
@@ -466,7 +466,7 @@ class AnnouncementsService {
     // 1. Call server API
     let createdRecord: AnnouncementRecord | null = null;
     try {
-      const res = await fetch('/api/admin/announcements', {
+      const res = await authenticatedFetch('/api/admin/announcements', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -572,7 +572,7 @@ class AnnouncementsService {
 
     let updatedRecord: AnnouncementRecord | null = null;
     try {
-      const res = await fetch(`/api/admin/announcements/${id}`, {
+      const res = await authenticatedFetch(`/api/admin/announcements/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -665,7 +665,7 @@ class AnnouncementsService {
 
     let updatedRecord: AnnouncementRecord | null = null;
     try {
-      const res = await fetch(`/api/admin/announcements/${id}/archive`, {
+      const res = await authenticatedFetch(`/api/admin/announcements/${id}/archive`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ updatedBy: adminUid, updatedByName: adminName }),
@@ -721,7 +721,7 @@ class AnnouncementsService {
     const adminUid = user?.uid || 'admin';
     const adminName = user?.displayName || user?.email || 'VENUE Administrator';
 
-    const res = await fetch(
+    const res = await authenticatedFetch(
       `/api/admin/announcements/${id}?adminUid=${encodeURIComponent(adminUid)}&adminName=${encodeURIComponent(adminName)}`,
       {
         method: 'DELETE',
@@ -872,7 +872,7 @@ class AnnouncementsService {
     everyone: number;
   }> {
     try {
-      const res = await fetch('/api/admin/announcements/stats');
+      const res = await authenticatedFetch('/api/admin/announcements/stats');
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.stats) {

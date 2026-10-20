@@ -28,6 +28,7 @@ import {
   MaterialStatus,
 } from '../types';
 
+import { authenticatedFetch } from './apiClient';
 export interface MaterialFilterOptions {
   search?: string;
   materialType?: AcademicMaterialType | 'ALL';
@@ -645,7 +646,7 @@ class AdminMaterialsService {
 
     // 2. Try server storage cleanup
     try {
-      await fetch('/api/materials/file', {
+      await authenticatedFetch('/api/materials/file', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: storagePath }),
@@ -664,7 +665,7 @@ class AdminMaterialsService {
 
       // 1. Read from persistent server metadata repository first
       try {
-        const res = await fetch('/api/materials/metadata');
+        const res = await authenticatedFetch('/api/materials/metadata');
         if (res.ok) {
           const payload = await res.json();
           if (Array.isArray(payload?.materials)) {
@@ -810,7 +811,7 @@ class AdminMaterialsService {
 
     // 1. Check persistent server metadata repository first
     try {
-      const res = await fetch(`/api/materials/metadata/${encodeURIComponent(id)}`);
+      const res = await authenticatedFetch(`/api/materials/metadata/${encodeURIComponent(id)}`);
       if (res.ok) {
         const data = await res.json();
         if (data?.material) {
@@ -945,7 +946,7 @@ class AdminMaterialsService {
 
     // 3A. Save to persistent server metadata repository (verifies file exists on disk if local storagePath)
     try {
-      const srvRes = await fetch('/api/materials/metadata', {
+      const srvRes = await authenticatedFetch('/api/materials/metadata', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newRecord),
@@ -1097,7 +1098,7 @@ class AdminMaterialsService {
 
     // 3A. Update server metadata repository
     try {
-      const srvRes = await fetch(`/api/materials/metadata/${encodeURIComponent(id)}`, {
+      const srvRes = await authenticatedFetch(`/api/materials/metadata/${encodeURIComponent(id)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(mergedUpdated),
@@ -1105,7 +1106,7 @@ class AdminMaterialsService {
       if (srvRes.ok) {
         updatedAny = true;
       } else if (srvRes.status === 404) {
-        const postRes = await fetch('/api/materials/metadata', {
+        const postRes = await authenticatedFetch('/api/materials/metadata', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(mergedUpdated),
@@ -1168,7 +1169,7 @@ class AdminMaterialsService {
 
     // 1A. Delete from server metadata store
     try {
-      const res = await fetch(`/api/materials/metadata/${encodeURIComponent(id)}`, {
+      const res = await authenticatedFetch(`/api/materials/metadata/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
       if (res.ok) deletedAny = true;

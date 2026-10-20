@@ -24,6 +24,7 @@ import {
 import { lecturerCourseService } from './lecturerCourseService';
 import { lecturerAuthService } from './lecturerAuthService';
 
+import { authenticatedFetch } from './apiClient';
 export interface UploadLecturerMaterialInput {
   lecturer: LecturerRecord;
   assignment: LecturerCourseAssignment;
@@ -106,7 +107,7 @@ class LecturerMaterialsService {
 
       // 1. Fetch from persistent server metadata repository
       try {
-        const res = await fetch('/api/materials/metadata', {
+        const res = await authenticatedFetch('/api/materials/metadata', {
           method: 'GET',
           headers: { Accept: 'application/json' },
         });
@@ -375,7 +376,7 @@ class LecturerMaterialsService {
     }
 
     try {
-      const serverRes = await fetch('/api/materials/metadata', {
+      const serverRes = await authenticatedFetch('/api/materials/metadata', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(materialRecord),
@@ -503,7 +504,7 @@ class LecturerMaterialsService {
     }
 
     try {
-      const srvRes = await fetch(`/api/materials/metadata/${encodeURIComponent(materialId)}`, {
+      const srvRes = await authenticatedFetch(`/api/materials/metadata/${encodeURIComponent(materialId)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -575,7 +576,7 @@ class LecturerMaterialsService {
     }
 
     try {
-      const srvRes = await fetch(`/api/materials/metadata/${encodeURIComponent(materialId)}`, {
+      const srvRes = await authenticatedFetch(`/api/materials/metadata/${encodeURIComponent(materialId)}`, {
         method: 'DELETE',
       });
       if (srvRes.ok) {
