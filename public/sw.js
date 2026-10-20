@@ -10,7 +10,7 @@
  *   user storage, IndexedDB, Firestore, or localStorage.
  */
 
-const CACHE_NAME = 'venue-shell-v1';
+const CACHE_NAME = 'venue-shell-v2';
 
 // Minimum safe static application shell assets
 const PRECACHE_ASSETS = [
@@ -91,7 +91,11 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
+          if (
+            networkResponse &&
+            networkResponse.status === 200 &&
+            (networkResponse.headers.get('content-type') || '').includes('text/html')
+          ) {
             const responseClone = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(request, responseClone);
@@ -142,7 +146,12 @@ self.addEventListener('fetch', (event) => {
 
         return fetch(request)
           .then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
+            // Never cache an HTML page served in place of a JS/CSS/image file
+            if (
+              networkResponse &&
+              networkResponse.status === 200 &&
+              !(networkResponse.headers.get('content-type') || '').includes('text/html')
+            ) {
               const responseClone = networkResponse.clone();
               caches.open(CACHE_NAME).then((cache) => {
                 cache.put(request, responseClone);
