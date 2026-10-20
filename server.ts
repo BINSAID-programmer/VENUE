@@ -10333,11 +10333,22 @@ async function startServer() {
           } else if (filePath.endsWith('manifest.json')) {
             res.setHeader('Content-Type', 'application/manifest+json; charset=UTF-8');
             res.setHeader('Cache-Control', 'no-cache');
+          } else if (filePath.endsWith('index.html')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          } else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+            // Vite fingerprints these file names, so they can be cached for a long time
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
           }
         },
       })
     );
+    // Missing hashed assets must be a real 404 (never the HTML shell), otherwise a stale
+    // service-worker/old page can cache HTML as if it were JS/CSS and show an outdated app.
+    app.get(['/assets/*', '/icons/*'], (_req, res) => {
+      res.status(404).send('Not found');
+    });
     app.get('*', (_req, res) => {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
