@@ -315,6 +315,24 @@ export async function hydrateFromFirestore(): Promise<void> {
   }
 }
 
+/** Both Firestore databases (named + "(default)") using the same service account. */
+export function getFirestoreHandles(): { named: Firestore; legacyDefault: Firestore } | null {
+  if (!firestore) return null;
+  try {
+    const app = getApps().find((a) => a.name === 'venue-store');
+    if (!app) return null;
+    const legacyDefault = getFirestore(app);
+    try {
+      legacyDefault.settings({ ignoreUndefinedProperties: true });
+    } catch {
+      /* already configured */
+    }
+    return { named: firestore, legacyDefault };
+  } catch {
+    return null;
+  }
+}
+
 export function getPersistenceStatus() {
   return {
     mode: firestore ? 'firestore' : 'file-only',
