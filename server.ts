@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 
+import { runReconcile, getReconcileStatus } from './reconcile';
 import { initPersistence, hydrateFromFirestore, saveStoreFile, flushPersistence, getPersistenceStatus } from './persistence';
 import { AUDITED_PROGRAMMES, AUDITED_DEPARTMENTS, AUDITED_ACADEMIC_UNITS } from './src/data/udsmAuditedCatalogue2025';
 import { SAMPLE_COURSES } from './src/data/mockData';
@@ -20,7 +21,7 @@ import {
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 app.use(securityHeadersMiddleware);
 
@@ -630,6 +631,7 @@ app.get('/api/health', (_req, res) => {
     firebaseAdminReady: isFirebaseAdminReady(),
     projectId: FIREBASE_PROJECT_ID,
     persistence: getPersistenceStatus(),
+    dbReconcile: getReconcileStatus(),
   });
 });
 
@@ -10366,6 +10368,10 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`VENUE Server running on http://localhost:${PORT}`);
+    const reconcileMode = (process.env.DB_RECONCILE || '').trim().toLowerCase();
+    if (reconcileMode === 'report' || reconcileMode === 'apply') {
+      void runReconcile(reconcileMode);
+    }
   });
 }
 
