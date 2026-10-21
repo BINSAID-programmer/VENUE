@@ -15,7 +15,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
+import { initializeApp, getApps, cert, applicationDefault, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 
 type StoreKind = 'map' | 'array';
@@ -88,14 +88,18 @@ function parseServiceAccount(): Record<string, any> | null {
 export function initPersistence(storageDir: string): void {
   storageDirPath = storageDir;
   const sa = parseServiceAccount();
-  if (!sa) {
-    if (!initError) initError = 'FIREBASE_SERVICE_ACCOUNT_JSON not set (file-only mode)';
+  // On Google Cloud (Cloud Run) the platform provides credentials automatically (no key file needed).
+  const onGoogleCloud = Boolean(process.env.K_SERVICE || process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  if (!sa && !onGoogleCloud) {
+    if (!initError) initError = 'No Firestore credentials (set FIREBASE_SERVICE_ACCOUNT_JSON or run on Google Cloud): file-only mode';
     return;
   }
   try {
     let app: App | undefined = getApps().find((a) => a.name === 'venue-store');
     if (!app) {
-      app = initializeApp({ credential: cert(sa as any), projectId: sa.project_id }, 'venue-store');
+      app = sa
+        ? initializeApp({ credential: cert(sa as any), projectId: sa.project_id }, 'venue-store')
+        : initializeApp({ credential: applicationDefault(), projectId: loadProjectId() }, 'venue-store');
     }
     const dbId = loadDatabaseId();
     firestore = dbId ? getFirestore(app, dbId) : getFirestore(app);
@@ -103,6 +107,19 @@ export function initPersistence(storageDir: string): void {
   } catch (err: any) {
     firestore = null;
     initError = `Firestore init failed: ${err?.message || err}`;
+  }
+}
+
+function loadProjectId(): string | undefined {
+  if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PROJECT_ID.trim()) {
+    return process.env.FIREBASE_PROJECT_ID.trim();
+  }
+  try {
+    const raw = fs.readFileSync(path.join(process.cwd(), 'firebase-applet-config.json'), 'utf-8');
+    const id = JSON.parse(raw)?.projectId;
+    return typeof id === 'string' && id ? id : undefined;
+  } catch {
+    return undefined;
   }
 }
 
