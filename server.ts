@@ -6,6 +6,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 
 import { runReconcile, getReconcileStatus } from './reconcile';
+import { backupMaterialFile, restoreMaterialFile, removeMaterialBackup } from './persistence';
 import { initPersistence, hydrateFromFirestore, saveStoreFile, flushPersistence, getPersistenceStatus } from './persistence';
 import { AUDITED_PROGRAMMES, AUDITED_DEPARTMENTS, AUDITED_ACADEMIC_UNITS } from './src/data/udsmAuditedCatalogue2025';
 import { SAMPLE_COURSES } from './src/data/mockData';
@@ -1957,6 +1958,18 @@ function buildPdfBufferFromIndexedChunks(chunks: Array<{ pageNumber?: number; te
   return Buffer.from(pdfOut, 'utf-8');
 }
 
+/** If the file is missing locally (e.g. after a restart), pull it back from Firebase Storage. */
+async function ensureMaterialLocal(rawStoragePath: string): Promise<void> {
+  try {
+    const resolved = resolveSafeMaterialPath(rawStoragePath);
+    if (!resolved) return;
+    if (fs.existsSync(resolved.fullPath) && fs.statSync(resolved.fullPath).size > 0) return;
+    await restoreMaterialFile(resolved.cleanRelPath, resolved.fullPath);
+  } catch {
+    /* fall through to the normal resolver */
+  }
+}
+
 /**
  * Resolves a material file on disk, or self-heals it from:
  * 1) Direct path in `.storage/materials/`
@@ -2142,6 +2155,7 @@ app.post('/api/materials/storage/upload', requireAuth, (req, res) => {
     }
 
     fs.writeFileSync(fullPath, buffer);
+    void backupMaterialFile(cleanRelPath, buffer, mimeType);
 
     const resolvedMatId = extractMaterialIdFromPath(cleanRelPath, materialId);
     const resolvedFileName = fileName || path.basename(cleanRelPath);
@@ -2224,7 +2238,7 @@ app.post('/api/materials/entitlement/check-download', (req, res) => {
   }
 });
 
-app.get('/api/materials/file', (req, res) => {
+app.get('/api/materials/file', async (req, res) => {
   try {
     const rawPath = (req.query.path as string) || '';
     const rawMaterialId = (req.query.materialId as string) || '';
@@ -2255,6 +2269,7 @@ app.get('/api/materials/file', (req, res) => {
       }
     }
 
+    if (lookupPath) await ensureMaterialLocal(lookupPath);
     const resolved = resolveOrRestoreMaterialFileOnDisk(lookupPath, rawMaterialId);
     if (!resolved || !fs.existsSync(resolved.fullPath)) {
       return res.status(404).json({
@@ -2384,6 +2399,7 @@ app.delete('/api/materials/file', requireAuth, requireRoles(['admin', 'super_adm
         fs.unlinkSync(blobPath);
       }
     } catch {}
+    void removeMaterialBackup(cleanRelPath);
 
     // Stage 9A: Record trusted server audit log
     recordServerAuditLog({
@@ -2931,6 +2947,7 @@ async function getOrBuildMaterialIndex(params: {
     }
     if (!rawPath) return null;
 
+    await ensureMaterialLocal(rawPath);
     const resolved = resolveOrRestoreMaterialFileOnDisk(rawPath, params.materialId);
     if (!resolved || !fs.existsSync(resolved.fullPath)) return null;
 
@@ -3656,6 +3673,95 @@ function searchRelevantMaterialChunks(
   });
 
   return results;
+}
+
+// ---------------------------------------------------------------------------
+// Compatibility helpers used by the Practice, Exam-Prep and Flashcards endpoints.
+// They were referenced but never defined, so those features failed with a ReferenceError
+// whenever course materials were attached. They now delegate to the shared indexer/search.
+// ---------------------------------------------------------------------------
+const MAX_CHARS_PER_CHUNK = 1500;
+
+async function getOrExtractMaterialIndex(p: {
+  id: string;
+  title?: string;
+  courseCode?: string;
+  materialType?: string;
+  fileUrl?: string;
+  fileType?: string;
+  fileName?: string;
+  description?: string;
+  storagePath?: string;
+}): Promise<IndexedMaterialDocument | null> {
+  try {
+    return await getOrBuildMaterialIndex({
+      materialId: p.id,
+      storagePath: p.storagePath,
+      fileUrl: p.fileUrl,
+      courseCode: p.courseCode,
+      title: p.title,
+      materialType: p.materialType,
+    });
+  } catch (err) {
+    console.error('getOrExtractMaterialIndex failed:', err);
+    return null;
+  }
+}
+
+function retrieveRelevantChunksFromIndex(
+  index: IndexedMaterialDocument,
+  queryTerms: { terms: string[]; phrases: string[] },
+  maxChunks: number,
+  includeFallbackWhenNoMatch: boolean
+): Array<{ chunkId: string; pageNumber?: number; sectionIndex: number; text: string; score: number }> {
+  const query = [...(queryTerms?.phrases || []), ...(queryTerms?.terms || [])].join(' ');
+  const [result] = searchRelevantMaterialChunks([{ meta: {}, index }], query);
+  let chunks = result?.selectedChunks || [];
+  if (chunks.length === 0 && includeFallbackWhenNoMatch && index.chunks.length > 0) {
+    chunks = index.chunks
+      .filter((c) => (!c.pageNumber || c.pageNumber > 3) && c.text.length > 150)
+      .slice(0, maxChunks)
+      .map((c) => ({ ...c, score: 1, matchedTermsCount: 0 }));
+  }
+  return chunks.slice(0, maxChunks).map((c) => ({
+    chunkId: c.chunkId,
+    pageNumber: c.pageNumber,
+    sectionIndex: c.sectionIndex,
+    text: c.text.slice(0, MAX_CHARS_PER_CHUNK),
+    score: c.score,
+  }));
+}
+
+async function extractRealMaterialText(
+  mat: any,
+  topic: string
+): Promise<{ wasDirectlyRead: boolean; extractedText: string; pageReferences: number[] }> {
+  const empty = { wasDirectlyRead: false, extractedText: '', pageReferences: [] as number[] };
+  try {
+    const index = await getOrExtractMaterialIndex({
+      id: String(mat?.materialId || mat?.id || ''),
+      storagePath: mat?.storagePath,
+      fileUrl: mat?.fileUrl,
+      courseCode: mat?.courseCode,
+      title: mat?.title,
+      materialType: mat?.materialType,
+    });
+    if (!index || index.extractionStatus !== 'indexed' || index.chunks.length === 0) return empty;
+    const terms = extractQuerySearchTerms(String(topic || ''));
+    const chunks = retrieveRelevantChunksFromIndex(index, terms, MAX_CHUNKS_PER_MATERIAL, true);
+    if (chunks.length === 0) return empty;
+    const pages = Array.from(
+      new Set(chunks.map((c) => c.pageNumber).filter((n): n is number => typeof n === 'number' && n > 0))
+    ).sort((a, b) => a - b);
+    return {
+      wasDirectlyRead: true,
+      extractedText: chunks.map((c) => c.text).join('\n\n'),
+      pageReferences: pages,
+    };
+  } catch (err) {
+    console.error('extractRealMaterialText failed:', err);
+    return empty;
+  }
 }
 
 // AI Tutor Chat endpoint

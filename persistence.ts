@@ -17,6 +17,7 @@ import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps, cert, applicationDefault, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 
 type StoreKind = 'map' | 'array';
 interface StoreDef {
@@ -313,6 +314,80 @@ export async function hydrateFromFirestore(): Promise<void> {
     }
     // A store that could not be hydrated stays paused: never overwrite remote data blindly.
   }
+}
+
+// ---------- uploaded material files (Firebase Storage) ----------
+
+const MATERIAL_PREFIX = 'server_materials/';
+
+function materialBucket() {
+  if (!firestore) return null;
+  try {
+    const app = getApps().find((a) => a.name === 'venue-store');
+    if (!app) return null;
+    let name = (process.env.FIREBASE_STORAGE_BUCKET || '').trim();
+    if (!name) {
+      try {
+        const raw = fs.readFileSync(path.join(process.cwd(), 'firebase-applet-config.json'), 'utf-8');
+        name = JSON.parse(raw)?.storageBucket || '';
+      } catch {
+        /* ignore */
+      }
+    }
+    return name ? getStorage(app).bucket(name) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Keep a durable copy of an uploaded material file. Never throws. */
+export async function backupMaterialFile(relPath: string, data: Buffer, contentType?: string): Promise<void> {
+  const bucket = materialBucket();
+  if (!bucket) return;
+  try {
+    await bucket.file(MATERIAL_PREFIX + relPath).save(data, {
+      contentType: contentType || 'application/octet-stream',
+      resumable: false,
+    });
+  } catch (err: any) {
+    lastError = `material backup ${relPath}: ${err?.message || err}`;
+    console.error('[persistence]', lastError);
+  }
+}
+
+/** Bring a material file back to local disk if it only exists in Firebase Storage. */
+export async function restoreMaterialFile(relPath: string, fullPath: string): Promise<boolean> {
+  const bucket = materialBucket();
+  if (!bucket) return false;
+  try {
+    const file = bucket.file(MATERIAL_PREFIX + relPath);
+    const [exists] = await file.exists();
+    if (!exists) return false;
+    const [buf] = await file.download();
+    if (!buf || buf.length === 0) return false;
+    fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+    writeFileAtomicBuffer(fullPath, buf);
+    return true;
+  } catch (err: any) {
+    console.error('[persistence] material restore failed', relPath, err?.message || err);
+    return false;
+  }
+}
+
+export async function removeMaterialBackup(relPath: string): Promise<void> {
+  const bucket = materialBucket();
+  if (!bucket) return;
+  try {
+    await bucket.file(MATERIAL_PREFIX + relPath).delete({ ignoreNotFound: true });
+  } catch (err: any) {
+    console.error('[persistence] material backup delete failed', relPath, err?.message || err);
+  }
+}
+
+function writeFileAtomicBuffer(file: string, data: Buffer) {
+  const tmp = `${file}.tmp-${process.pid}`;
+  fs.writeFileSync(tmp, data);
+  fs.renameSync(tmp, file);
 }
 
 /** Both Firestore databases (named + "(default)") using the same service account. */
