@@ -2529,16 +2529,16 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({
               setSelectedCourseContext(act.courseCode);
             }
             if (act.type === 'practice') {
-              setStudyHandoffTopic(act.topic);
+              setModeHandoffTopic(act.topic);
               setActiveMode('PRACTICE');
             } else if (act.type === 'study_mode') {
-              setStudyHandoffTopic(act.topic);
+              setModeHandoffTopic(act.topic);
               setActiveMode('STUDY');
             } else if (act.type === 'quiz') {
-              setStudyHandoffTopic(act.topic);
+              setModeHandoffTopic(act.topic);
               setActiveMode('QUIZ');
             } else if (act.type === 'flashcards') {
-              setStudyHandoffTopic(act.topic);
+              setModeHandoffTopic(act.topic);
               setActiveMode('FLASHCARDS');
             } else if (act.type === 'exam_prep') {
               setActiveMode('EXAM_PREP');

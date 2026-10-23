@@ -787,6 +787,7 @@ export const App: React.FC = () => {
           currentScreen === 'material-viewer'
         }
       >
+        <ScreenErrorBoundary resetKey={currentScreen} screenName="This screen">
         {/* App Header for Authenticated Screens */}
       {showHeader && (
         <Header
@@ -1375,8 +1376,11 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      {/* [TEMPORARY STAGE 1 DIAGNOSTIC PANEL — REMOVE AFTER VERIFICATION] */}
-      <TempAuthDiagnosticPanel />
+      {/* Diagnostic panel: hidden from normal users, open the app with ?diag=1 to show it */}
+      {typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('diag') && (
+        <TempAuthDiagnosticPanel />
+      )}
+        </ScreenErrorBoundary>
     </DeviceWrapper>
   </ThemeProvider>
   );

@@ -2,6 +2,8 @@ import React from 'react';
 
 interface ScreenErrorBoundaryProps {
   screenName: string;
+  /** When this value changes, a shown error is cleared (e.g. the user navigated elsewhere). */
+  resetKey?: string | number;
   children: React.ReactNode;
 }
 
@@ -24,6 +26,12 @@ export class ScreenErrorBoundary extends React.Component<
     const message =
       error instanceof Error ? `${error.name}: ${error.message}` : String(error ?? 'Unknown error');
     return { hasError: true, message: message.slice(0, 300) };
+  }
+
+  componentDidUpdate(prevProps: ScreenErrorBoundaryProps) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false, message: '' });
+    }
   }
 
   componentDidCatch(error: unknown) {
