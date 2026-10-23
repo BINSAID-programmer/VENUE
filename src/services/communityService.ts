@@ -74,8 +74,6 @@ import {
   CommunityAIMessage,
   CommunityAIConversation,
   CommunityAIFeedbackRecord,
-  Course,
-  StudentProfile,
 } from '../types';
 import { lecturerCourseService } from './lecturerCourseService';
 import { lecturerAuthService } from './lecturerAuthService';
