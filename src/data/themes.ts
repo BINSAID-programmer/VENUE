@@ -35,17 +35,17 @@ const def = (
 ): ThemeDefinition => ({ id, name, mode, shortDesc, fullDesc, swatches, pairedThemeId });
 
 export const LIGHT_THEMES: ThemeDefinition[] = [
-  def('blue', 'Blue', 'light', 'Clean & fresh', 'Clean, bright blue — fresh and easy to read.', 'dark-blue', { page: '#eef4fc', card: '#ffffff', accent: '#2563eb', text: '#0f1b33', border: '#cfdcee' }),
-  def('green', 'Green', 'light', 'Calm & focused', 'Calm natural green — relaxed and focused for long study sessions.', 'dark-teal', { page: '#eef6f0', card: '#ffffff', accent: '#15803d', text: '#0f2418', border: '#c9dfd0' }),
-  def('purple', 'Purple', 'light', 'Modern & creative', 'Modern violet — creative and stylish.', 'dark-purple', { page: '#f4f0fb', card: '#ffffff', accent: '#7c3aed', text: '#1d1233', border: '#d9cdee' }),
-  def('beige', 'Beige & Orange', 'light', 'Warm & friendly', 'Warm beige with orange accents — friendly and welcoming.', 'dark-gold', { page: '#faf4ea', card: '#fffdf8', accent: '#c2410c', text: '#2b1d0e', border: '#e6d8bd' }),
+  def('blue', 'Blue', 'light', 'Clean & fresh', 'Clean, bright blue — fresh and easy to read.', 'dark-blue', { page: '#e4f0fc', card: '#f7fbff', accent: '#2563eb', text: '#0c2147', border: '#b9d4f1' }),
+  def('green', 'Green', 'light', 'Calm & focused', 'Calm natural green — relaxed and focused for long study sessions.', 'dark-teal', { page: '#e0f5ec', card: '#f6fcf9', accent: '#0f7f6d', text: '#08271f', border: '#b0dac9' }),
+  def('purple', 'Purple', 'light', 'Modern & creative', 'Modern violet — creative and stylish.', 'dark-purple', { page: '#ede6fc', card: '#faf7ff', accent: '#6a48dc', text: '#1b1240', border: '#cbbdf1' }),
+  def('beige', 'Beige & Orange', 'light', 'Warm & friendly', 'Warm beige with orange accents — friendly and welcoming.', 'dark-gold', { page: '#faeedb', card: '#fffaf2', accent: '#b45f06', text: '#2c1a08', border: '#e8cfa3' }),
 ];
 
 export const DARK_THEMES: ThemeDefinition[] = [
-  def('dark-blue', 'Dark Blue', 'dark', 'Professional', 'Deep navy blue — professional and easy on the eyes.', 'blue', { page: '#0b1220', card: '#121b2e', accent: '#2563eb', text: '#f1f5f9', border: '#263552' }),
-  def('dark-teal', 'Dark Teal', 'dark', 'Calm & modern', 'Deep teal — calm, modern and relaxing at night.', 'green', { page: '#08181a', card: '#0f2427', accent: '#0f766e', text: '#effafa', border: '#1f4044' }),
-  def('dark-purple', 'Dark Purple', 'dark', 'Sleek & creative', 'Deep purple — sleek and creative.', 'purple', { page: '#130d20', card: '#1c1430', accent: '#7c3aed', text: '#f5f0ff', border: '#382a5c' }),
-  def('dark-gold', 'Dark Gold', 'dark', 'Elegant & premium', 'Dark charcoal with amber-gold accents — elegant and premium.', 'beige', { page: '#14100a', card: '#1e1810', accent: '#b45309', text: '#fbf5e9', border: '#40331f' }),
+  def('dark-blue', 'Dark Blue', 'dark', 'Professional', 'Deep navy blue — professional and easy on the eyes.', 'blue', { page: '#031a45', card: '#08244f', accent: '#0b66d6', text: '#f1f6ff', border: '#1b4a8a' }),
+  def('dark-teal', 'Dark Teal', 'dark', 'Calm & modern', 'Deep teal — calm, modern and relaxing at night.', 'green', { page: '#03191d', card: '#07272c', accent: '#0f766e', text: '#ecfdfb', border: '#14565c' }),
+  def('dark-purple', 'Dark Purple', 'dark', 'Sleek & creative', 'Deep purple — sleek and creative.', 'purple', { page: '#12153a', card: '#1a2050', accent: '#6a48dc', text: '#f3f1ff', border: '#3c4388' }),
+  def('dark-gold', 'Dark Gold', 'dark', 'Elegant & premium', 'Dark charcoal with amber-gold accents — elegant and premium.', 'beige', { page: '#121b24', card: '#1d2328', accent: '#b45309', text: '#fbf6ea', border: '#6b5a3d' }),
 ];
 
 export const ALL_THEMES: ThemeDefinition[] = [...LIGHT_THEMES, ...DARK_THEMES];
