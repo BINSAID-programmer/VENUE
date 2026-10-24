@@ -855,7 +855,7 @@ app.post('/api/student/placement-correction', requireAuth, (req, res) => {
     }
     const used = Number(existing.placementCorrections || 0);
     if (used >= MAX_PLACEMENT_CORRECTIONS) {
-      return res.status(403).json({ success: false, error: 'LIMIT_REACHED', message: 'Umefikia kikomo cha marekebisho. Wasiliana na admin.' });
+      return res.status(403).json({ success: false, error: 'LIMIT_REACHED', message: 'You have reached the correction limit. Please contact your university admin.' });
     }
     const allowed = [
       'universityId', 'university', 'universityName', 'academicUnitId', 'academicUnitName', 'college', 'collegeId',
@@ -902,7 +902,7 @@ app.delete('/api/student/account', requireAuth, (req, res) => {
       (existing.email || '').toLowerCase().trim() === 'binsaid679@gmail.com';
     const role = existing.role || 'student';
     if (isOwnerAccount || role !== 'student') {
-      return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Akaunti hii haiwezi kufutwa hapa.' });
+      return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'This account cannot be deleted here.' });
     }
     if (profiles[uid]) {
       delete profiles[uid];

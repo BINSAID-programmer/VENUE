@@ -601,16 +601,32 @@ export async function saveStudentProfile(profile: StudentProfile): Promise<Stude
     if (res.ok) {
       const data = await res.json();
       if (data.success && data.profile) {
+        // The server keeps its own (possibly OLD) copy of the academic placement. The student's current
+        // placement (loaded from Firestore) must win, otherwise a corrected course silently reverts.
+        const placementKeys = [
+          'universityId', 'university', 'universityName', 'universityShort',
+          'academicUnitId', 'academicUnitName', 'college', 'collegeId', 'institutionId', 'institutionName',
+          'departmentId', 'department', 'departmentName',
+          'programmeId', 'programme', 'programmeName', 'programmeShort',
+          'academicYear', 'yearOfStudy', 'semester', 'placementCorrections',
+        ] as const;
+        const merged: Record<string, any> = { ...data.profile };
+        const clientProfile = safeStudentProfile as Record<string, any>;
+        if (clientProfile.isProfileComplete && clientProfile.programmeId) {
+          for (const k of placementKeys) {
+            if (clientProfile[k] !== undefined && clientProfile[k] !== '') merged[k] = clientProfile[k];
+          }
+        }
         // Also sync to Firestore users and students collections
         if (auth.currentUser && auth.currentUser.uid === uid) {
           try {
-            await setDoc(doc(db, 'users', uid), data.profile, { merge: true });
-            await setDoc(doc(db, 'students', uid), data.profile, { merge: true });
+            await setDoc(doc(db, 'users', uid), merged, { merge: true });
+            await setDoc(doc(db, 'students', uid), merged, { merge: true });
           } catch (fsErr) {
             console.warn('Firestore sync note:', fsErr);
           }
         }
-        return data.profile as StudentProfile;
+        return merged as StudentProfile;
       }
     }
   } catch (error) {
