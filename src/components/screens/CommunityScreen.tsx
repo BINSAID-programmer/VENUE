@@ -501,7 +501,7 @@ export const CommunityScreen: React.FC<CommunityScreenProps> = ({
     communityService.updateUserPresence(displayName, true);
     const interval = window.setInterval(() => {
       communityService.updateUserPresence(displayName, true);
-    }, 60_000);
+    }, 5 * 60_000);
     return () => {
       window.clearInterval(interval);
     };

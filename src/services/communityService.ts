@@ -1,3 +1,4 @@
+import { isFirestoreQuotaPaused, reportFirestoreError } from './quotaGuard';
 import {
   collection,
   doc,
@@ -4765,6 +4766,7 @@ class CommunityService {
     const currentUser = auth.currentUser;
     if (!currentUser || !conversationId) return;
 
+    if (isFirestoreQuotaPaused()) return;
     const now = Date.now();
     const lastWrite = this.lastTypingWriteByConv.get(conversationId) || 0;
     // Throttle typing true writes to at most once every 3.5 seconds to prevent Firestore write spam
@@ -4790,8 +4792,8 @@ class CommunityService {
         },
         { merge: true }
       );
-    } catch {
-      // non-blocking ephemeral typing state
+    } catch (err) {
+      reportFirestoreError(err);
     }
   }
 
@@ -4869,7 +4871,10 @@ class CommunityService {
     if (!currentUser) return;
 
     const now = Date.now();
-    if (!options.force && now - this.lastPresenceHeartbeat < 60_000) {
+    // Presence is optional background traffic: skip when quota is exhausted or the app is hidden.
+    if (isFirestoreQuotaPaused()) return;
+    if (!options.force && typeof document !== 'undefined' && document.hidden) return;
+    if (!options.force && now - this.lastPresenceHeartbeat < 4 * 60_000) {
       return;
     }
     this.lastPresenceHeartbeat = now;
@@ -4889,8 +4894,8 @@ class CommunityService {
 
     try {
       await setDoc(docRef, payload, { merge: true });
-    } catch {
-      // non-blocking
+    } catch (err) {
+      reportFirestoreError(err);
     }
   }
 
