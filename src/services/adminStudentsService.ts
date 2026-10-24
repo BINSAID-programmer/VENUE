@@ -160,17 +160,29 @@ class AdminStudentsService {
 
     // 2. Direct Firestore fallback query
     try {
-      let qSnap: any;
-      try {
-        const q = query(collection(db, 'students'), limit(pageSize * page));
-        qSnap = await getDocs(q);
-      } catch (fsErr) {
+      // Try every place student records may live; use the first one that actually has rows.
+      // (Previously an EMPTY result from the first database was returned as-is, hiding students stored elsewhere.)
+      let qSnap: any = null;
+      let firstError: any = null;
+      const sources: Array<[any, string]> = [
+        [db, 'students'],
+        [dbDefault, 'students'],
+        [db, 'users'],
+        [dbDefault, 'users'],
+      ];
+      for (const [database, colName] of sources) {
         try {
-          const qDef = query(collection(dbDefault, 'students'), limit(pageSize * page));
-          qSnap = await getDocs(qDef);
-        } catch {
-          handleFirestoreError(fsErr, OperationType.LIST, 'students');
+          const snap = await getDocs(query(collection(database, colName), limit(pageSize * page)));
+          if (!snap.empty) {
+            qSnap = snap;
+            break;
+          }
+        } catch (fsErr) {
+          firstError = firstError || fsErr;
         }
+      }
+      if (!qSnap && firstError) {
+        handleFirestoreError(firstError, OperationType.LIST, 'students');
       }
 
       if (!qSnap || qSnap.empty) {
@@ -188,6 +200,8 @@ class AdminStudentsService {
         ...(d.data() as any),
         status: d.data().status || d.data().accountStatus || 'active',
       })) as StudentProfile[];
+      // `users` may also hold staff accounts: keep only students
+      list = list.filter((s: any) => !s.role || s.role === 'student');
 
       // In-memory filters
       if (filters) {
