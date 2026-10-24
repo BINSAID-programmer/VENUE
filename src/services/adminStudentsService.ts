@@ -142,7 +142,8 @@ class AdminStudentsService {
       const res = await authenticatedFetch(`/api/admin/students?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.success && Array.isArray(data.students)) {
+        // An EMPTY list from the server may just mean its local store was reset: then also check Firestore below.
+        if (data.success && Array.isArray(data.students) && data.students.length > 0) {
           const result: PaginatedStudentsResponse = {
             students: data.students,
             total: data.total || data.students.length,
