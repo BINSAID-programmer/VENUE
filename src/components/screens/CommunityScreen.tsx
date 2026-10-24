@@ -627,6 +627,10 @@ export const CommunityScreen: React.FC<CommunityScreenProps> = ({
     };
   }, [currentUserUid, profile?.universityId, profile?.academicUnitId, profile?.programmeId]);
 
+  // Keep latest open conversation in a ref so the conversations listener is not re-created on every chat open/close
+  const activeConversationRef = useRef(activeConversation);
+  activeConversationRef.current = activeConversation;
+
   // Subscribe to user's real chat conversations
   useEffect(() => {
     if (!currentUserUid) {
@@ -638,9 +642,10 @@ export const CommunityScreen: React.FC<CommunityScreenProps> = ({
       currentUserUid,
       (liveConvs) => {
         setConversations(liveConvs);
-        if (activeConversation) {
+        const currentActive = activeConversationRef.current;
+        if (currentActive) {
           const updatedActive = liveConvs.find(
-            (c) => c.conversationId === activeConversation.conversationId
+            (c) => c.conversationId === currentActive.conversationId
           );
           if (updatedActive) {
             setActiveConversation(updatedActive);
@@ -655,7 +660,7 @@ export const CommunityScreen: React.FC<CommunityScreenProps> = ({
     return () => {
       unsubscribe();
     };
-  }, [currentUserUid, activeConversation?.conversationId]);
+  }, [currentUserUid]);
 
   // Subscribe to messages, typing indicators, and peer presence when a conversation is open
   useEffect(() => {

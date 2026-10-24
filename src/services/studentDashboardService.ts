@@ -85,7 +85,7 @@ const ACTIVITY_CACHE_PREFIX = 'venue_real_student_activity_';
 
 // Short-lived in-memory cache for dashboard aggregations to avoid repeated reads
 const dashboardMetricsCache = new Map<string, { data: StudentDashboardMetrics; timestamp: number }>();
-const DASHBOARD_CACHE_TTL_MS = 12_000;
+const DASHBOARD_CACHE_TTL_MS = 60_000; // cleared on every student write
 
 function getEffectiveUid(providedUid?: string): string {
   if (auth.currentUser?.uid) {
