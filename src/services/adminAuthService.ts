@@ -266,20 +266,18 @@ class AdminAuthService {
       lastUpdated: new Date().toISOString(),
     };
 
+    // Larger of the main and legacy (default) databases: never hide records stored in either one.
     const getCollectionCount = async (collName: string): Promise<number> => {
-      try {
-        const snap = await getCountFromServer(collection(db, collName));
-        const count = snap.data().count;
-        if (count > 0) return count;
-      } catch {
-        // continue to fallback
-      }
-      try {
-        const snapDef = await getCountFromServer(collection(dbDefault, collName));
-        return snapDef.data().count;
-      } catch {
-        return 0;
-      }
+      const counts = await Promise.all(
+        [db, dbDefault].map(async (database) => {
+          try {
+            return (await getCountFromServer(collection(database, collName))).data().count;
+          } catch {
+            return 0;
+          }
+        })
+      );
+      return Math.max(...counts);
     };
 
     try {
