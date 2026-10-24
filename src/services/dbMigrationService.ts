@@ -70,12 +70,12 @@ async function copyCollection(
   }
 }
 
-export async function migrateFromLegacyDatabase(onProgress: (p: MigrationProgress) => void): Promise<void> {
+export async function migrateFromLegacyDatabase(onProgress: (p: MigrationProgress) => void): Promise<boolean> {
   const source = legacyDb();
   if (!source) throw new Error('No legacy database is configured.');
   for (const name of MIGRATION_COLLECTIONS) {
     const keepGoing = await copyCollection(source, [name], onProgress, name);
-    if (!keepGoing) return;
+    if (!keepGoing) return false;
   }
   // Chat messages live in a sub-collection of every conversation.
   try {
@@ -87,9 +87,10 @@ export async function migrateFromLegacyDatabase(onProgress: (p: MigrationProgres
         onProgress,
         `chat_conversations/${c.id}/messages`
       );
-      if (!keepGoing) return;
+      if (!keepGoing) return false;
     }
   } catch {
     /* already reported by the top-level pass */
   }
+  return true;
 }
