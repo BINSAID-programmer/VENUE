@@ -31,18 +31,23 @@ import {
   sendStudentEmailVerification,
 } from '../../services/studentProfileService';
 import { auth } from '../../services/firebase';
+import { AccountManagement } from '../account/AccountManagement';
 
 interface EditProfileScreenProps {
   profile: StudentProfile;
   onSave: (updated: StudentProfile) => Promise<void> | void;
   onCancel: () => void;
   isInitialSetup?: boolean;
+  onProfileUpdated?: (p: StudentProfile) => void;
+  onAccountDeleted?: () => void;
 }
 
 export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
   profile,
   onSave,
   onCancel,
+  onProfileUpdated,
+  onAccountDeleted,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -394,7 +399,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
             <div className="flex items-center gap-2">
               <GraduationCap className="w-4 h-4 text-indigo-400" />
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                Academic Enrollment (Read-Only)
+                Academic Enrollment
               </h3>
             </div>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
@@ -404,9 +409,8 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
           </div>
 
           <p className="text-xs text-slate-400 leading-relaxed">
-            Degree registration, curriculum cohort, and institutional enrollments are locked to prevent
-            academic catalogue desynchronization. Contact your departmental administration for course
-            or programme reassignments.
+            Registration number is verified by administration. If you chose the wrong university or
+            programme, use "Course na Mwaka wa Masomo" below to correct it.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -579,6 +583,14 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
             </div>
           </div>
         </div>
+
+        {onProfileUpdated && onAccountDeleted && (
+          <AccountManagement
+            profile={profile}
+            onProfileUpdated={onProfileUpdated}
+            onAccountDeleted={onAccountDeleted}
+          />
+        )}
 
         {/* Submit & Cancel Actions */}
         <div className="flex items-center justify-end gap-3 pt-3">
