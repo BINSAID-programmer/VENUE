@@ -793,7 +793,7 @@ export const App: React.FC = () => {
           role="status"
           className="fixed top-0 inset-x-0 z-[200] px-3 py-2 text-center text-[11px] font-semibold bg-amber-500 text-black"
         >
-          Huduma ina msongamano kwa sasa. Baadhi ya vipengele (online status) vimepumzishwa kwa muda.
+          The service is busy right now. Some features (online status) are paused for a short while.
         </div>
       )}
       <DeviceWrapper

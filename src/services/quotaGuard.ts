@@ -17,8 +17,13 @@ try {
 
 export function isQuotaError(err: unknown): boolean {
   const e = err as any;
-  const text = `${e?.code || ''} ${e?.message || ''}`.toLowerCase();
-  return text.includes('resource-exhausted') || text.includes('quota') || text.includes('429');
+  const code = String(e?.code || '').toLowerCase();
+  const name = String(e?.name || '');
+  const msg = String(e?.message || '').toLowerCase();
+  // Only genuine Firestore quota errors. Browser storage "QuotaExceededError" or AI/Gemini
+  // rate-limit (429) errors must NOT pause Community features.
+  if (code === 'resource-exhausted' || code === 'firestore/resource-exhausted') return true;
+  return name === 'FirebaseError' && msg.includes('quota') && msg.includes('exceed');
 }
 
 export function isFirestoreQuotaPaused(): boolean {
