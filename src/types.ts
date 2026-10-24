@@ -97,6 +97,8 @@ export interface CountryRecord {
 
 export interface StudentProfile {
   uid?: string;
+  /** How many times the student has self-corrected their academic placement (max 3). */
+  placementCorrections?: number;
   name: string;
   fullName?: string;
   firstName?: string;

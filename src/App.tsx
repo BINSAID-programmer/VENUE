@@ -1050,6 +1050,20 @@ export const App: React.FC = () => {
               }
             }}
             isInitialSetup={currentScreen === 'complete-profile' || !profile.isProfileComplete}
+            onProfileUpdated={(updated) => {
+              const placementChanged = updated.programmeId !== profile.programmeId;
+              setProfile(updated);
+              if (placementChanged) {
+                courseCurriculumService.clearCache();
+                degreeProgrammeService.clearCache();
+                studentDashboardService.clearCache();
+                // Reload so courses, dashboard and community follow the corrected programme.
+                setTimeout(() => window.location.reload(), 1200);
+              }
+            }}
+            onAccountDeleted={() => {
+              void handleLogout();
+            }}
           />
         )}
 

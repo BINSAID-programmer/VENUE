@@ -804,9 +804,11 @@ app.post('/api/student/profile', requireAuth, (req, res) => {
             programmeId: existing.programmeId,
             programme: existing.programme,
             programmeName: existing.programmeName,
-            academicYear: existing.academicYear || profile.academicYear,
-            yearOfStudy: existing.yearOfStudy || profile.yearOfStudy,
-            semester: existing.semester || profile.semester,
+            // Year / semester / academic year are normal progression: the student may update them.
+            academicYear: profile.academicYear || existing.academicYear,
+            yearOfStudy: profile.yearOfStudy || existing.yearOfStudy,
+            semester: profile.semester || existing.semester,
+            placementCorrections: existing.placementCorrections || 0,
             registrationNumber: existing.registrationNumber || profile.registrationNumber,
           }
         : {}),
@@ -824,6 +826,110 @@ app.post('/api/student/profile', requireAuth, (req, res) => {
   } catch (err: any) {
     console.error('Error saving profile:', err);
     return res.status(500).json({ success: false, error: err?.message || 'Failed to save profile' });
+  }
+});
+
+const MAX_PLACEMENT_CORRECTIONS = 3;
+
+// Student corrects a wrongly chosen university / college / department / programme (max 3 times).
+app.post('/api/student/placement-correction', requireAuth, (req, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ success: false, error: 'UNAUTHORIZED' });
+    const uid = req.user.uid;
+    const p = (req.body && req.body.placement) || {};
+    const required = ['universityId', 'academicUnitId', 'departmentId', 'programmeId'];
+    for (const k of required) {
+      if (!p[k] || typeof p[k] !== 'string') {
+        return res.status(400).json({ success: false, error: `Missing ${k}` });
+      }
+    }
+    const profiles = readAllProfiles();
+    const existing = profiles[uid] || {};
+    if (existing.status === 'inactive' || existing.accountStatus === 'inactive') {
+      return res.status(403).json({ success: false, error: 'Account is inactive.' });
+    }
+    const used = Number(existing.placementCorrections || 0);
+    if (used >= MAX_PLACEMENT_CORRECTIONS) {
+      return res.status(403).json({ success: false, error: 'LIMIT_REACHED', message: 'Umefikia kikomo cha marekebisho. Wasiliana na admin.' });
+    }
+    const allowed = [
+      'universityId', 'university', 'universityName', 'academicUnitId', 'academicUnitName', 'college', 'collegeId',
+      'departmentId', 'department', 'departmentName', 'programmeId', 'programme', 'programmeName',
+      'academicYear', 'yearOfStudy', 'semester',
+    ];
+    const patch: Record<string, any> = {};
+    for (const k of allowed) if (p[k] !== undefined) patch[k] = p[k];
+    const updated = {
+      ...existing,
+      ...patch,
+      uid,
+      placementCorrections: used + 1,
+      updatedAt: new Date().toISOString(),
+    };
+    profiles[uid] = updated;
+    writeAllProfiles(profiles);
+    recordServerAuditLog({
+      actorUid: uid,
+      actorRole: 'student',
+      action: 'student_placement_corrected',
+      entityType: 'student',
+      entityId: uid,
+      summary: 'Student corrected academic placement',
+      outcome: 'success',
+      metadata: { from: existing.programmeId, to: patch.programmeId, correctionNo: used + 1 },
+      source: 'trusted_server',
+    });
+    return res.json({ success: true, profile: updated, correctionsLeft: MAX_PLACEMENT_CORRECTIONS - (used + 1) });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || 'Failed to correct placement' });
+  }
+});
+
+// Student deletes their own account data from the server store (Auth + Firestore are removed by the client).
+app.delete('/api/student/account', requireAuth, (req, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ success: false, error: 'UNAUTHORIZED' });
+    const uid = req.user.uid;
+    const profiles = readAllProfiles();
+    const existing = profiles[uid] || {};
+    const isOwnerAccount =
+      uid === 'Faz9X1kqMZWkujTMKYaRfvM4jvw1' || req.user.isOwner ||
+      (existing.email || '').toLowerCase().trim() === 'binsaid679@gmail.com';
+    const role = existing.role || 'student';
+    if (isOwnerAccount || role !== 'student') {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Akaunti hii haiwezi kufutwa hapa.' });
+    }
+    if (profiles[uid]) {
+      delete profiles[uid];
+      writeAllProfiles(profiles);
+    }
+    const results = readAllResults();
+    if (results[uid]) {
+      delete results[uid];
+      writeAllResults(results);
+    }
+    const reads = readAllAnnouncementReads();
+    let readsChanged = false;
+    for (const k of Object.keys(reads)) {
+      if (k.startsWith(`${uid}_`)) {
+        delete reads[k];
+        readsChanged = true;
+      }
+    }
+    if (readsChanged) writeAllAnnouncementReads(reads);
+    recordServerAuditLog({
+      actorUid: uid,
+      actorRole: 'student',
+      action: 'student_account_deleted',
+      entityType: 'student',
+      entityId: uid,
+      summary: 'Student deleted own account',
+      outcome: 'success',
+      source: 'trusted_server',
+    });
+    return res.json({ success: true });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || 'Failed to delete account' });
   }
 });
 

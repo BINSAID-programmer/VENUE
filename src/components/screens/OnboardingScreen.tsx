@@ -30,12 +30,17 @@ interface OnboardingScreenProps {
   initialProfile: StudentProfile;
   onComplete: (updated: Partial<StudentProfile>) => void;
   onBackToAuth?: () => void;
+  /** 'correction' = signed-in student fixing a wrongly chosen course (shows a notice, back leaves the flow). */
+  mode?: 'onboarding' | 'correction';
+  correctionsLeft?: number;
 }
 
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   initialProfile,
   onComplete,
   onBackToAuth,
+  mode = 'onboarding',
+  correctionsLeft,
 }) => {
   // 6 sequential onboarding steps mapping to official academic hierarchy:
   // 1: Select Country
@@ -307,6 +312,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         collegeId: selectedUnitId,
         institutionId: selectedUnitId,
         academicUnitId: selectedUnitId,
+        academicUnitName: matchedUnit?.name || college,
         academicUnitType: matchedUnit?.type || 'College',
         department: matchedDept?.name || department,
         departmentName: matchedDept?.name || department,
@@ -337,6 +343,14 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
     <div className="min-h-full min-h-screen sm:min-h-full flex-1 flex flex-col justify-between p-4 sm:p-7 bg-gradient-to-b from-[#070b14] via-[#091122] to-[#070b14] relative overflow-y-auto overflow-x-hidden pb-8">
       {/* Top Stepper Navigation */}
       <div>
+        {mode === 'correction' && (
+          <div className="mb-3 p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-xs text-amber-200 leading-relaxed">
+            Unarekebisha chuo / course yako. Chagua tena hatua zote kisha thibitisha.
+            {typeof correctionsLeft === 'number' && (
+              <span className="block mt-1 font-semibold">Marekebisho yaliyobaki: {correctionsLeft} kati ya 3</span>
+            )}
+          </div>
+        )}
         <div className="flex items-center justify-between mb-3">
           <button
             type="button"

@@ -60,6 +60,37 @@ service cloud.firestore {
       return isDepartmentModerator();
     }
 
+    // ---- Student self-service academic placement (used by students/{id} and users/{id}) ----
+    function placementUnchanged() {
+      return (!('universityId' in request.resource.data) || !('universityId' in resource.data) || resource.data.universityId == '' || request.resource.data.universityId == resource.data.universityId) &&
+             (!('academicUnitId' in request.resource.data) || !('academicUnitId' in resource.data) || resource.data.academicUnitId == '' || request.resource.data.academicUnitId == resource.data.academicUnitId) &&
+             (!('departmentId' in request.resource.data) || !('departmentId' in resource.data) || resource.data.departmentId == '' || request.resource.data.departmentId == resource.data.departmentId) &&
+             (!('programmeId' in request.resource.data) || !('programmeId' in resource.data) || resource.data.programmeId == '' || request.resource.data.programmeId == resource.data.programmeId);
+    }
+
+    // The correction counter can only change together with a placement correction.
+    function placementCounterUnchanged() {
+      return request.resource.data.get('placementCorrections', 0) == resource.data.get('placementCorrections', 0);
+    }
+
+    // A correction must bump the counter by exactly 1, stay within 3, and keep every placement field filled.
+    function validPlacementCorrection() {
+      return resource.data.get('placementCorrections', 0) < 3 &&
+             request.resource.data.get('placementCorrections', 0) == resource.data.get('placementCorrections', 0) + 1 &&
+             request.resource.data.get('universityId', '') != '' &&
+             request.resource.data.get('academicUnitId', '') != '' &&
+             request.resource.data.get('departmentId', '') != '' &&
+             request.resource.data.get('programmeId', '') != '';
+    }
+
+    // A student may delete only their own regular student account (never the platform owner,
+    // never an admin / lecturer / moderator account).
+    function canSelfDeleteAccount(userId) {
+      return isOwner(userId) && isValidId(userId) &&
+        userId != 'Faz9X1kqMZWkujTMKYaRfvM4jvw1' &&
+        resource.data.get('role', 'student') == 'student';
+    }
+
     // Helper: Check if a student account is active (not deactivated/restricted)
     function isStudentAccountActive(userId) {
       return isVerifiedPlatformOwner() || (
@@ -449,16 +480,12 @@ service cloud.firestore {
          (!('permissions' in request.resource.data) || ('permissions' in resource.data && request.resource.data.permissions == resource.data.permissions)) &&
          // Student cannot alter official institutional registration number once set
          (!('registrationNumber' in request.resource.data) || !('registrationNumber' in resource.data) || resource.data.registrationNumber == '' || request.resource.data.registrationNumber == resource.data.registrationNumber) &&
-         // Student cannot alter protected academic placement once onboarding is completed
-         (!('universityId' in request.resource.data) || !('universityId' in resource.data) || resource.data.universityId == '' || request.resource.data.universityId == resource.data.universityId) &&
-         (!('academicUnitId' in request.resource.data) || !('academicUnitId' in resource.data) || resource.data.academicUnitId == '' || request.resource.data.academicUnitId == resource.data.academicUnitId) &&
-         (!('departmentId' in request.resource.data) || !('departmentId' in resource.data) || resource.data.departmentId == '' || request.resource.data.departmentId == resource.data.departmentId) &&
-         (!('programmeId' in request.resource.data) || !('programmeId' in resource.data) || resource.data.programmeId == '' || request.resource.data.programmeId == resource.data.programmeId) &&
-         (!('academicYear' in request.resource.data) || !('academicYear' in resource.data) || resource.data.academicYear == '' || request.resource.data.academicYear == resource.data.academicYear) &&
-         (!('yearOfStudy' in request.resource.data) || !('yearOfStudy' in resource.data) || resource.data.yearOfStudy == '' || request.resource.data.yearOfStudy == resource.data.yearOfStudy) &&
-         (!('semester' in request.resource.data) || !('semester' in resource.data) || resource.data.semester == '' || request.resource.data.semester == resource.data.semester))
+         // Placement (university / unit / department / programme) only changes through a counted
+         // self-correction (max 3 per account). Year of study, semester and academic year are normal
+         // student progression and may be updated by the student.
+         ((placementUnchanged() && placementCounterUnchanged()) || validPlacementCorrection()))
       );
-      allow delete: if false;
+      allow delete: if canSelfDeleteAccount(userId);
 
       // User Results
       match /results/{resultId} {
@@ -543,16 +570,12 @@ service cloud.firestore {
          (!('permissions' in request.resource.data) || ('permissions' in resource.data && request.resource.data.permissions == resource.data.permissions)) &&
          // Student cannot alter official institutional registration number once set
          (!('registrationNumber' in request.resource.data) || !('registrationNumber' in resource.data) || resource.data.registrationNumber == '' || request.resource.data.registrationNumber == resource.data.registrationNumber) &&
-         // Student cannot alter protected academic placement once onboarding is completed
-         (!('universityId' in request.resource.data) || !('universityId' in resource.data) || resource.data.universityId == '' || request.resource.data.universityId == resource.data.universityId) &&
-         (!('academicUnitId' in request.resource.data) || !('academicUnitId' in resource.data) || resource.data.academicUnitId == '' || request.resource.data.academicUnitId == resource.data.academicUnitId) &&
-         (!('departmentId' in request.resource.data) || !('departmentId' in resource.data) || resource.data.departmentId == '' || request.resource.data.departmentId == resource.data.departmentId) &&
-         (!('programmeId' in request.resource.data) || !('programmeId' in resource.data) || resource.data.programmeId == '' || request.resource.data.programmeId == resource.data.programmeId) &&
-         (!('academicYear' in request.resource.data) || !('academicYear' in resource.data) || resource.data.academicYear == '' || request.resource.data.academicYear == resource.data.academicYear) &&
-         (!('yearOfStudy' in request.resource.data) || !('yearOfStudy' in resource.data) || resource.data.yearOfStudy == '' || request.resource.data.yearOfStudy == resource.data.yearOfStudy) &&
-         (!('semester' in request.resource.data) || !('semester' in resource.data) || resource.data.semester == '' || request.resource.data.semester == resource.data.semester))
+         // Placement (university / unit / department / programme) only changes through a counted
+         // self-correction (max 3 per account). Year of study, semester and academic year are normal
+         // student progression and may be updated by the student.
+         ((placementUnchanged() && placementCounterUnchanged()) || validPlacementCorrection()))
       );
-      allow delete: if false;
+      allow delete: if canSelfDeleteAccount(studentId);
 
       // Student Results (Isolated subcollection for academic grades & GPA)
       match /results/{resultId} {
