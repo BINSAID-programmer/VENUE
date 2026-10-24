@@ -41,7 +41,7 @@ export const AccountManagement: React.FC<Props> = ({ profile, onProfileUpdated, 
       await fn();
       setMsg({ text: ok });
     } catch (err: any) {
-      setMsg({ text: err?.message || 'Imeshindwa. Jaribu tena.', error: true });
+      setMsg({ text: err?.message || 'Something went wrong. Please try again.', error: true });
     } finally {
       setBusy('');
     }
@@ -54,7 +54,7 @@ export const AccountManagement: React.FC<Props> = ({ profile, onProfileUpdated, 
         const updated = await updateAcademicProgress(profile, { yearOfStudy: year, semester });
         onProfileUpdated(updated);
       },
-      'Mwaka na semester vimehifadhiwa.'
+      'Year and semester saved.'
     );
 
   const submitCorrection = async (payload: Partial<StudentProfile>) => {
@@ -70,7 +70,7 @@ export const AccountManagement: React.FC<Props> = ({ profile, onProfileUpdated, 
         setYear(updated.yearOfStudy || year);
         setSemester(updated.semester || semester);
       },
-      'Course/chuo kimerekebishwa. Mada na data sasa zinafuata course mpya.'
+      'Your course was corrected. Your courses and data now follow the new programme.'
     );
   };
 
@@ -81,7 +81,7 @@ export const AccountManagement: React.FC<Props> = ({ profile, onProfileUpdated, 
         await deleteMyAccount(accountUsesPassword() ? password : undefined);
         onAccountDeleted();
       },
-      'Akaunti imefutwa.'
+      'Account deleted.'
     );
 
   const selectCls =
@@ -92,7 +92,7 @@ export const AccountManagement: React.FC<Props> = ({ profile, onProfileUpdated, 
       <div className="p-5 sm:p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
           <GraduationCap className="w-4 h-4 text-indigo-400" />
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Course na Mwaka wa Masomo</h3>
+          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Course & Year of Study</h3>
         </div>
 
         {msg && (
@@ -109,7 +109,7 @@ export const AccountManagement: React.FC<Props> = ({ profile, onProfileUpdated, 
 
         <div className="grid grid-cols-2 gap-3 text-xs">
           <label className="text-slate-400">
-            Mwaka wa masomo
+            Year of study
             <select className={selectCls} value={year} onChange={(e) => setYear(e.target.value)}>
               {YEARS.map((y) => (
                 <option key={y}>{y}</option>
@@ -131,13 +131,13 @@ export const AccountManagement: React.FC<Props> = ({ profile, onProfileUpdated, 
           disabled={!!busy}
           className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold disabled:opacity-50"
         >
-          {busy === 'progress' ? 'Inahifadhi...' : 'Hifadhi mwaka/semester'}
+          {busy === 'progress' ? 'Saving...' : 'Save year/semester'}
         </button>
 
         <div className="pt-3 border-t border-slate-800 space-y-2">
           <p className="text-xs text-slate-400 leading-relaxed">
-            Ulichagua chuo au course kimakosa? Unaweza kurekebisha mara {MAX_PLACEMENT_CORRECTIONS} tu. Marekebisho
-            yaliyobaki: <span className="font-bold text-white">{left}</span>
+            Chose the wrong university or course? You can correct it up to {MAX_PLACEMENT_CORRECTIONS} times. Corrections
+            left: <span className="font-bold text-white">{left}</span>
           </p>
           <button
             type="button"
@@ -145,7 +145,7 @@ export const AccountManagement: React.FC<Props> = ({ profile, onProfileUpdated, 
             disabled={!!busy || left === 0}
             className="px-4 py-2 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/40 text-amber-200 text-xs font-semibold disabled:opacity-40"
           >
-            {busy === 'correction' ? 'Inarekebisha...' : left === 0 ? 'Kikomo kimefikiwa' : 'Rekebisha chuo / course'}
+            {busy === 'correction' ? 'Correcting...' : left === 0 ? 'Limit reached' : 'Correct university / course'}
           </button>
         </div>
       </div>
@@ -153,24 +153,24 @@ export const AccountManagement: React.FC<Props> = ({ profile, onProfileUpdated, 
       <div className="p-5 sm:p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
           <Download className="w-4 h-4 text-indigo-400" />
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Data na Akaunti</h3>
+          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Data & Account</h3>
         </div>
         <button
           type="button"
-          onClick={() => run('export', exportMyData, 'Data yako imepakuliwa.')}
+          onClick={() => run('export', exportMyData, 'Your data was downloaded.')}
           disabled={!!busy}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold disabled:opacity-50"
         >
           {busy === 'export' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-          Pakua data yangu
+          Download my data
         </button>
 
         <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-500/5 space-y-2">
           <p className="text-xs text-rose-300 flex items-center gap-1.5 font-semibold">
-            <AlertTriangle className="w-4 h-4" /> Eneo la hatari
+            <AlertTriangle className="w-4 h-4" /> Danger zone
           </p>
           <p className="text-xs text-slate-400">
-            Kufuta akaunti kunaondoa wasifu wako, matokeo na data yako yote. Haiwezi kurudishwa.
+            Deleting your account removes your profile, results and all your data. This cannot be undone.
           </p>
           <button
             type="button"
@@ -178,7 +178,7 @@ export const AccountManagement: React.FC<Props> = ({ profile, onProfileUpdated, 
             disabled={!!busy}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold disabled:opacity-50"
           >
-            <Trash2 className="w-4 h-4" /> Futa akaunti yangu
+            <Trash2 className="w-4 h-4" /> Delete my account
           </button>
         </div>
       </div>
@@ -199,19 +199,19 @@ export const AccountManagement: React.FC<Props> = ({ profile, onProfileUpdated, 
         <div className="fixed inset-0 z-[90] bg-black/70 flex items-center justify-center p-4">
           <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-rose-500/40 p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-white">Futa akaunti?</h4>
-              <button type="button" onClick={() => setShowDelete(false)} aria-label="Funga">
+              <h4 className="text-sm font-bold text-white">Delete account?</h4>
+              <button type="button" onClick={() => setShowDelete(false)} aria-label="Close">
                 <X className="w-4 h-4 text-slate-400" />
               </button>
             </div>
             <p className="text-xs text-slate-400">
-              Andika <span className="font-mono text-rose-300">FUTA</span> kuthibitisha
-              {accountUsesPassword() ? ' na weka password yako.' : '. Utaombwa kuingia na Google tena.'}
+              Type <span className="font-mono text-rose-300">DELETE</span> to confirm
+              {accountUsesPassword() ? ' and enter your password.' : '. You will be asked to sign in with Google again.'}
             </p>
             <input
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
-              placeholder="FUTA"
+              placeholder="DELETE"
               className={selectCls}
             />
             {accountUsesPassword() && (
@@ -228,11 +228,11 @@ export const AccountManagement: React.FC<Props> = ({ profile, onProfileUpdated, 
               type="button"
               onClick={doDelete}
               disabled={
-                busy === 'delete' || confirmText.trim().toUpperCase() !== 'FUTA' || (accountUsesPassword() && !password)
+                busy === 'delete' || confirmText.trim().toUpperCase() !== 'DELETE' || (accountUsesPassword() && !password)
               }
               className="w-full px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold disabled:opacity-40"
             >
-              {busy === 'delete' ? 'Inafuta...' : 'Futa kabisa'}
+              {busy === 'delete' ? 'Deleting...' : 'Delete permanently'}
             </button>
           </div>
         </div>

@@ -142,8 +142,16 @@ class AdminStudentsService {
       const res = await authenticatedFetch(`/api/admin/students?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        // An EMPTY list from the server may just mean its local store was reset: then also check Firestore below.
-        if (data.success && Array.isArray(data.students) && data.students.length > 0) {
+        // The server's own store can be stale or reset. Firestore is the source of truth: only trust the
+        // server list when it is at least as complete as Firestore (otherwise fall through to Firestore below).
+        let firestoreCount = 0;
+        try {
+          firestoreCount = (await getCountFromServer(collection(db, 'students'))).data().count;
+        } catch {
+          /* count unavailable: trust the server */
+        }
+        const serverTotal = Number(data.total || (Array.isArray(data.students) ? data.students.length : 0));
+        if (data.success && Array.isArray(data.students) && data.students.length > 0 && serverTotal >= firestoreCount) {
           const result: PaginatedStudentsResponse = {
             students: data.students,
             total: data.total || data.students.length,
@@ -173,7 +181,7 @@ class AdminStudentsService {
       ];
       for (const [database, colName] of sources) {
         try {
-          const snap = await getDocs(query(collection(database, colName), limit(pageSize * page)));
+          const snap = await getDocs(query(collection(database, colName), limit(Math.max(pageSize * page, 500))));
           if (!snap.empty) {
             qSnap = snap;
             break;

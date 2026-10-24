@@ -55,7 +55,7 @@ export async function updateAcademicProgress(
   progress: { yearOfStudy: string; semester: string; academicYear?: string }
 ): Promise<StudentProfile> {
   const uid = auth.currentUser?.uid;
-  if (!uid) throw new Error('Tafadhali ingia tena.');
+  if (!uid) throw new Error('Please sign in again.');
   const patch = {
     yearOfStudy: progress.yearOfStudy,
     semester: progress.semester,
@@ -89,7 +89,7 @@ export async function updateAcademicProgress(
 /** Correct a wrongly chosen university / college / department / programme (max 3 times). */
 export async function correctPlacement(profile: StudentProfile, placement: PlacementInput): Promise<StudentProfile> {
   const uid = auth.currentUser?.uid;
-  if (!uid) throw new Error('Tafadhali ingia tena.');
+  if (!uid) throw new Error('Please sign in again.');
 
   // Source of truth for the counter: the highest value we can see.
   let used = Number((profile as any).placementCorrections || 0);
@@ -100,7 +100,7 @@ export async function correctPlacement(profile: StudentProfile, placement: Place
     /* use local value */
   }
   if (used >= MAX_PLACEMENT_CORRECTIONS) {
-    throw new Error('Umefikia kikomo cha marekebisho (mara 3). Wasiliana na admin wa chuo.');
+    throw new Error('You have reached the correction limit (3). Please contact your university admin.');
   }
 
   let next: StudentProfile = {
@@ -118,7 +118,7 @@ export async function correctPlacement(profile: StudentProfile, placement: Place
     });
     if (res.status === 403) {
       const d = await res.json().catch(() => ({}));
-      if (d?.error === 'LIMIT_REACHED') throw new Error(d.message || 'Umefikia kikomo cha marekebisho.');
+      if (d?.error === 'LIMIT_REACHED') throw new Error(d.message || 'You have reached the correction limit.');
     } else if (res.ok) {
       const data = await res.json();
       if (data?.profile) {
@@ -126,7 +126,7 @@ export async function correctPlacement(profile: StudentProfile, placement: Place
       }
     }
   } catch (err: any) {
-    if (String(err?.message || '').includes('kikomo')) throw err;
+    if (String(err?.message || '').includes('correction limit')) throw err;
     /* server offline: Firestore below is the source of truth */
   }
 
@@ -142,7 +142,7 @@ export async function correctPlacement(profile: StudentProfile, placement: Place
 
 export async function exportMyData(): Promise<void> {
   const user = auth.currentUser;
-  if (!user) throw new Error('Tafadhali ingia tena.');
+  if (!user) throw new Error('Please sign in again.');
   const profile = await loadStudentProfile(user.uid, user.email || undefined);
   let results: any = null;
   try {
@@ -171,10 +171,10 @@ export function accountUsesPassword(): boolean {
 
 async function reauthenticate(password?: string) {
   const user = auth.currentUser;
-  if (!user) throw new Error('Tafadhali ingia tena.');
+  if (!user) throw new Error('Please sign in again.');
   if (accountUsesPassword()) {
-    if (!password) throw new Error('Weka password yako ili kuthibitisha.');
-    if (!user.email) throw new Error('Akaunti haina email.');
+    if (!password) throw new Error('Enter your password to confirm.');
+    if (!user.email) throw new Error('This account has no email.');
     await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
   } else {
     await reauthenticateWithPopup(user, new GoogleAuthProvider());
@@ -193,7 +193,7 @@ async function deleteSubcollection(parentPath: string[], name: string) {
 /** Permanently delete the signed-in student's account and data. */
 export async function deleteMyAccount(password?: string): Promise<void> {
   const user = auth.currentUser;
-  if (!user) throw new Error('Tafadhali ingia tena.');
+  if (!user) throw new Error('Please sign in again.');
   const uid = user.uid;
   const email = user.email || undefined;
 
@@ -202,7 +202,7 @@ export async function deleteMyAccount(password?: string): Promise<void> {
   } catch (err: any) {
     const code = err?.code || '';
     if (code.includes('wrong-password') || code.includes('invalid-credential')) {
-      throw new Error('Password si sahihi.');
+      throw new Error('Incorrect password.');
     }
     throw err;
   }
@@ -210,7 +210,7 @@ export async function deleteMyAccount(password?: string): Promise<void> {
   const res = await authenticatedFetch('/api/student/account', { method: 'DELETE' }).catch(() => null);
   if (res && res.status === 403) {
     const d = await res.json().catch(() => ({}));
-    throw new Error(d?.message || 'Akaunti hii haiwezi kufutwa.');
+    throw new Error(d?.message || 'This account cannot be deleted.');
   }
 
   for (const sub of ['results', 'notifications', 'ai_learning_sessions', 'ai_learning_progress']) {
@@ -222,7 +222,7 @@ export async function deleteMyAccount(password?: string): Promise<void> {
       try {
         await deleteDoc(doc(database, col, uid));
       } catch (err: any) {
-        if (database === db) throw new Error('Imeshindwa kufuta data. Hakikisha sheria mpya (rules) zimewekwa.');
+        if (database === db) throw new Error('Could not delete your data. Make sure the latest Firestore rules are published.');
       }
     }
   }
