@@ -774,7 +774,12 @@ app.post('/api/student/profile', requireAuth, (req, res) => {
 
     // 3. Once academic placement is completed on the server, protect institutional placement fields from arbitrary client overwrite
     // (Authorized admin placement changes use /api/admin/students/:uid/academic-placement)
+    // A student self-correction (counted, max 3, enforced by Firestore rules) raises placementCorrections.
+    // Accept that newer placement instead of re-imposing a stale server copy.
+    const clientCorrectedPlacement =
+      Number(profile.placementCorrections || 0) > Number(existing.placementCorrections || 0);
     const isLockedPlacement = Boolean(
+      !clientCorrectedPlacement &&
       existing.isProfileComplete &&
       existing.universityId &&
       existing.programmeId &&
