@@ -13,8 +13,6 @@ import {
   AnalyticsFeatureType,
   UserGrowthDataPoint,
 } from '../types';
-import { AUDITED_ACADEMIC_UNITS, AUDITED_DEPARTMENTS, AUDITED_PROGRAMMES } from '../data/udsmAuditedCatalogue2025';
-import { SAMPLE_COURSES } from '../data/mockData';
 
 interface CacheEntry {
   data: AdminAdvancedAnalytics;
@@ -42,6 +40,24 @@ class AdminAnalyticsService {
         return fallbackCount;
       }
     }
+  }
+
+  /**
+   * Live document count: the larger of the main and legacy (default) databases,
+   * or null when neither can be read. Never returns invented numbers.
+   */
+  private async liveCount(collectionName: string): Promise<number | null> {
+    const results = await Promise.all(
+      [db, dbDefault].map(async (database) => {
+        try {
+          return (await getCountFromServer(collection(database, collectionName))).data().count;
+        } catch {
+          return null;
+        }
+      })
+    );
+    const ok = results.filter((n): n is number => typeof n === 'number');
+    return ok.length ? Math.max(...ok) : null;
   }
 
   /**
@@ -92,19 +108,41 @@ class AdminAnalyticsService {
         if (json.success && json.overview) {
           const overview = json.overview as AdminAdvancedAnalytics;
 
-          // Double check live Firestore counts for guaranteed real-time accuracy if available
+          // Firestore is the source of truth: the server's own store can be stale or reset.
           try {
-            const [liveMaterialsCount, livePublishedAnnsCount] = await Promise.all([
-              this.getFirestoreCount('materials', overview.allTime.totalMaterials),
-              this.getPublishedAnnouncementsCount(),
-            ]);
-
-            if (liveMaterialsCount > overview.allTime.totalMaterials) {
-              overview.allTime.totalMaterials = liveMaterialsCount;
-              overview.materials.totalMaterials = liveMaterialsCount;
+            const [students, lecturers, admins, units, depts, progs, courses, materials, unis, anns] =
+              await Promise.all([
+                this.liveCount('students'),
+                this.liveCount('lecturers'),
+                this.liveCount('admin_users'),
+                this.liveCount('academic_units'),
+                this.liveCount('departments'),
+                this.liveCount('programmes'),
+                this.liveCount('canonical_courses'),
+                this.liveCount('materials'),
+                this.liveCount('universities'),
+                this.getPublishedAnnouncementsCount(),
+              ]);
+            const at = overview.allTime;
+            if (students !== null) at.totalStudents = Math.max(students, 0);
+            if (lecturers !== null) at.totalLecturers = lecturers;
+            if (admins !== null) at.totalAdministrators = admins;
+            if (units !== null) at.totalAcademicUnits = units;
+            if (depts !== null) at.totalDepartments = depts;
+            if (progs !== null) at.totalProgrammes = progs;
+            if (courses !== null) at.totalCourses = courses;
+            if (materials !== null) {
+              at.totalMaterials = materials;
+              overview.materials.totalMaterials = materials;
             }
-            if (livePublishedAnnsCount > overview.allTime.totalPublishedAnnouncements) {
-              overview.allTime.totalPublishedAnnouncements = livePublishedAnnsCount;
+            if (anns > 0) at.totalPublishedAnnouncements = Math.max(anns, 0);
+            at.totalUsers = at.totalStudents + at.totalLecturers + at.totalAdministrators;
+            if (unis !== null && overview.catalogue) overview.catalogue.universities = unis;
+            if (overview.catalogue) {
+              overview.catalogue.academicUnits = at.totalAcademicUnits;
+              overview.catalogue.departments = at.totalDepartments;
+              overview.catalogue.programmes = at.totalProgrammes;
+              overview.catalogue.canonicalCourses = at.totalCourses;
             }
           } catch {
             // Keep server-calculated counts
@@ -141,20 +179,22 @@ class AdminAnalyticsService {
       matCount,
       studCount,
       lectCount,
+      adminCount,
       pubAnnCount,
     ] = await Promise.all([
-      this.getFirestoreCount('universities', 1),
-      this.getFirestoreCount('academic_units', AUDITED_ACADEMIC_UNITS.length),
-      this.getFirestoreCount('departments', AUDITED_DEPARTMENTS.length),
-      this.getFirestoreCount('programmes', AUDITED_PROGRAMMES.length),
-      this.getFirestoreCount('canonical_courses', SAMPLE_COURSES.length),
-      this.getFirestoreCount('materials', 0),
-      this.getFirestoreCount('students', 2),
-      this.getFirestoreCount('lecturers', 2),
+      this.liveCount('universities'),
+      this.liveCount('academic_units'),
+      this.liveCount('departments'),
+      this.liveCount('programmes'),
+      this.liveCount('canonical_courses'),
+      this.liveCount('materials'),
+      this.liveCount('students'),
+      this.liveCount('lecturers'),
+      this.liveCount('admin_users'),
       this.getPublishedAnnouncementsCount(),
-    ]);
+    ]).then((arr) => arr.map((n) => n ?? 0) as number[]) as number[];
 
-    const totalAdmins = 2; // Verified administrative accounts
+    const totalAdmins = adminCount;
     const totalUsers = studCount + lectCount + totalAdmins;
 
     // Build day-by-day points for user growth
@@ -162,23 +202,23 @@ class AdminAnalyticsService {
     const numPoints = Math.min(days, 14);
     const stepDays = Math.max(1, Math.floor(days / numPoints));
 
-    let runningUsers = Math.max(1, totalUsers - Math.min(totalUsers, 2));
+    const runningUsers = totalUsers;
     for (let i = numPoints; i >= 0; i--) {
       const d = new Date(now.getTime() - i * stepDays * 86400000);
       const dateStr = d.toISOString().split('T')[0];
       const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      if (i === 0) runningUsers = totalUsers;
       points.push({
         date: dateStr,
         label,
-        newUsers: i === 0 ? 1 : 0,
+        newUsers: 0,
         cumulativeUsers: runningUsers,
       });
     }
 
-    const dau = 1;
-    const wau = 2;
-    const mau = 2;
+    // Active-user figures need event tracking from the server; never invent them.
+    const dau = 0;
+    const wau = 0;
+    const mau = 0;
 
     return {
       allTime: {
@@ -191,63 +231,53 @@ class AdminAnalyticsService {
         totalProgrammes: progCount,
         totalCourses: canonCount,
         totalMaterials: matCount,
-        totalPublishedAnnouncements: pubAnnCount > 0 ? pubAnnCount : 4,
+        totalPublishedAnnouncements: pubAnnCount,
       },
       period: {
         range,
         startDate: sinceDate.toISOString(),
         endDate: now.toISOString(),
-        newUsers: 1,
-        newStudents: 1,
+        newUsers: 0,
+        newStudents: 0,
         newLecturers: 0,
         newMaterials: 0,
-        newAnnouncements: 1,
+        newAnnouncements: 0,
         aiRequests: 0,
       },
       engagement: {
         dau,
         wau,
         mau,
-        stickinessRatio: Math.round((dau / mau) * 100),
-        newRegistrationsInPeriod: 1,
-        returningUsersInPeriod: 1,
+        stickinessRatio: 0,
+        newRegistrationsInPeriod: 0,
+        returningUsersInPeriod: 0,
         activeUsersTrend: points.map((p) => ({
           date: p.date,
           label: p.label,
-          activeUsers: p.newUsers > 0 ? 2 : 1,
-          eventsCount: p.newUsers > 0 ? 4 : 2,
+          activeUsers: 0,
+          eventsCount: 0,
         })),
         activityDefinition:
           'An active user is defined as any verified student, faculty lecturer, or administrator who initiated at least one meaningful interaction (such as an AI Tutor query, academic material open/download, quiz attempt, study planner task, or announcement read) within the specified timeframe.',
       },
       featureUsage: {
-        totalFeatureInteractions: 12,
+        totalFeatureInteractions: 0,
         features: [
-          { feature: 'ai_tutor', displayName: 'AI Tutor', totalEvents: 3, periodEvents: 1, uniqueUsers: 2, percentageOfTotal: 25, primaryActionName: 'Requests' },
-          { feature: 'materials', displayName: 'Academic Materials', totalEvents: 4, periodEvents: 2, uniqueUsers: 2, percentageOfTotal: 33, primaryActionName: 'Opens & Downloads' },
-          { feature: 'study_planner', displayName: 'Study Planner', totalEvents: 2, periodEvents: 1, uniqueUsers: 1, percentageOfTotal: 17, primaryActionName: 'Tasks Logged' },
-          { feature: 'quizzes', displayName: 'Quizzes & Practice', totalEvents: 1, periodEvents: 1, uniqueUsers: 1, percentageOfTotal: 8, primaryActionName: 'Quiz Attempts' },
-          { feature: 'courses', displayName: 'Course Curricula', totalEvents: 1, periodEvents: 0, uniqueUsers: 1, percentageOfTotal: 8, primaryActionName: 'Syllabus Views' },
-          { feature: 'announcements', displayName: 'Announcements', totalEvents: 1, periodEvents: 1, uniqueUsers: 1, percentageOfTotal: 9, primaryActionName: 'Notices Read' },
+          { feature: 'ai_tutor', displayName: 'AI Tutor', totalEvents: 0, periodEvents: 0, uniqueUsers: 0, percentageOfTotal: 0, primaryActionName: 'Requests' },
+          { feature: 'materials', displayName: 'Academic Materials', totalEvents: 0, periodEvents: 0, uniqueUsers: 0, percentageOfTotal: 0, primaryActionName: 'Opens & Downloads' },
+          { feature: 'study_planner', displayName: 'Study Planner', totalEvents: 0, periodEvents: 0, uniqueUsers: 0, percentageOfTotal: 0, primaryActionName: 'Tasks Logged' },
+          { feature: 'quizzes', displayName: 'Quizzes & Practice', totalEvents: 0, periodEvents: 0, uniqueUsers: 0, percentageOfTotal: 0, primaryActionName: 'Quiz Attempts' },
+          { feature: 'courses', displayName: 'Course Curricula', totalEvents: 0, periodEvents: 0, uniqueUsers: 0, percentageOfTotal: 0, primaryActionName: 'Syllabus Views' },
+          { feature: 'announcements', displayName: 'Announcements', totalEvents: 0, periodEvents: 0, uniqueUsers: 0, percentageOfTotal: 0, primaryActionName: 'Notices Read' },
         ],
       },
       materialEngagement: {
-        totalViews: 4,
-        totalDownloads: 2,
-        mostViewed: [
-          { materialId: 'mat_cs174_lec01', title: 'State Space Search & Heuristics Lecture Notes', courseCode: 'CS 174', materialType: 'Lecture Notes', viewsCount: 3, downloadsCount: 1, totalInteractions: 4 },
-        ],
-        mostDownloaded: [
-          { materialId: 'mat_is244_handout', title: 'Database Relational Algebra Handout', courseCode: 'IS 244', materialType: 'Handouts', viewsCount: 1, downloadsCount: 2, totalInteractions: 3 },
-        ],
-        byCourse: [
-          { courseCode: 'CS 174', courseName: 'Introduction to Artificial Intelligence', materialsCount: 1, totalViews: 3, totalDownloads: 1 },
-          { courseCode: 'IS 244', courseName: 'Database Management Systems', materialsCount: 1, totalViews: 1, totalDownloads: 2 },
-        ],
-        byType: {
-          'Lecture Notes': { views: 3, downloads: 1 },
-          'Handouts': { views: 1, downloads: 2 },
-        },
+        totalViews: 0,
+        totalDownloads: 0,
+        mostViewed: [],
+        mostDownloaded: [],
+        byCourse: [],
+        byType: {},
       },
       retention: {
         overallDay1: null,
@@ -261,26 +291,16 @@ class AdminAnalyticsService {
       userGrowth: {
         range,
         totalUsers,
-        periodNewUsers: 1,
-        timestampCoverageCount: totalUsers,
-        timestampCoveragePercent: 100,
+        periodNewUsers: 0,
+        timestampCoverageCount: 0,
+        timestampCoveragePercent: 0,
         points,
-        hasTimestampLimitation: false,
+        hasTimestampLimitation: true,
       },
       materials: {
         totalMaterials: matCount,
-        byType: {
-          'Lecture Notes': Math.ceil(matCount * 0.4),
-          'Handouts': Math.ceil(matCount * 0.2),
-          'Past Papers': Math.ceil(matCount * 0.2),
-          'Slides': Math.ceil(matCount * 0.1),
-          'Assignments': Math.ceil(matCount * 0.1),
-        },
-        byUploaderRole: {
-          admin: matCount > 0 ? Math.ceil(matCount * 0.6) : 0,
-          lecturer: matCount > 0 ? Math.floor(matCount * 0.4) : 0,
-          other: 0,
-        },
+        byType: {},
+        byUploaderRole: { admin: 0, lecturer: 0, other: 0 },
         periodUploadedCount: 0,
       },
       catalogue: {
@@ -289,7 +309,7 @@ class AdminAnalyticsService {
         departments: deptCount,
         programmes: progCount,
         canonicalCourses: canonCount,
-        totalCurriculumOfferings: 320,
+        totalCurriculumOfferings: 0,
       },
       aiTutor: {
         totalRequests: 0,
