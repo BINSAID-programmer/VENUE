@@ -20,6 +20,8 @@ import {
 import { AdminStatCard } from './AdminStatCard';
 import { AdminPlatformStats, AdminSectionId } from '../../types';
 import { adminAuthService, ADMIN_ROLE_HIERARCHY } from '../../services/adminAuthService';
+import { DatabaseMigrationCard } from './DatabaseMigrationCard';
+import { auth, isVerifiedOwnerAccount } from '../../services/firebase';
 
 interface AdminDashboardProps {
   onNavigateSection: (section: AdminSectionId) => void;
@@ -91,6 +93,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateSectio
           </div>
         </div>
       </div>
+
+      {isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email) && <DatabaseMigrationCard />}
 
       {/* 8 REQUIRED PLATFORM STAT CARDS */}
       <div>

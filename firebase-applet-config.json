@@ -3,10 +3,11 @@
   "appId": "1:370363708785:web:4a6bcfddc588a1fc5632d0",
   "apiKey": "AIzaSyDf8FRtMwlWWE2hVqu0Vh2aTmOkExBMKkM",
   "authDomain": "venue-e6f65.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-venue-0f0462e8-c693-4a30-a668-4c4fc2f6c2f6",
+  "firestoreDatabaseId": "(default)",
   "storageBucket": "venue-e6f65.firebasestorage.app",
   "messagingSenderId": "370363708785",
   "measurementId": "",
   "oAuthClientId": "370363708785-uui60ria4o4sur7kh8324oienrmegcme.apps.googleusercontent.com",
-  "recaptchaSiteKey": ""
+  "recaptchaSiteKey": "",
+  "legacyAiStudioDatabaseId": "ai-studio-venue-0f0462e8-c693-4a30-a668-4c4fc2f6c2f6"
 }

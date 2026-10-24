@@ -61,13 +61,16 @@ export const storage = (() => {
 
 // Initialize Firestore with explicit databaseId and forced HTTPS long-polling for resilient connectivity in cloud and iframe environments
 export const db = (() => {
-  const dbId = (firebaseConfig as { firestoreDatabaseId?: string }).firestoreDatabaseId;
+  // '(default)' (or empty) means the project's standard database, which has the normal Firebase quota.
+  // The old AI Studio database (ai-studio-...) runs on AI Studio's SHARED quota and gets locked daily.
+  const rawId = (firebaseConfig as { firestoreDatabaseId?: string }).firestoreDatabaseId;
+  const dbId = rawId && rawId !== '(default)' ? rawId : undefined;
   const firestoreSettings = {
     experimentalForceLongPolling: true,
     localCache: memoryLocalCache(),
   };
   try {
-    return initializeFirestore(app, firestoreSettings, dbId);
+    return dbId ? initializeFirestore(app, firestoreSettings, dbId) : initializeFirestore(app, firestoreSettings);
   } catch {
     return dbId ? getFirestore(app, dbId) : getFirestore(app);
   }
