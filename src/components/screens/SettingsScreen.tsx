@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { ThemeToggle } from '../ThemeToggle';
 import { ThemeSelector } from '../ThemeSelector';
+import { HelpSupport } from '../support/HelpSupport';
 
 interface SettingsScreenProps {
   onLogout: () => void;
@@ -185,6 +186,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onLogout, onRese
           </button>
         </div>
       </div>
+
+      <HelpSupport />
 
       {/* Account & Storage Actions */}
       <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
