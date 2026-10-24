@@ -372,22 +372,29 @@ export async function loadStudentProfile(uid: string, email?: string): Promise<S
   try {
     // 1. Try Firestore direct document read if authenticated (check 'users' then 'students' across db and dbDefault)
     if (auth.currentUser && auth.currentUser.uid === targetUid) {
+      // Read both `users` and `students`, and pick the NEWEST copy (by updatedAt) so an older
+      // duplicate document can never override fresher data. Check the main database first;
+      // the legacy (default) database is only consulted when the main one has nothing.
+      const pickNewest = (rows: Array<StudentProfile | null>): StudentProfile | null => {
+        let best: StudentProfile | null = null;
+        for (const r of rows) {
+          if (!r) continue;
+          if (!best || String(r.updatedAt || '') > String(best.updatedAt || '')) best = r;
+        }
+        return best;
+      };
       for (const firestoreInstance of [db, dbDefault]) {
         try {
-          const userDoc = await getDoc(doc(firestoreInstance, 'users', targetUid));
-          if (userDoc.exists()) {
-            const fsData = sanitizeLoadedProfile(userDoc.data() as StudentProfile);
-            try {
-              localStorage.setItem(`venue_profile_${targetUid}`, JSON.stringify(fsData));
-            } catch {
-              // ignore
-            }
-            return fsData;
-          }
-
-          const studentDoc = await getDoc(doc(firestoreInstance, 'students', targetUid));
-          if (studentDoc.exists()) {
-            const fsData = sanitizeLoadedProfile(studentDoc.data() as StudentProfile);
+          const [userDoc, studentDoc] = await Promise.all([
+            getDoc(doc(firestoreInstance, 'users', targetUid)),
+            getDoc(doc(firestoreInstance, 'students', targetUid)),
+          ]);
+          const best = pickNewest([
+            userDoc.exists() ? (userDoc.data() as StudentProfile) : null,
+            studentDoc.exists() ? (studentDoc.data() as StudentProfile) : null,
+          ]);
+          if (best) {
+            const fsData = sanitizeLoadedProfile(best);
             try {
               localStorage.setItem(`venue_profile_${targetUid}`, JSON.stringify(fsData));
             } catch {
