@@ -83,6 +83,7 @@ import { AdminGuard } from './components/admin';
 import { LecturerGuard } from './components/lecturer';
 import { lecturerAuthService } from './services/lecturerAuthService';
 import { ThemeProvider } from './context/ThemeContext';
+import { installGlobalQuotaWatcher, isFirestoreQuotaPaused, onQuotaStateChange } from './services/quotaGuard';
 import { ShieldAlert, CheckCircle2, AlertTriangle } from 'lucide-react';
 // [TEMPORARY STAGE 1 DIAGNOSTIC PANEL — REMOVE AFTER VERIFICATION]
 import { TempAuthDiagnosticPanel } from './components/TempAuthDiagnosticPanel';
@@ -116,6 +117,13 @@ export const App: React.FC = () => {
   const [communityPosts, setCommunityPosts] = useState<CommunityPost[]>(mockCommunityPosts);
   const [financials, setFinancials] = useState(mockFinancials);
   const [notifications, setNotifications] = useState(mockNotifications);
+
+  // Firestore daily-quota protection: watch for quota errors and show a gentle notice
+  const [quotaPaused, setQuotaPaused] = useState<boolean>(isFirestoreQuotaPaused());
+  useEffect(() => {
+    installGlobalQuotaWatcher();
+    return onQuotaStateChange(setQuotaPaused);
+  }, []);
 
   // Subscribe to real Firestore community notifications for the authenticated user
   useEffect(() => {
@@ -780,6 +788,14 @@ export const App: React.FC = () => {
 
   return (
     <ThemeProvider initialTheme={profile.themePreference}>
+      {quotaPaused && (
+        <div
+          role="status"
+          className="fixed top-0 inset-x-0 z-[200] px-3 py-2 text-center text-[11px] font-semibold bg-amber-500 text-black"
+        >
+          Huduma ina msongamano kwa sasa. Baadhi ya vipengele (online status) vimepumzishwa kwa muda.
+        </div>
+      )}
       <DeviceWrapper
         fullWidth={
           currentScreen === 'admin' ||
