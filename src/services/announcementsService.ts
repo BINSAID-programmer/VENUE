@@ -198,7 +198,7 @@ export function matchAnnouncementAudience(
 class AnnouncementsService {
   private cache: Map<string, { data: any; timestamp: number }> = new Map();
   private readCache: Map<string, Set<string>> = new Map();
-  private CACHE_TTL_MS = 10000; // 10 seconds client cache
+  private CACHE_TTL_MS = 90_000; // 90 seconds client cache (cleared on every write)
 
   private clearCache() {
     this.cache.clear();

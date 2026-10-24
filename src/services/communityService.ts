@@ -3861,7 +3861,8 @@ class CommunityService {
       conversationId,
       COMMUNITY_COLLECTIONS.MESSAGES
     );
-    const q = query(msgColRef, orderBy('createdAt', 'asc'), limit(limitCount));
+    // Newest N messages (desc) so chats longer than N keep showing new messages; reversed to read oldest -> newest.
+    const q = query(msgColRef, orderBy('createdAt', 'desc'), limit(limitCount));
 
     return onSnapshot(
       q,
@@ -3895,7 +3896,7 @@ class CommunityService {
             });
           }
         });
-        onUpdate(list);
+        onUpdate(list.reverse());
       },
       (err) => {
         if (onError) onError(err);
