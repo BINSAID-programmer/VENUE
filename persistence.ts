@@ -59,12 +59,13 @@ function storeName(file: string): string {
 
 function loadDatabaseId(): string | undefined {
   if (process.env.FIRESTORE_DATABASE_ID && process.env.FIRESTORE_DATABASE_ID.trim()) {
-    return process.env.FIRESTORE_DATABASE_ID.trim();
+    const envId = process.env.FIRESTORE_DATABASE_ID.trim();
+    return envId === '(default)' ? undefined : envId;
   }
   try {
     const raw = fs.readFileSync(path.join(process.cwd(), 'firebase-applet-config.json'), 'utf-8');
     const id = JSON.parse(raw)?.firestoreDatabaseId;
-    return typeof id === 'string' && id ? id : undefined;
+    return typeof id === 'string' && id && id !== '(default)' ? id : undefined;
   } catch {
     return undefined;
   }
