@@ -12,6 +12,7 @@
  * 5. Robust offline and error fallback mechanisms
  */
 
+import { reportFirestoreError } from './quotaGuard';
 import {
   collection,
   doc,
@@ -1627,7 +1628,11 @@ class AcademicStructureService {
   /**
    * 0. Get all supported Countries
    */
+  private countriesCache: CountryRecord[] | null = null;
+
   async getCountries(): Promise<CountryRecord[]> {
+    // Countries almost never change: read Firestore once per session, not on every screen.
+    if (this.countriesCache) return this.countriesCache;
     try {
       const snap = await getDocs(collection(db, 'countries'));
       if (!snap.empty) {
@@ -1636,12 +1641,14 @@ class AcademicStructureService {
           fetched.push(docSnap.data() as CountryRecord);
         });
         if (fetched.length > 0) {
+          this.countriesCache = fetched;
           return fetched;
         }
       }
     } catch (err) {
-      // offline fallback
+      reportFirestoreError(err);
     }
+    this.countriesCache = GLOBAL_COUNTRIES;
     return GLOBAL_COUNTRIES;
   }
 
