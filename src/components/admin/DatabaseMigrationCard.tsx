@@ -13,8 +13,12 @@ export const DatabaseMigrationCard: React.FC = () => {
     setRows([]);
     setMessage('');
     try {
-      await migrateFromLegacyDatabase((p) => setRows((prev) => [...prev, p]));
-      setMessage('Finished. If any row shows an error, wait until tomorrow and press the button again: only the missing records are copied.');
+      const complete = await migrateFromLegacyDatabase((p) => setRows((prev) => [...prev, p]));
+      setMessage(
+        complete
+          ? 'Finished. All available records were copied.'
+          : 'Stopped before finishing (the old database is still rate-limited). Nothing was lost: try again later, only the missing records will be copied.'
+      );
     } catch (err: any) {
       setMessage(err?.message || 'Migration failed.');
     } finally {
@@ -54,7 +58,9 @@ export const DatabaseMigrationCard: React.FC = () => {
           Stopped at "{failed[0].collection}": {failed[0].error}
         </p>
       )}
-      {message && <p className="text-[11px] text-emerald-300">{message}</p>}
+      {message && (
+        <p className={`text-[11px] ${failed.length > 0 ? 'text-amber-300' : 'text-emerald-300'}`}>{message}</p>
+      )}
     </div>
   );
 };
