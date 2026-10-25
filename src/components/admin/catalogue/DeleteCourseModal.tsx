@@ -10,6 +10,7 @@ import {
   MinusCircle,
 } from 'lucide-react';
 import { CourseRecord, ProgrammeRecord } from '../../../types';
+import { auth, isVerifiedOwnerAccount } from '../../../services/firebase';
 import {
   adminCatalogueService,
   CourseUsageRecord,
@@ -121,8 +122,10 @@ export const DeleteCourseModal: React.FC<DeleteCourseModalProps> = ({
   };
 
   // Handle deleting the canonical course entirely
+  const isOwner = isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email);
+
   const handleDeleteCanonical = async () => {
-    if (usages.length > 0) {
+    if (usages.length > 0 && !isOwner) {
       setErrorMessage(
         `Cannot delete canonical course: It is still assigned to ${usages.length} programme(s). You must unassign it from all programmes first or Archive it instead.`
       );
@@ -133,7 +136,7 @@ export const DeleteCourseModal: React.FC<DeleteCourseModalProps> = ({
     setErrorMessage(null);
 
     try {
-      const res = await adminCatalogueService.deleteCanonicalCourse(code);
+      const res = await adminCatalogueService.deleteCanonicalCourse(code, { force: isOwner });
       if (!res.success) {
         setErrorMessage(res.error || 'Failed to delete canonical course.');
         setSubmitting(false);
@@ -360,6 +363,17 @@ export const DeleteCourseModal: React.FC<DeleteCourseModalProps> = ({
                     <Archive className="h-3.5 w-3.5" />
                     <span>Archive Course Instead</span>
                   </button>
+                  {isOwner && (
+                    <button
+                      type="button"
+                      onClick={handleDeleteCanonical}
+                      disabled={submitting}
+                      className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-500 transition disabled:opacity-50"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>{submitting ? 'Deleting...' : 'Delete Anyway (Owner)'}</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { ProgrammeRecord, DepartmentRecord } from '../../../types';
 import { adminCatalogueService, ProgrammeDependencyCheckResult } from '../../../services/adminCatalogueService';
+import { auth, isVerifiedOwnerAccount } from '../../../services/firebase';
 
 interface DeleteProgrammeModalProps {
   isOpen: boolean;
@@ -68,6 +69,9 @@ export const DeleteProgrammeModal: React.FC<DeleteProgrammeModalProps> = ({
   const targetCode = (programme.code || programme.shortName || programme.id).toUpperCase();
   const isCodeConfirmed = confirmInput.trim().toUpperCase() === targetCode;
   const hasBlocker = Boolean(depResult?.hasDependencies);
+  // Only the verified platform owner may delete a programme that is still in use.
+  const isOwner = isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email);
+  const canForceDelete = hasBlocker && isOwner;
   const isArchived = Boolean(programme.archived || programme.status === 'archived');
 
   const handleArchive = async () => {
@@ -92,7 +96,7 @@ export const DeleteProgrammeModal: React.FC<DeleteProgrammeModalProps> = ({
   };
 
   const handleDelete = async () => {
-    if (hasBlocker) {
+    if (hasBlocker && !canForceDelete) {
       setError('Deletion blocked: Dependent courses, students, or materials exist. Please Archive this programme instead.');
       return;
     }
@@ -106,7 +110,8 @@ export const DeleteProgrammeModal: React.FC<DeleteProgrammeModalProps> = ({
     try {
       const res = await adminCatalogueService.deleteProgramme(
         programme.id,
-        programme.departmentId
+        programme.departmentId,
+        { force: canForceDelete }
       );
 
       if (!res.success) {
@@ -274,10 +279,10 @@ export const DeleteProgrammeModal: React.FC<DeleteProgrammeModalProps> = ({
           )}
 
           {/* Confirmation Input Guard */}
-          {!hasBlocker && !checking && (
+          {(!hasBlocker || canForceDelete) && !checking && (
             <div className="space-y-2 pt-2">
               <label className="text-xs text-slate-300 leading-normal block">
-                To confirm permanent deletion, type the programme code{' '}
+                {canForceDelete && 'Owner override: this removes the programme and its course links. Students and materials are kept. '}To confirm permanent deletion, type the programme code{' '}
                 <strong className="text-rose-400 font-mono">{targetCode}</strong> below:
               </label>
               <input
@@ -318,15 +323,15 @@ export const DeleteProgrammeModal: React.FC<DeleteProgrammeModalProps> = ({
             </span>
           </button>
 
-          {!hasBlocker && (
+          {(!hasBlocker || canForceDelete) && (
             <button
               type="button"
               onClick={handleDelete}
-              disabled={deleting || archiving || hasBlocker || !isCodeConfirmed || checking}
+              disabled={deleting || archiving || !isCodeConfirmed || checking}
               className="flex items-center gap-2 rounded-xl bg-rose-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-rose-600/30 hover:bg-rose-500 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Trash2 className="h-4 w-4" />
-              <span>{deleting ? 'Deleting...' : 'Delete Permanently'}</span>
+              <span>{deleting ? 'Deleting...' : canForceDelete ? 'Delete Anyway' : 'Delete Permanently'}</span>
             </button>
           )}
         </div>

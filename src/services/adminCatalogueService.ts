@@ -12,7 +12,7 @@ import {
   deleteDoc,
   getCountFromServer,
 } from 'firebase/firestore';
-import { db, dbDefault, handleFirestoreError, OperationType, auth } from './firebase';
+import { isVerifiedOwnerAccount, db, dbDefault, handleFirestoreError, OperationType, auth } from './firebase';
 import { adminAuditService } from './adminAuditService';
 import {
   UniversityRecord,
@@ -2184,14 +2184,15 @@ class AdminCatalogueService {
    */
   async deleteProgramme(
     programmeId: string,
-    departmentId?: string
+    departmentId?: string,
+    options?: { force?: boolean }
   ): Promise<{ success: boolean; hasDependencies?: boolean; dependencies?: ProgrammeDependencyCheckResult; error?: string }> {
     const cleanId = programmeId.toLowerCase().trim();
     if (!cleanId) return { success: false, error: 'Missing programme ID.' };
 
-    // Strict dependency safety check
+    // Strict dependency safety check (the verified owner may override with force: see below)
     const depCheck = await this.checkProgrammeDependencies(cleanId);
-    if (depCheck.hasDependencies) {
+    if (depCheck.hasDependencies && !(options?.force && isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email))) {
       return {
         success: false,
         hasDependencies: true,
@@ -2201,6 +2202,17 @@ class AdminCatalogueService {
     }
 
     try {
+      if (depCheck.hasDependencies) {
+        // Forced delete: remove the curriculum links of this programme. Students and materials are NEVER deleted.
+        for (const colName of ['programme_courses', 'catalogue_courses']) {
+          const links = await this.queryBothDatabases(colName, (colRef) =>
+            query(colRef, where('programmeId', '==', cleanId))
+          );
+          for (const d of links) {
+            await this.deleteDocInBothDatabases(colName, d.id);
+          }
+        }
+      }
       await this.deleteDocInBothDatabases('programmes', cleanId);
 
       // Invalidate caches
@@ -3552,7 +3564,8 @@ class AdminCatalogueService {
    * 31. Delete Canonical Course (Protected: blocked if used in any programme or has materials)
    */
   async deleteCanonicalCourse(
-    idOrCode: string
+    idOrCode: string,
+    options?: { force?: boolean }
   ): Promise<{
     success: boolean;
     hasUsages?: boolean;
@@ -3578,7 +3591,9 @@ class AdminCatalogueService {
       // ignore
     }
 
-    if (usages.length > 0 || materialCount > 0) {
+    const forced =
+      Boolean(options?.force) && isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email);
+    if ((usages.length > 0 || materialCount > 0) && !forced) {
       return {
         success: false,
         hasUsages: true,
@@ -3588,8 +3603,20 @@ class AdminCatalogueService {
       };
     }
 
-    // 2. Safe to delete
+    // 2. Safe to delete (or forced by the owner)
     try {
+      if (forced) {
+        // Remove this course from every programme. Materials are kept (only their course link becomes unassigned).
+        for (const colName of ['programme_courses', 'catalogue_courses']) {
+          const links = await this.queryBothDatabases(colName, (colRef) =>
+            query(colRef, where('code', '==', cleanCode))
+          );
+          for (const d of links) {
+            await this.deleteDocInBothDatabases(colName, d.id);
+          }
+        }
+        this.coursesCache.clear();
+      }
       await this.deleteDocInBothDatabases('canonical_courses', cleanId);
 
       await this.recordCatalogueAuditLog({
