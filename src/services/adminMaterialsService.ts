@@ -28,7 +28,7 @@ import {
   MaterialStatus,
 } from '../types';
 
-import { authenticatedFetch } from './apiClient';
+import { authenticatedFetch, buildAuthenticatedHeaders } from './apiClient';
 export interface MaterialFilterOptions {
   search?: string;
   materialType?: AcademicMaterialType | 'ALL';
@@ -421,6 +421,8 @@ class AdminMaterialsService {
       base64Data,
     });
 
+    const authHeaders = await buildAuthenticatedHeaders();
+
     const serverResult = await new Promise<{
       fileUrl: string;
       downloadURL?: string;
@@ -432,6 +434,9 @@ class AdminMaterialsService {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', '/api/materials/storage/upload');
       xhr.setRequestHeader('Content-Type', 'application/json');
+      if (authHeaders['Authorization']) {
+        xhr.setRequestHeader('Authorization', authHeaders['Authorization']);
+      }
 
       xhr.upload.onprogress = (evt) => {
         if (evt.lengthComputable && evt.total > 0) {
