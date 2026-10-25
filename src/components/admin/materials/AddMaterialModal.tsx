@@ -880,7 +880,7 @@ export const AddMaterialModal: React.FC<AddMaterialModalProps> = ({
                 type="file"
                 className="hidden"
                 disabled={isFormSubmitting}
-                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png"
+                accept="*/*"
                 onChange={(e) => handleFileSelected(e.target.files?.[0] || null)}
               />
 

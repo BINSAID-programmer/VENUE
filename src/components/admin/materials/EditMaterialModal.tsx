@@ -306,7 +306,7 @@ export const EditMaterialModal: React.FC<EditMaterialModalProps> = ({
                   ref={fileInputRef}
                   type="file"
                   className="hidden"
-                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png"
+                  accept="*/*"
                   onChange={(e) => handleReplacementFileSelected(e.target.files?.[0] || null)}
                 />
                 <button
