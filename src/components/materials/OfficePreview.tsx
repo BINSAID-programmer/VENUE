@@ -40,8 +40,11 @@ export default function OfficePreview({ kind, data, onFailed }: Props) {
           const mod: any = await import('pptx-preview');
           if (cancelled || !host) return;
           host.innerHTML = '';
-          const width = Math.max(280, Math.min(host.clientWidth || 360, 960));
-          const viewer = mod.init(host, { width, height: Math.round((width * 9) / 16), mode: 'list' });
+          // 'list' mode shows every slide in a scrollable box of the given size, so make the box
+          // as tall as the screen and slightly narrower than the page so slides are never cropped.
+          const width = Math.max(260, Math.min((host.clientWidth || 360) - 28, 960));
+          const height = Math.max(360, Math.round(window.innerHeight - 150));
+          const viewer = mod.init(host, { width, height, mode: 'list' });
           await viewer.preview(data);
         } else {
           const XLSX: any = await import('xlsx');
@@ -83,7 +86,7 @@ export default function OfficePreview({ kind, data, onFailed }: Props) {
       {kind !== 'xlsx' && (
         <div
           ref={hostRef}
-          className={`overflow-auto rounded-2xl ${kind === 'docx' ? 'bg-slate-200 p-2' : 'bg-slate-900/60 p-2'}`}
+          className={`rounded-2xl ${kind === 'docx' ? 'overflow-auto bg-slate-200 p-2' : 'overflow-x-hidden bg-slate-900/60 p-3 flex justify-center'}`}
           style={{ WebkitOverflowScrolling: 'touch' }}
         />
       )}
