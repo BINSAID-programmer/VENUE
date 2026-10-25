@@ -38,7 +38,7 @@ export const DeleteMaterialModal: React.FC<DeleteMaterialModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto overscroll-contain">
       <div className="relative w-full max-w-lg rounded-3xl border border-rose-500/20 bg-slate-900 shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 px-6 py-5 bg-slate-950/50">

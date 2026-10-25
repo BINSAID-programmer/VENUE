@@ -59,7 +59,7 @@ export const MaterialDetailModal: React.FC<MaterialDetailModalProps> = ({
   const canPreviewInBrowser = isPdf || isImage;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto overscroll-contain">
       <div className={`relative w-full rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden my-8 transition-all ${showEmbeddedPreview ? 'max-w-5xl' : 'max-w-2xl'}`}>
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 px-6 py-5 bg-slate-950/50">
