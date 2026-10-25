@@ -602,7 +602,7 @@ function getGeminiClient(): GoogleGenAI {
   }
 
   if (!geminiClient) {
-    geminiClient = new GoogleGenAI({
+    const client = new GoogleGenAI({
       apiKey,
       httpOptions: {
         headers: {
@@ -610,6 +610,50 @@ function getGeminiClient(): GoogleGenAI {
         },
       },
     });
+
+    // Speed + reliability for EVERY tutor endpoint:
+    //  - cap "thinking" effort (the default dynamic thinking is the main cause of slow answers),
+    //  - give each attempt a time limit so a hung model falls through to the next candidate quickly.
+    const GEMINI_ATTEMPT_TIMEOUT_MS = Number(process.env.GEMINI_ATTEMPT_TIMEOUT_MS || 40000);
+    const originalGenerate = client.models.generateContent.bind(client.models);
+    const withTimeout = <T,>(p: Promise<T>): Promise<T> =>
+      new Promise<T>((resolve, reject) => {
+        const timer = setTimeout(
+          () => reject(new Error('Gemini request timed out. Please try again.')),
+          GEMINI_ATTEMPT_TIMEOUT_MS
+        );
+        p.then(
+          (v) => {
+            clearTimeout(timer);
+            resolve(v);
+          },
+          (e) => {
+            clearTimeout(timer);
+            reject(e);
+          }
+        );
+      });
+    (client.models as any).generateContent = async (params: any) => {
+      const modelName = String(params?.model || '');
+      const isTextModel = /gemini/i.test(modelName) && !/image/i.test(modelName);
+      const hasThinking = Boolean(params?.config?.thinkingConfig);
+      if (!isTextModel || hasThinking) return withTimeout(originalGenerate(params));
+      try {
+        return await withTimeout(
+          originalGenerate({
+            ...params,
+            config: { ...(params.config || {}), thinkingConfig: { thinkingLevel: 'LOW' } },
+          })
+        );
+      } catch (err: any) {
+        // Some models do not accept this setting: retry once exactly as before.
+        if (/thinking/i.test(String(err?.message || ''))) {
+          return withTimeout(originalGenerate(params));
+        }
+        throw err;
+      }
+    };
+    geminiClient = client;
   }
 
   return geminiClient;
@@ -4084,9 +4128,13 @@ app.post('/api/tutor/chat', async (req, res) => {
 
     // STAGE 10B & 10D: Index & Retrieve relevant chunks across verified materials
     // Never retrieve course materials for general non-academic greetings or unrelated general trivia
+    // Indexing downloads/parses material files on a cold server: cap the wait so the answer is never
+    // blocked for long. Indexing keeps running in the background and is cached for the next question.
+    const withinMs = <T,>(p: Promise<T>, ms: number, fallback: T): Promise<T> =>
+      Promise.race([p, new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))]);
     const indexedDocs = userIntent.isGeneralNonAcademicConversational
       ? []
-      : await Promise.all(
+      : await withinMs(Promise.all(
           verifiedMaterials.map(async (m: any) => {
             const index = await getOrBuildMaterialIndex({
               materialId: String(m.materialId || m.id || ''),
@@ -4102,7 +4150,7 @@ app.post('/api/tutor/chat', async (req, res) => {
             });
             return { meta: m, index };
           })
-        );
+        ), 9000, [] as any[]);
 
     const rankedRetrievals = searchRelevantMaterialChunks(indexedDocs, effectiveSearchQuery);
     const querySearchTerms = extractQuerySearchTerms(effectiveSearchQuery);

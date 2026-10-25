@@ -118,6 +118,11 @@ export const App: React.FC = () => {
   const [financials, setFinancials] = useState(mockFinancials);
   const [notifications, setNotifications] = useState(mockNotifications);
 
+  // Wake the backend (free hosting sleeps when idle) while the student is still on the first screens.
+  useEffect(() => {
+    fetch('/api/health', { cache: 'no-store' }).catch(() => undefined);
+  }, []);
+
   // Firestore daily-quota protection: watch for quota errors and show a gentle notice
   const [quotaPaused, setQuotaPaused] = useState<boolean>(isFirestoreQuotaPaused());
   useEffect(() => {
