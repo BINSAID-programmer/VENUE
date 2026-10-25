@@ -10,7 +10,7 @@
  *   user storage, IndexedDB, Firestore, or localStorage.
  */
 
-const CACHE_NAME = 'venue-shell-v2';
+const CACHE_NAME = 'venue-shell-v3';
 
 // Minimum safe static application shell assets
 const PRECACHE_ASSETS = [
@@ -169,4 +169,18 @@ self.addEventListener('fetch', (event) => {
   }
 
   // All other same-origin requests bypass the service worker
+});
+
+// Tapping a chat notification opens (or focuses) VENUE on the Community screen.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ('focus' in client) return client.focus();
+      }
+      return self.clients.openWindow(target);
+    })
+  );
 });

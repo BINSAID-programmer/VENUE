@@ -42,6 +42,7 @@ import { courseCurriculumService } from './services/courseCurriculumService';
 import { degreeProgrammeService } from './services/degreeProgrammeService';
 import { studentDashboardService } from './services/studentDashboardService';
 import { communityService } from './services/communityService';
+import ChatNotificationHost from './components/community/ChatNotificationHost';
 import { verifyCurrentSessionWhoAmI } from './services/apiClient';
 
 // Layout Components
@@ -1269,6 +1270,15 @@ export const App: React.FC = () => {
             profile={profile}
           />
         )}
+
+        {profile?.uid &&
+          !['splash', 'welcome', 'login', 'signup', 'auth', 'verify-email', 'onboarding'].includes(currentScreen) && (
+            <ChatNotificationHost
+              uid={profile.uid}
+              onCommunityScreen={currentScreen === 'community'}
+              onOpenCommunity={() => handleNavigate('community')}
+            />
+          )}
 
         {/* Core Dashboard Card: Community */}
         {currentScreen === 'community' && (

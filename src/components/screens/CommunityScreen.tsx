@@ -2476,14 +2476,14 @@ export const CommunityScreen: React.FC<CommunityScreenProps> = ({
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-white truncate">
+                              <span className={`text-xs text-white truncate ${unread > 0 ? 'font-extrabold' : 'font-bold'}`}>
                                 {info.title}
                               </span>
                               <span className="text-[10px] text-slate-500 shrink-0">
                                 {info.subtitle}
                               </span>
                             </div>
-                            <p className="text-xs text-slate-400 truncate mt-0.5">
+                            <p className={`text-xs truncate mt-0.5 ${unread > 0 ? 'text-slate-100 font-semibold' : 'text-slate-400'}`}>
                               {conv.lastSenderName ? `${conv.lastSenderName}: ` : ''}
                               {conv.lastMessage}
                             </p>
@@ -2491,12 +2491,12 @@ export const CommunityScreen: React.FC<CommunityScreenProps> = ({
                         </div>
 
                         <div className="flex flex-col items-end gap-1 shrink-0">
-                          <span className="text-[10px] text-slate-500">
+                          <span className={`text-[10px] ${unread > 0 ? 'text-emerald-400 font-bold' : 'text-slate-500'}`}>
                             {formatRelativeTime(conv.lastMessageAt)}
                           </span>
                           {unread > 0 && (
-                            <span className="px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">
-                              {unread}
+                            <span className="min-w-[20px] h-5 px-1.5 inline-flex items-center justify-center rounded-full bg-emerald-500 text-white text-[10px] font-bold">
+                              {unread > 99 ? '99+' : unread}
                             </span>
                           )}
                         </div>
