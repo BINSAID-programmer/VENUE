@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import OfficePreview from '../materials/OfficePreview';
 import {
   ArrowLeft,
   Download,
@@ -230,6 +231,8 @@ export const MaterialViewerScreen: React.FC<MaterialViewerScreenProps> = ({
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [textContent, setTextContent] = useState<string>('');
   const [imageObjectUrl, setImageObjectUrl] = useState<string | null>(null);
+  const [officeBuffer, setOfficeBuffer] = useState<ArrayBuffer | null>(null);
+  const [officeFailed, setOfficeFailed] = useState<boolean>(false);
 
   // Modals
   const [showPremiumModal, setShowPremiumModal] = useState<boolean>(false);
@@ -421,6 +424,9 @@ export const MaterialViewerScreen: React.FC<MaterialViewerScreenProps> = ({
       } else if (viewerType === 'text') {
         const decoder = new TextDecoder('utf-8');
         setTextContent(decoder.decode(arrayBuffer));
+      } else if (viewerType === 'docx' || viewerType === 'pptx' || viewerType === 'xlsx') {
+        setOfficeFailed(false);
+        setOfficeBuffer(arrayBuffer);
       }
     } catch (err: any) {
       console.error('Error loading material in VENUE Reader:', err);
@@ -891,8 +897,19 @@ export const MaterialViewerScreen: React.FC<MaterialViewerScreenProps> = ({
           </div>
         )}
 
-        {/* 6. Honest Unsupported File Format State (DOCX, PPTX, XLSX) */}
-        {!loadingMetadata && !loadingFile && !errorState && material && viewerType === 'unsupported' && (
+        {/* 5b. Word / PowerPoint / Excel in-app preview */}
+        {!loadingMetadata && !loadingFile && !errorState && material && !officeFailed && officeBuffer &&
+          (viewerType === 'docx' || viewerType === 'pptx' || viewerType === 'xlsx') && (
+            <OfficePreview
+              kind={viewerType}
+              data={officeBuffer}
+              onFailed={() => setOfficeFailed(true)}
+            />
+          )}
+
+        {/* 6. Honest Unsupported File Format State (old DOC/PPT/XLS, or a file that failed to render) */}
+        {!loadingMetadata && !loadingFile && !errorState && material &&
+          (viewerType === 'unsupported' || (officeFailed && (viewerType === 'docx' || viewerType === 'pptx' || viewerType === 'xlsx'))) && (
           <div className="flex-1 flex flex-col items-center justify-center py-16 px-4 text-center">
             <div className="w-full max-w-lg p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-5">
               <div className="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">

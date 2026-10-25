@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
+    "docx-preview": "^0.3.0",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "firebase": "^12.19.0",
@@ -23,9 +24,11 @@
     "katex": "^0.18.7",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
+    "pptx-preview": "^1.0.0",
     "pdfjs-dist": "^6.4.299",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
+    "xlsx": "^0.18.5",
     "recharts": "^3.10.1"
   },
   "devDependencies": {
