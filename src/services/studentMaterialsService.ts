@@ -669,7 +669,7 @@ class StudentMaterialsService {
   getViewerSupportType(
     fileName?: string,
     mimeType?: string
-  ): 'pdf' | 'image' | 'text' | 'unsupported' {
+  ): 'pdf' | 'image' | 'text' | 'docx' | 'pptx' | 'xlsx' | 'unsupported' {
     const ext = (fileName || '').split('.').pop()?.toLowerCase() || '';
     const mime = (mimeType || '').toLowerCase();
 
@@ -682,6 +682,9 @@ class StudentMaterialsService {
     if (['txt', 'md', 'csv'].includes(ext) || mime.startsWith('text/plain')) {
       return 'text';
     }
+    if (ext === 'docx' || mime.includes('wordprocessingml')) return 'docx';
+    if (ext === 'pptx' || mime.includes('presentationml')) return 'pptx';
+    if (ext === 'xlsx' || mime.includes('spreadsheetml')) return 'xlsx';
     return 'unsupported';
   }
 
