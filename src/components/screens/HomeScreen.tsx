@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import PremiumBanner from '../premium/PremiumBanner';
 import {
   BookOpen,
   Sparkles,
@@ -884,6 +885,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         )}
       </section>
+
+      <PremiumBanner />
 
       {/* 5. Quick Access Grid to Key Features */}
       <section className="space-y-3">
