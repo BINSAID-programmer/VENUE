@@ -20,6 +20,7 @@ import {
   ExternalLink,
   Compass,
   UserCheck,
+  Calculator,
 } from 'lucide-react';
 import { ScreenId, StudentProfile } from '../../types';
 
@@ -34,6 +35,13 @@ export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onL
     {
       title: 'Academic & Learning Tools',
       items: [
+        {
+          id: 'courses' as ScreenId,
+          name: 'My Courses',
+          desc: 'Your enrolled courses and curriculum for this term',
+          icon: BookOpen,
+          color: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+        },
         {
           id: 'browse-materials' as ScreenId,
           name: 'Browse Academic Materials',
@@ -75,6 +83,13 @@ export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onL
           desc: 'Spaced repetition decks for theorems, axioms & definitions',
           icon: Layers,
           color: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+        },
+        {
+          id: 'gpa' as ScreenId,
+          name: 'GPA Tracker',
+          desc: 'Calculate and track your semester and cumulative GPA',
+          icon: Calculator,
+          color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
         },
       ],
     },
