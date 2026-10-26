@@ -7,10 +7,10 @@ import {
   CheckCircle2,
   ShieldCheck,
   Sparkles,
-  Info,
 } from 'lucide-react';
 import { AcademicMaterialRecord } from '../../types';
 import { studentMaterialsService } from '../../services/studentMaterialsService';
+import { premiumService } from '../../services/premiumService';
 
 interface PremiumDownloadModalProps {
   isOpen: boolean;
@@ -25,8 +25,6 @@ export const PremiumDownloadModal: React.FC<PremiumDownloadModalProps> = ({
   material,
   onReadInsideVenue,
 }) => {
-  const [showBillingNotice, setShowBillingNotice] = useState(false);
-
   if (!isOpen) return null;
 
   const cleanFileName = material
@@ -107,19 +105,6 @@ export const PremiumDownloadModal: React.FC<PremiumDownloadModalProps> = ({
             </div>
           </div>
 
-          {showBillingNotice && (
-            <div className="p-3.5 rounded-2xl bg-blue-950/40 border border-blue-500/30 text-xs text-sky-200 flex items-start gap-2.5 animate-fade-in">
-              <Info className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
-              <div className="space-y-1 leading-relaxed">
-                <p className="font-bold text-white">
-                  VENUE Premium Subscriptions Coming Soon
-                </p>
-                <p className="text-slate-300 text-[11px]">
-                  Google Play Billing and VENUE Premium plans are not yet active in this release. You can continue reading all authorized course materials inside VENUE for free.
-                </p>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Footer Actions */}
@@ -138,25 +123,18 @@ export const PremiumDownloadModal: React.FC<PremiumDownloadModalProps> = ({
             </button>
           )}
 
-          {!showBillingNotice ? (
-            <button
-              type="button"
-              id="btn-upgrade-to-premium"
-              onClick={() => setShowBillingNotice(true)}
-              className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Upgrade to Premium</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onClose}
-              className="py-2.5 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-colors cursor-pointer"
-            >
-              Got It
-            </button>
-          )}
+          <button
+            type="button"
+            id="btn-upgrade-to-premium"
+            onClick={() => {
+              onClose();
+              premiumService.openPremium();
+            }}
+            className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Get Premium · TZS 1,500/month</span>
+          </button>
         </div>
       </div>
     </div>

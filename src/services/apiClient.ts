@@ -109,3 +109,56 @@ export async function verifyCurrentSessionWhoAmI(): Promise<WhoAmIDiagnosticResu
 if (typeof window !== 'undefined') {
   (window as any).__venueVerifyWhoAmI = verifyCurrentSessionWhoAmI;
 }
+
+// ---------------------------------------------------------------------------
+// Global /api interceptor: every request to our own API carries the student's
+// sign-in token (so the server can apply Premium limits), and Premium-related
+// refusals (402) raise a "venue:premium-required" event that the app turns into
+// an upgrade prompt.
+// ---------------------------------------------------------------------------
+let interceptorInstalled = false;
+
+export function installApiInterceptor(): void {
+  if (interceptorInstalled || typeof window === 'undefined') return;
+  interceptorInstalled = true;
+  const nativeFetch = window.fetch.bind(window);
+
+  window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    let url = '';
+    try {
+      url = typeof input === 'string' ? input : input instanceof URL ? input.pathname : (input as Request).url;
+    } catch {
+      /* ignore */
+    }
+    const path = url.startsWith('http') ? (() => { try { return new URL(url).pathname; } catch { return ''; } })() : url;
+    const isApi = path.startsWith('/api/') && !path.startsWith('/api/health');
+
+    let finalInit = init;
+    if (isApi) {
+      const existing = new Headers(init?.headers || (input instanceof Request ? input.headers : undefined));
+      if (!existing.has('Authorization')) {
+        const token = await getFirebaseIdToken(false);
+        if (token) {
+          existing.set('Authorization', `Bearer ${token}`);
+          finalInit = { ...init, headers: existing };
+        }
+      }
+    }
+
+    const response = await nativeFetch(input, finalInit);
+
+    if (isApi && response.status === 402) {
+      try {
+        const data = await response.clone().json();
+        window.dispatchEvent(
+          new CustomEvent('venue:premium-required', {
+            detail: { code: data?.error || 'PREMIUM_REQUIRED', message: data?.message || '' },
+          })
+        );
+      } catch {
+        /* ignore */
+      }
+    }
+    return response;
+  };
+}

@@ -37,6 +37,8 @@ const STORE_DEFS: Record<string, StoreDef> = {
   'audit_logs.json': { kind: 'array' },
   'analytics_events.json': { kind: 'array' },
   'ai_usage_logs.json': { kind: 'array' },
+  'subscriptions.json': { kind: 'map', shards: 16 },
+  'payment_requests.json': { kind: 'map', shards: 8 },
 };
 
 let firestore: Firestore | null = null;

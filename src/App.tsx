@@ -43,6 +43,7 @@ import { degreeProgrammeService } from './services/degreeProgrammeService';
 import { studentDashboardService } from './services/studentDashboardService';
 import { communityService } from './services/communityService';
 import ChatNotificationHost from './components/community/ChatNotificationHost';
+import PremiumHost from './components/premium/PremiumHost';
 import { verifyCurrentSessionWhoAmI } from './services/apiClient';
 
 // Layout Components
@@ -1279,6 +1280,8 @@ export const App: React.FC = () => {
               onOpenCommunity={() => handleNavigate('community')}
             />
           )}
+
+        {profile?.uid && <PremiumHost />}
 
         {/* Core Dashboard Card: Community */}
         {currentScreen === 'community' && (
