@@ -1,4 +1,5 @@
 import React from 'react';
+import { premiumService } from '../../services/premiumService';
 import {
   Calendar,
   HelpCircle,
@@ -21,6 +22,7 @@ import {
   Compass,
   UserCheck,
   Calculator,
+  Crown,
 } from 'lucide-react';
 import { ScreenId, StudentProfile } from '../../types';
 
@@ -137,6 +139,13 @@ export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onL
       title: 'Account & Configuration',
       items: [
         {
+          id: 'premium' as any,
+          name: 'VENUE Premium',
+          desc: 'Unlimited AI Tutor, downloads and all career paths · TZS 1,500/month',
+          icon: Crown,
+          color: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+        },
+        {
           id: 'profile' as ScreenId,
           name: 'Student Profile',
           desc: 'Academic records, GPA, skills and student verification',
@@ -228,7 +237,7 @@ export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onL
               return (
                 <button
                   key={item.id}
-                  onClick={() => onNavigate(item.id)}
+                  onClick={() => (item.id === ('premium' as any) ? premiumService.openPremium() : onNavigate(item.id))}
                   className="w-full p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 hover:bg-slate-850 text-left transition-all flex items-center justify-between group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">

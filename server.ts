@@ -7,6 +7,7 @@ import { createServer as createViteServer } from 'vite';
 
 import { runReconcile, getReconcileStatus } from './reconcile';
 import { backupMaterialFile, restoreMaterialFile, removeMaterialBackup } from './persistence';
+import * as subs from './subscriptions';
 import { initPersistence, hydrateFromFirestore, saveStoreFile, flushPersistence, getPersistenceStatus } from './persistence';
 import { AUDITED_PROGRAMMES, AUDITED_DEPARTMENTS, AUDITED_ACADEMIC_UNITS } from './src/data/udsmAuditedCatalogue2025';
 import { SAMPLE_COURSES } from './src/data/mockData';
@@ -45,6 +46,7 @@ const AI_USAGE_FILE = path.join(PROFILES_DIR, 'ai_usage_logs.json');
 const ANALYTICS_EVENTS_FILE = path.join(PROFILES_DIR, 'analytics_events.json');
 const AUDIT_LOGS_FILE = path.join(PROFILES_DIR, 'audit_logs.json');
 initPersistence(PROFILES_DIR);
+subs.initSubscriptions(PROFILES_DIR);
 
 // Helper to safely read AI Tutor usage telemetry logs
 function readAiUsageLogs(): any[] {
@@ -687,6 +689,89 @@ const requireAuth = createRequireAuthMiddleware((uid: string) => {
   return profiles[uid];
 });
 const requireAuthDiagnostic = requireAuth;
+
+// ---------------------------------------------------------------------------
+// VENUE Premium: entitlements, limits and manual (mobile money) payment requests
+// ---------------------------------------------------------------------------
+app.get('/api/subscription/status', requireAuth, (req, res) => {
+  return res.json({ success: true, ...subs.getStatus(req.user!.uid, Boolean(req.user!.isOwner)) });
+});
+
+app.post('/api/subscription/request', requireAuth, (req, res) => {
+  const { kind, reference, senderPhone } = req.body || {};
+  const result = subs.createRequest(
+    { uid: req.user!.uid, email: req.user!.email, name: req.user!.name },
+    kind,
+    reference,
+    senderPhone
+  );
+  if (!result.ok) return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: result.error });
+  return res.json({ success: true, request: result.request });
+});
+
+app.get('/api/subscription/admin/requests', requireAuth, (req, res) => {
+  if (!req.user?.isOwner) return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+  const status = String(req.query.status || '') as any;
+  return res.json({ success: true, requests: subs.listRequests(['pending', 'approved', 'rejected'].includes(status) ? status : undefined) });
+});
+
+app.post('/api/subscription/admin/requests/:id/decision', requireAuth, (req, res) => {
+  if (!req.user?.isOwner) return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+  const result = subs.decideRequest(req.params.id, Boolean(req.body?.approve), req.user.uid, req.body?.note);
+  if (!result.ok) return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: result.error });
+  return res.json({ success: true, request: result.request });
+});
+
+// AI usage gate: free students get a daily allowance, Premium is unlimited.
+app.use('/api/tutor', requireAuth, (req, res, next) => {
+  if (req.method !== 'POST') return next();
+  const gate = subs.consumeAi(req.user!.uid, Boolean(req.user!.isOwner));
+  if (!gate.allowed) {
+    return res.status(402).json({
+      success: false,
+      error: 'AI_DAILY_LIMIT',
+      message: `You have used your ${subs.FREE_AI_DAILY_LIMIT} free AI requests for today. Get VENUE Premium (TZS ${subs.PREMIUM_PRICE_TZS}/month) for unlimited AI Tutor, or try again tomorrow.`,
+    });
+  }
+  return next();
+});
+
+// AI Career Advisor is a Premium feature.
+app.use('/api/career/advisor', requireAuth, (req, res, next) => {
+  if (req.method !== 'POST') return next();
+  if (!subs.isPremium(req.user!.uid, Boolean(req.user!.isOwner))) {
+    return res.status(402).json({
+      success: false,
+      error: 'PREMIUM_REQUIRED',
+      message: 'The AI Career Advisor is part of VENUE Premium (TZS ' + subs.PREMIUM_PRICE_TZS + '/month).',
+    });
+  }
+  return next();
+});
+
+// Original-file downloads: Premium only, limited per paid month. Reading in the app stays free.
+function isDownloadRequest(req: express.Request): boolean {
+  const mode = String(req.query.mode || '').toLowerCase();
+  return mode === 'download' || req.query.download === '1' || req.query.download === 'true';
+}
+app.use('/api/materials/file', (req, res, next) => {
+  if (!isDownloadRequest(req)) return next();
+  return requireAuth(req, res, () => {
+    const key = String(req.query.materialId || req.query.path || '');
+    const check = subs.checkDownload(req.user!.uid, Boolean(req.user!.isOwner), key);
+    if (check.allowed) return next();
+    const limit = check.reason === 'DOWNLOAD_LIMIT_REACHED';
+    return res.status(403).json({
+      success: false,
+      allowed: false,
+      isPremium: !limit,
+      error: limit ? 'DOWNLOAD_LIMIT_REACHED' : 'PREMIUM_DOWNLOAD_REQUIRED',
+      message: limit
+        ? `You have used all ${subs.BASE_DOWNLOADS} downloads included this month. Buy ${subs.DOWNLOAD_PACK_SIZE} more for TZS ${subs.DOWNLOAD_PACK_PRICE_TZS}.`
+        : `Downloading the original file needs VENUE Premium (TZS ${subs.PREMIUM_PRICE_TZS}/month). Reading is always free.`,
+    });
+  });
+});
 const requireAdminAuth = [requireAuth, requireRoles(['admin', 'super_admin'])];
 
 function isAuthorizedAdminOrOwner(req: express.Request): boolean {
@@ -2356,41 +2441,41 @@ app.post('/api/materials/storage/upload', requireAuth, (req, res) => {
   }
 });
 
-app.post('/api/materials/entitlement/check-download', (req, res) => {
-  try {
-    const { userId, materialId } = req.body || {};
-    if (!materialId) {
-      return res.status(400).json({
-        allowed: false,
-        isPremium: false,
-        reason: 'ERROR',
-        title: 'Invalid Material Request',
-        message: 'Material identifier is required to verify download entitlement.',
-      });
-    }
-
-    // Foundation stage: Google Play Billing / Subscription backend is not yet connected.
-    // Never grant fake Premium status or trust client-supplied flags.
-    return res.status(403).json({
-      allowed: false,
-      isPremium: false,
-      tier: 'free',
-      reason: 'PREMIUM_REQUIRED',
-      userId: userId || 'anonymous',
-      materialId,
-      title: 'Premium Download',
-      message:
-        'Reading this material is free inside VENUE. Downloading course materials is available with VENUE Premium.',
-    });
-  } catch (err: any) {
-    return res.status(500).json({
+app.post('/api/materials/entitlement/check-download', requireAuth, (req, res) => {
+  const { materialId, storagePath } = req.body || {};
+  if (!materialId) {
+    return res.status(400).json({
       allowed: false,
       isPremium: false,
       reason: 'ERROR',
-      title: 'Verification Error',
-      message: err?.message || 'Unable to verify download entitlement.',
+      title: 'Invalid Material Request',
+      message: 'Material identifier is required to verify download entitlement.',
     });
   }
+  const isOwner = Boolean(req.user!.isOwner);
+  const check = subs.checkDownload(req.user!.uid, isOwner, String(materialId));
+  const status = subs.getStatus(req.user!.uid, isOwner);
+  if (check.allowed) {
+    return res.json({ allowed: true, isPremium: true, tier: 'premium', downloadsLeft: status.downloadsLeft });
+  }
+  if (check.reason === 'DOWNLOAD_LIMIT_REACHED') {
+    return res.status(403).json({
+      allowed: false,
+      isPremium: true,
+      tier: 'premium',
+      reason: 'DOWNLOAD_LIMIT_REACHED',
+      title: 'Download limit reached',
+      message: `You have used all ${subs.BASE_DOWNLOADS} downloads included this month. Buy ${subs.DOWNLOAD_PACK_SIZE} more for TZS ${subs.DOWNLOAD_PACK_PRICE_TZS}.`,
+    });
+  }
+  return res.status(403).json({
+    allowed: false,
+    isPremium: false,
+    tier: 'free',
+    reason: 'PREMIUM_REQUIRED',
+    title: 'Premium Download',
+    message: `Reading this material is free inside VENUE. Downloading the original file needs VENUE Premium (TZS ${subs.PREMIUM_PRICE_TZS}/month, ${subs.BASE_DOWNLOADS} downloads included).`,
+  });
 });
 
 app.get('/api/materials/file', async (req, res) => {
@@ -2439,15 +2524,8 @@ app.get('/api/materials/file', async (req, res) => {
     // Server-side Premium download enforcement:
     // If the caller requests mode=download (or download=1), verify Premium entitlement on the server
     // BEFORE streaming the file as a downloadable attachment.
-    if (mode === 'download' || req.query.download === '1' || req.query.download === 'true') {
-      return res.status(403).json({
-        success: false,
-        allowed: false,
-        isPremium: false,
-        error: 'PREMIUM_DOWNLOAD_REQUIRED',
-        message:
-          'Reading this material is free inside VENUE. Downloading the original file requires an active VENUE Premium subscription.',
-      });
+    if (isDownloadRequest(req) && req.user) {
+      subs.registerDownload(req.user.uid, Boolean(req.user.isOwner), String(req.query.materialId || req.query.path || ''));
     }
 
     const ext = path.extname(fullPath).toLowerCase();

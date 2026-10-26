@@ -40,6 +40,8 @@ import {
 } from '../../services/careerHubService';
 import { ScholarshipsScreen } from './ScholarshipsScreen';
 import { MathRenderer } from '../MathRenderer';
+import { premiumService } from '../../services/premiumService';
+import { Crown } from 'lucide-react';
 
 interface CareerHubScreenProps {
   careerPaths?: CareerPath[];
@@ -96,6 +98,28 @@ export const CareerHubScreen: React.FC<CareerHubScreenProps> = ({
   const [advisorLoading, setAdvisorLoading] = useState<boolean>(false);
   const [advisorError, setAdvisorError] = useState<string | null>(null);
   const [advisorMessages, setAdvisorMessages] = useState<AICareerAdvisorMessage[]>([]);
+
+  // Premium access: free students see a few career paths; the AI Career Advisor is Premium.
+  const [access, setAccess] = useState<'loading' | 'premium' | 'free'>('loading');
+  const [freePathLimit, setFreePathLimit] = useState<number>(3);
+  useEffect(() => {
+    let alive = true;
+    premiumService.getStatus().then((st) => {
+      if (!alive) return;
+      if (!st) {
+        setAccess('premium'); // could not check: do not lock students out; the server still enforces limits
+        return;
+      }
+      setFreePathLimit(st.freeCareerPaths || 3);
+      setAccess(st.isPremium ? 'premium' : 'free');
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const locked = access === 'free';
+  const visibleRecommendations = locked ? recommendations.slice(0, freePathLimit) : recommendations;
+  const hiddenCount = Math.max(0, recommendations.length - visibleRecommendations.length);
 
   // AI Safety Report Modal State (Section 37)
   const [reportingMessage, setReportingMessage] = useState<AICareerAdvisorMessage | null>(null);
@@ -593,7 +617,25 @@ export const CareerHubScreen: React.FC<CareerHubScreenProps> = ({
                 </button>
               </div>
 
-              {recommendations.map((rec) => {
+              {locked && hiddenCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    premiumService.openPremium(
+                      `Unlock ${hiddenCount} more career paths and the AI Career Advisor with VENUE Premium.`
+                    )
+                  }
+                  className="w-full p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3 text-left cursor-pointer"
+                >
+                  <Crown className="w-5 h-5 text-amber-400 shrink-0" />
+                  <span className="text-xs text-amber-100 leading-relaxed">
+                    You are seeing {visibleRecommendations.length} of {recommendations.length} career paths.{' '}
+                    <b>Get Premium (TZS 1,500/month)</b> to unlock the rest.
+                  </span>
+                </button>
+              )}
+
+              {visibleRecommendations.map((rec) => {
                 const { career, matchLabel, matchFactors, matchedDegreeCourses, skillGap, levelAppropriateProjects } = rec;
                 const isExpanded = expandedCareerId === career.id;
                 const isSaved = Boolean(preferences?.savedCareerIds?.includes(career.id));
@@ -1253,7 +1295,24 @@ export const CareerHubScreen: React.FC<CareerHubScreenProps> = ({
       {/* ====================================================================
           TAB 3: DEDICATED AI CAREER ADVISOR (Sections 20–22, 37)
          ==================================================================== */}
-      {activeSection === 'advisor' && (
+      {activeSection === 'advisor' && locked && (
+        <div className="p-6 rounded-2xl bg-slate-900/70 border border-amber-500/30 text-center space-y-3">
+          <Crown className="w-8 h-8 text-amber-400 mx-auto" />
+          <h3 className="text-sm font-bold text-white">AI Career Advisor is a Premium feature</h3>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Ask personal career questions, get roadmaps and skill-gap advice. Included with VENUE Premium.
+          </p>
+          <button
+            type="button"
+            onClick={() => premiumService.openPremium('Unlock the AI Career Advisor with VENUE Premium.')}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-xs font-extrabold cursor-pointer"
+          >
+            Get Premium · TZS 1,500/month
+          </button>
+        </div>
+      )}
+
+      {activeSection === 'advisor' && !locked && (
         <div className="space-y-4">
           <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
