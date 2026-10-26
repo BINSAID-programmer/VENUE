@@ -887,9 +887,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
       {/* 5. Quick Access Grid to Key Features */}
       <section className="space-y-3">
-        <h3 className="text-base font-bold text-white tracking-tight">Academic Tools & Hubs</h3>
+        <h3 className="text-base font-bold text-white tracking-tight">Student Life & Hubs</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
-          {quickFeatureTiles.map((tile) => {
+          {(['community', 'scholarships', 'university-hub', 'career', 'financial-planner'] as string[])
+            .map((id) => quickFeatureTiles.find((t) => t.id === id))
+            .filter((t): t is (typeof quickFeatureTiles)[number] => Boolean(t))
+            .map((tile) => {
             const Icon = tile.icon;
             return (
               <button
