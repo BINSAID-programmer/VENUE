@@ -456,6 +456,34 @@ class AdminCatalogueService {
     return false;
   }
 
+  /** Codes that were removed from a programme's term (markers keep built-in links hidden). */
+  private async loadRemovedFromTerm(
+    programmeId: string,
+    aliases: Set<string>,
+    year: number,
+    semester: number
+  ): Promise<Set<string>> {
+    const out = new Set<string>();
+    try {
+      const aliasList = Array.from(aliases).slice(0, 10);
+      const docs = await this.queryBothDatabases('programme_courses', (colRef) =>
+        query(colRef, where('programmeId', 'in', aliasList), where('deleted', '==', true))
+      );
+      for (const d of docs) {
+        const m = d.data as any;
+        if (
+          normalizeYearValue(m.yearOfStudy ?? m.year) === year &&
+          normalizeSemesterValue(m.semester) === semester
+        ) {
+          out.add(String(m.code || m.courseCode || '').trim().toUpperCase().replace(/[\s_-]+/g, ' '));
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    return out;
+  }
+
   private async deleteDocInBothDatabases(
     collectionName: string,
     docId: string
@@ -1556,8 +1584,20 @@ class AdminCatalogueService {
           ),
         ]);
 
+        const removedFromTerm = new Set<string>();
+        for (const d of [...catDocs, ...relDocs]) {
+          const md = d.data as any;
+          if (md?.deleted === true) {
+            const mc = normalizeCodeKey(md.code || md.courseCode);
+            const my = normalizeYearValue(md.yearOfStudy ?? md.year);
+            const ms = normalizeSemesterValue(md.semester);
+            if (mc && my === numYear && ms === numSem) removedFromTerm.add(mc);
+          }
+        }
+
         for (const d of catDocs) {
           const data = d.data as any;
+          if (data?.deleted === true) continue;
           const docYear = normalizeYearValue(data.yearOfStudy ?? data.year);
           const docSem = normalizeSemesterValue(data.semester);
           if (docYear === numYear && docSem === numSem) {
@@ -1606,6 +1646,7 @@ class AdminCatalogueService {
 
         for (const d of relDocs) {
           const data = d.data as any;
+          if (data?.deleted === true) continue;
           const docYear = normalizeYearValue(data.yearOfStudy ?? data.year);
           const docSem = normalizeSemesterValue(data.semester);
           if (docYear === numYear && docSem === numSem) {
@@ -1662,9 +1703,11 @@ class AdminCatalogueService {
     }
 
     const hiddenCodes = await this.loadDeletedCourseCodes();
-    const courses = Array.from(coursesByCode.values()).filter(
-      (c) => !hiddenCodes.has(String(c.code || c.courseCode || '').trim().toUpperCase().replace(/[\s_-]+/g, ' '))
-    );
+    const removedHere = await this.loadRemovedFromTerm(cleanProgId, progAliases, numYear, numSem);
+    const courses = Array.from(coursesByCode.values()).filter((c) => {
+      const k = String(c.code || c.courseCode || '').trim().toUpperCase().replace(/[\s_-]+/g, ' ');
+      return !hiddenCodes.has(k) && !removedHere.has(k);
+    });
 
     // Sort: Core courses first, then by course code alphabetically
     courses.sort((a, b) => {
@@ -3548,6 +3591,17 @@ class AdminCatalogueService {
       console.warn('Error checking duplicate course assignment:', err);
     }
 
+    // Assigning a course again clears any earlier "removed from this term" marker.
+    try {
+      await this.deleteDocInBothDatabases(
+        'programme_courses',
+        `${cleanProgId}__removed__${codeSlug}_y${year}s${sem}`.replace(/[^a-zA-Z0-9_-]/g, '-')
+      );
+    } catch {
+      /* no marker */
+    }
+    this.coursesCache.delete(`${cleanProgId}_y${year}_s${sem}`);
+
     // 2. Ensure canonical course exists in canonical_courses
     try {
       const canonRef = doc(db, 'canonical_courses', canonicalId);
@@ -3705,6 +3759,21 @@ class AdminCatalogueService {
       for (const d of snapCc) {
         await this.deleteDocInBothDatabases('catalogue_courses', d.id);
       }
+
+      // Built-in links would reappear from the app's seed data: leave a removal marker.
+      await setDoc(
+        doc(db, 'programme_courses', `${cleanProgId}__removed__${codeSlug}_y${year}s${sem}`.replace(/[^a-zA-Z0-9_-]/g, '-')),
+        {
+          deleted: true,
+          programmeId: cleanProgId,
+          code: cleanCode,
+          yearOfStudy: year,
+          semester: sem,
+          deletedAt: new Date().toISOString(),
+          deletedBy: auth.currentUser?.uid || '',
+        },
+        { merge: false }
+      );
 
       // Invalidate cache
       this.coursesCache.delete(`${cleanProgId}_y${year}_s${sem}`);
