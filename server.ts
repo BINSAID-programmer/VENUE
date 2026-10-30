@@ -679,6 +679,7 @@ app.get('/api/health', (_req, res) => {
     projectId: FIREBASE_PROJECT_ID,
     persistence: getPersistenceStatus(),
     dbReconcile: getReconcileStatus(),
+    features: { premium: true, tutorLimits: true, uptimeSeconds: Math.round(process.uptime()) },
   });
 });
 
