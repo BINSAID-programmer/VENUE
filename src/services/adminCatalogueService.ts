@@ -206,7 +206,8 @@ export interface CatalogueAuditLogEntry {
     | 'delete_course'
     | 'assign_course'
     | 'edit_programme_course'
-    | 'remove_course';
+    | 'remove_course'
+    | 'update_course_relationship';
   targetType:
     | 'academic_unit'
     | 'department'
@@ -3161,6 +3162,7 @@ class AdminCatalogueService {
         query(colRef, where('code', '==', current.code))
       );
       for (const d of pcDocs) {
+        if ((d.data as any)?.deleted === true) continue;
         await this.setDocInBothDatabases(
           'programme_courses',
           d.id,
@@ -3179,6 +3181,7 @@ class AdminCatalogueService {
         query(colRef, where('code', '==', current.code))
       );
       for (const d of ccDocs) {
+        if ((d.data as any)?.deleted === true) continue;
         await this.setDocInBothDatabases(
           'catalogue_courses',
           d.id,
@@ -3275,8 +3278,8 @@ class AdminCatalogueService {
     try {
       // If moving to a different Year/Semester, verify no duplicate assignment in target term
       if (oldYear !== newYear || oldSem !== newSem) {
-        const existingInTarget = await this.getCoursesByProgrammeYearSemester(cleanProgId, newYear, newSem);
-        if (existingInTarget.some((c) => c.code.trim().toUpperCase() === cleanCode)) {
+        const existingInTarget = await this.getCoursesByTerm(cleanProgId, newYear, newSem);
+        if (existingInTarget.some((c) => String(c.code || (c as any).courseCode || '').trim().toUpperCase().replace(/[\s_-]+/g, ' ') === cleanCode.replace(/[\s_-]+/g, ' '))) {
           return {
             success: false,
             error: `Course ${cleanCode} is already assigned to Year ${newYear}, Semester ${newSem} in this programme.`,
@@ -3313,6 +3316,7 @@ class AdminCatalogueService {
         query(colRef, where('programmeId', '==', cleanProgId), where('code', '==', cleanCode))
       );
       for (const d of matchingPc) {
+        if ((d.data as any)?.deleted === true) continue;
         await this.setDocInBothDatabases(
           'programme_courses',
           d.id,
@@ -3355,6 +3359,7 @@ class AdminCatalogueService {
         query(colRef, where('programmeId', '==', cleanProgId), where('code', '==', cleanCode))
       );
       for (const d of matchingCc) {
+        if ((d.data as any)?.deleted === true) continue;
         await this.setDocInBothDatabases(
           'catalogue_courses',
           d.id,
@@ -3370,6 +3375,32 @@ class AdminCatalogueService {
           },
           { merge: true }
         );
+      }
+
+      // Moving a course to another term: hide it in the old term (built-in links come from seed data)
+      // and make sure it is not hidden in the new term.
+      const markerId = (y: number, sm: number) =>
+        `${cleanProgId}__removed__${codeSlug}_y${y}s${sm}`.replace(/[^a-zA-Z0-9_-]/g, '-');
+      if (oldYear !== newYear || oldSem !== newSem) {
+        await setDoc(
+          doc(db, 'programme_courses', markerId(oldYear, oldSem)),
+          {
+            deleted: true,
+            programmeId: cleanProgId,
+            code: cleanCode,
+            yearOfStudy: oldYear,
+            semester: oldSem,
+            deletedAt: nowIso,
+            deletedBy: auth.currentUser?.uid || '',
+            reason: 'moved',
+          },
+          { merge: false }
+        );
+        try {
+          await this.deleteDocInBothDatabases('programme_courses', markerId(newYear, newSem));
+        } catch {
+          /* no marker in target term */
+        }
       }
 
       // Invalidate both old and new term caches
