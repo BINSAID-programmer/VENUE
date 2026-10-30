@@ -456,34 +456,6 @@ class AdminCatalogueService {
     return false;
   }
 
-  /** Codes that were removed from a programme's term (markers keep built-in links hidden). */
-  private async loadRemovedFromTerm(
-    programmeId: string,
-    aliases: Set<string>,
-    year: number,
-    semester: number
-  ): Promise<Set<string>> {
-    const out = new Set<string>();
-    try {
-      const aliasList = Array.from(aliases).slice(0, 10);
-      const docs = await this.queryBothDatabases('programme_courses', (colRef) =>
-        query(colRef, where('programmeId', 'in', aliasList), where('deleted', '==', true))
-      );
-      for (const d of docs) {
-        const m = d.data as any;
-        if (
-          normalizeYearValue(m.yearOfStudy ?? m.year) === year &&
-          normalizeSemesterValue(m.semester) === semester
-        ) {
-          out.add(String(m.code || m.courseCode || '').trim().toUpperCase().replace(/[\s_-]+/g, ' '));
-        }
-      }
-    } catch {
-      /* ignore */
-    }
-    return out;
-  }
-
   private async deleteDocInBothDatabases(
     collectionName: string,
     docId: string
@@ -1425,6 +1397,7 @@ class AdminCatalogueService {
 
     const progAliases = getProgrammeAliases(cleanProgId);
     const coursesByCode = new Map<string, CourseRecord>();
+    const removedFromTerm = new Set<string>();
 
     const normalizeCodeKey = (code?: string) =>
       String(code || '')
@@ -1584,7 +1557,6 @@ class AdminCatalogueService {
           ),
         ]);
 
-        const removedFromTerm = new Set<string>();
         for (const d of [...catDocs, ...relDocs]) {
           const md = d.data as any;
           if (md?.deleted === true) {
@@ -1703,10 +1675,9 @@ class AdminCatalogueService {
     }
 
     const hiddenCodes = await this.loadDeletedCourseCodes();
-    const removedHere = await this.loadRemovedFromTerm(cleanProgId, progAliases, numYear, numSem);
     const courses = Array.from(coursesByCode.values()).filter((c) => {
       const k = String(c.code || c.courseCode || '').trim().toUpperCase().replace(/[\s_-]+/g, ' ');
-      return !hiddenCodes.has(k) && !removedHere.has(k);
+      return !hiddenCodes.has(k) && !removedFromTerm.has(k);
     });
 
     // Sort: Core courses first, then by course code alphabetically
