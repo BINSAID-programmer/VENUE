@@ -424,6 +424,38 @@ class AdminCatalogueService {
     return false;
   }
 
+  private deletedUnitKeys: Set<string> | null = null;
+  private deletedDepartmentKeys: Set<string> | null = null;
+
+  private async loadDeletedKeys(collectionName: 'academic_units' | 'departments'): Promise<Set<string>> {
+    const cached = collectionName === 'academic_units' ? this.deletedUnitKeys : this.deletedDepartmentKeys;
+    if (cached) return cached;
+    const keys = new Set<string>();
+    try {
+      const docs = await this.queryBothDatabases(collectionName, (colRef) =>
+        query(colRef, where('deleted', '==', true), limit(200))
+      );
+      for (const d of docs) {
+        keys.add(d.id.toLowerCase());
+        const aliases = collectionName === 'academic_units' ? getAcademicUnitAliases(d.id) : getDepartmentAliases(d.id);
+        for (const a of aliases) keys.add(a.toLowerCase());
+      }
+    } catch {
+      /* nothing hidden */
+    }
+    if (collectionName === 'academic_units') this.deletedUnitKeys = keys;
+    else this.deletedDepartmentKeys = keys;
+    return keys;
+  }
+
+  private isKeyHidden(id: string, hidden: Set<string>, kind: 'unit' | 'department'): boolean {
+    if (hidden.size === 0) return false;
+    if (hidden.has(id.toLowerCase())) return true;
+    const aliases = kind === 'unit' ? getAcademicUnitAliases(id) : getDepartmentAliases(id);
+    for (const a of aliases) if (hidden.has(a.toLowerCase())) return true;
+    return false;
+  }
+
   private async deleteDocInBothDatabases(
     collectionName: string,
     docId: string
@@ -832,13 +864,16 @@ class AdminCatalogueService {
    * 0H. Delete Academic Unit (Blocked if dependencies exist)
    */
   async deleteAcademicUnit(
-    unitId: string
+    unitId: string,
+    options?: { force?: boolean }
   ): Promise<{ success: boolean; hasDependencies?: boolean; dependencies?: AcademicUnitDependencyCheckResult; error?: string }> {
     const cleanId = unitId.toLowerCase().trim();
     if (!cleanId) return { success: false, error: 'Missing Academic Unit ID.' };
 
+    const forced =
+      Boolean(options?.force) && isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email);
     const depCheck = await this.checkAcademicUnitDependencies(cleanId);
-    if (depCheck.hasDependencies) {
+    if (depCheck.hasDependencies && !forced) {
       return {
         success: false,
         hasDependencies: true,
@@ -848,7 +883,25 @@ class AdminCatalogueService {
     }
 
     try {
+      if (depCheck.hasDependencies && forced) {
+        // Owner override: remove every department (and its programmes) under this unit.
+        // Students, lecturers and materials are NEVER deleted.
+        const depts = await this.getDepartmentsByUnit(cleanId);
+        for (const dept of depts) {
+          const r = await this.deleteDepartment(dept.id, cleanId, { force: true });
+          if (!r.success) return { success: false, error: r.error || `Could not delete department ${dept.name}.` };
+        }
+      }
       await this.deleteDocInBothDatabases('academic_units', cleanId);
+      if (AUDITED_ACADEMIC_UNITS.some((u) => getAcademicUnitAliases(cleanId).has(u.id.toLowerCase()))) {
+        await setDoc(
+          doc(db, 'academic_units', cleanId),
+          { id: cleanId, universityId: 'udsm', deleted: true, deletedAt: new Date().toISOString(), deletedBy: auth.currentUser?.uid || '' },
+          { merge: false }
+        );
+      }
+      this.deletedUnitKeys = null;
+      this.departmentsByUnitCache.clear();
       this.unitsCache = null;
 
       await this.recordCatalogueAuditLog({
@@ -1043,13 +1096,16 @@ class AdminCatalogueService {
    */
   async deleteDepartment(
     departmentId: string,
-    academicUnitId?: string
+    academicUnitId?: string,
+    options?: { force?: boolean }
   ): Promise<{ success: boolean; hasDependencies?: boolean; dependencies?: DepartmentDependencyCheckResult; error?: string }> {
     const cleanId = departmentId.toLowerCase().trim();
     if (!cleanId) return { success: false, error: 'Missing Department ID.' };
 
+    const forced =
+      Boolean(options?.force) && isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email);
     const depCheck = await this.checkDepartmentDependencies(cleanId);
-    if (depCheck.hasDependencies) {
+    if (depCheck.hasDependencies && !forced) {
       return {
         success: false,
         hasDependencies: true,
@@ -1059,7 +1115,31 @@ class AdminCatalogueService {
     }
 
     try {
+      if (depCheck.hasDependencies && forced) {
+        // Owner override: delete the programmes under this department (students/materials are kept).
+        const progs = await this.getProgrammesByDepartment(cleanId);
+        for (const prog of progs) {
+          const r = await this.deleteProgramme(prog.id, cleanId, { force: true });
+          if (!r.success) return { success: false, error: r.error || `Could not delete programme ${prog.name}.` };
+        }
+      }
       await this.deleteDocInBothDatabases('departments', cleanId);
+      if (AUDITED_DEPARTMENTS.some((d) => getDepartmentAliases(cleanId).has(d.id.toLowerCase()))) {
+        await setDoc(
+          doc(db, 'departments', cleanId),
+          {
+            id: cleanId,
+            academicUnitId: (academicUnitId || '').toLowerCase().trim(),
+            deleted: true,
+            deletedAt: new Date().toISOString(),
+            deletedBy: auth.currentUser?.uid || '',
+          },
+          { merge: false }
+        );
+      }
+      this.deletedDepartmentKeys = null;
+      this.programmesByDeptCache.clear();
+      this.allProgrammesCache = null;
       if (academicUnitId) {
         this.departmentsByUnitCache.delete(academicUnitId.toLowerCase().trim());
       }
@@ -1106,6 +1186,7 @@ class AdminCatalogueService {
         query(colRef, where('universityId', '==', cleanUni))
       );
       for (const d of docs) {
+        if ((d.data as any)?.deleted === true) continue;
         const raw = { id: d.id, ...(d.data as any) } as AcademicUnitRecord;
         const key = normalizeCatalogueRefId(raw.id);
         const existing = unitsByKey.get(key);
@@ -1123,7 +1204,8 @@ class AdminCatalogueService {
       console.warn('AdminCatalogueService: Error reading academic_units from Firestore:', err);
     }
 
-    const units = Array.from(unitsByKey.values());
+    const hiddenUnits = await this.loadDeletedKeys('academic_units');
+    const units = Array.from(unitsByKey.values()).filter((u) => !this.isKeyHidden(u.id, hiddenUnits, 'unit'));
 
     // Sort by Type (College, Constituent College, School, Institute, Centre) then by Name
     const typeRank: Record<string, number> = {
@@ -1176,6 +1258,7 @@ class AdminCatalogueService {
           query(colRef, where('academicUnitId', 'in', aliasList))
         );
         for (const docSnap of docs) {
+          if ((docSnap.data as any)?.deleted === true) continue;
           const raw = { id: docSnap.id, ...(docSnap.data as any) } as DepartmentRecord;
           const rawId = (raw.id || docSnap.id).toLowerCase().trim();
           const rawAliases = getDepartmentAliases(rawId);
@@ -1215,7 +1298,8 @@ class AdminCatalogueService {
       console.warn(`AdminCatalogueService: Error reading departments for unit ${cleanId}:`, err);
     }
 
-    const depts = Array.from(deptsById.values());
+    const hiddenDeptsA = await this.loadDeletedKeys('departments');
+    const depts = Array.from(deptsById.values()).filter((d) => !this.isKeyHidden(d.id, hiddenDeptsA, 'department'));
     depts.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     this.departmentsByUnitCache.set(cleanId, depts);
     return depts;
@@ -1713,6 +1797,7 @@ class AdminCatalogueService {
     try {
       const docs = await this.queryBothDatabases('departments');
       for (const d of docs) {
+        if ((d.data as any)?.deleted === true) continue;
         const raw = { id: d.id, ...(d.data as any) } as DepartmentRecord;
         const rawId = (raw.id || d.id).toLowerCase().trim();
         const rawAliases = getDepartmentAliases(rawId);
@@ -1750,7 +1835,8 @@ class AdminCatalogueService {
       console.warn('AdminCatalogueService: Error loading all departments:', err);
     }
 
-    const depts = Array.from(deptsById.values());
+    const hiddenDeptsB = await this.loadDeletedKeys('departments');
+    const depts = Array.from(deptsById.values()).filter((d) => !this.isKeyHidden(d.id, hiddenDeptsB, 'department'));
     depts.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     this.allDepartmentsCache = depts;
     return depts;
