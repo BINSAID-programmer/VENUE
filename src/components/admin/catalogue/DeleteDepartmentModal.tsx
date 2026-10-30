@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { auth, isVerifiedOwnerAccount } from '../../../services/firebase';
 import {
   X,
   Trash2,
@@ -85,11 +86,13 @@ export const DeleteDepartmentModal: React.FC<DeleteDepartmentModalProps> = ({
     }
   };
 
+  const isOwner = isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email);
+
   const handleHardDelete = async () => {
     setSubmitting(true);
     setErrorMessage(null);
     try {
-      const res = await adminCatalogueService.deleteDepartment(department.id, department.academicUnitId);
+      const res = await adminCatalogueService.deleteDepartment(department.id, department.academicUnitId, { force: isOwner });
       if (!res.success) {
         setErrorMessage(res.error || 'Cannot delete department.');
         if (res.dependencies) {
@@ -236,6 +239,17 @@ export const DeleteDepartmentModal: React.FC<DeleteDepartmentModalProps> = ({
                     : 'Archive Department'}
                 </span>
               </button>
+              {isOwner && (
+                <button
+                  type="button"
+                  onClick={handleHardDelete}
+                  disabled={submitting}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-rose-600/20 hover:bg-rose-500 disabled:opacity-50 transition"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>{submitting ? 'Deleting...' : 'Delete Anyway (Owner)'}</span>
+                </button>
+              )}
             </div>
           </div>
         ) : (
