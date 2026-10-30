@@ -374,6 +374,56 @@ class AdminCatalogueService {
     }
   }
 
+  // ---- "Deleted" markers -------------------------------------------------
+  // Many UDSM programmes and courses are built into the app (audited seed data). Deleting their
+  // Firestore document alone would make them reappear, so a small marker document
+  // ({ deleted: true }) is stored under the same id and every list hides marked items.
+  private deletedProgrammeKeys: Set<string> | null = null;
+  private deletedCourseCodes: Set<string> | null = null;
+
+  private async loadDeletedProgrammeKeys(): Promise<Set<string>> {
+    if (this.deletedProgrammeKeys) return this.deletedProgrammeKeys;
+    const keys = new Set<string>();
+    try {
+      const docs = await this.queryBothDatabases('programmes', (colRef) =>
+        query(colRef, where('deleted', '==', true), limit(200))
+      );
+      for (const d of docs) {
+        keys.add(d.id.toLowerCase());
+        for (const a of getProgrammeAliases(d.id)) keys.add(a.toLowerCase());
+      }
+    } catch {
+      /* ignore: nothing hidden */
+    }
+    this.deletedProgrammeKeys = keys;
+    return keys;
+  }
+
+  private async loadDeletedCourseCodes(): Promise<Set<string>> {
+    if (this.deletedCourseCodes) return this.deletedCourseCodes;
+    const codes = new Set<string>();
+    try {
+      const docs = await this.queryBothDatabases('canonical_courses', (colRef) =>
+        query(colRef, where('deleted', '==', true), limit(300))
+      );
+      for (const d of docs) {
+        const code = String(d.data?.code || d.id || '').trim().toUpperCase().replace(/[\s_-]+/g, ' ');
+        if (code) codes.add(code);
+      }
+    } catch {
+      /* ignore */
+    }
+    this.deletedCourseCodes = codes;
+    return codes;
+  }
+
+  private isProgrammeHidden(id: string, hidden: Set<string>): boolean {
+    if (hidden.size === 0) return false;
+    if (hidden.has(id.toLowerCase())) return true;
+    for (const a of getProgrammeAliases(id)) if (hidden.has(a.toLowerCase())) return true;
+    return false;
+  }
+
   private async deleteDocInBothDatabases(
     collectionName: string,
     docId: string
@@ -1201,6 +1251,7 @@ class AdminCatalogueService {
           query(colRef, where('departmentId', 'in', aliasList))
         );
         for (const docSnap of docs) {
+          if ((docSnap.data as any)?.deleted === true) continue;
           const raw = { id: docSnap.id, ...(docSnap.data as any) } as ProgrammeRecord;
           // Match by canonical alias or name
           const rawAliases = getProgrammeAliases(raw.id);
@@ -1233,7 +1284,8 @@ class AdminCatalogueService {
       console.warn(`AdminCatalogueService: Error reading programmes for dept ${cleanId}:`, err);
     }
 
-    const progs = Array.from(progsByKey.values());
+    const hiddenProgs = await this.loadDeletedProgrammeKeys();
+    const progs = Array.from(progsByKey.values()).filter((p) => !this.isProgrammeHidden(p.id, hiddenProgs));
     progs.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     this.programmesByDeptCache.set(cleanId, progs);
     return progs;
@@ -1525,7 +1577,10 @@ class AdminCatalogueService {
       }
     }
 
-    const courses = Array.from(coursesByCode.values());
+    const hiddenCodes = await this.loadDeletedCourseCodes();
+    const courses = Array.from(coursesByCode.values()).filter(
+      (c) => !hiddenCodes.has(String(c.code || c.courseCode || '').trim().toUpperCase().replace(/[\s_-]+/g, ' '))
+    );
 
     // Sort: Core courses first, then by course code alphabetically
     courses.sort((a, b) => {
@@ -1718,6 +1773,7 @@ class AdminCatalogueService {
     try {
       const docs = await this.queryBothDatabases('programmes');
       for (const d of docs) {
+        if ((d.data as any)?.deleted === true) continue;
         const raw = { id: d.id, ...(d.data as any) } as ProgrammeRecord;
         const rawAliases = getProgrammeAliases(raw.id);
         let matchedKey: string | null = null;
@@ -1748,7 +1804,8 @@ class AdminCatalogueService {
       console.warn('AdminCatalogueService: Error loading all programmes:', err);
     }
 
-    const progs = Array.from(progsByKey.values());
+    const hiddenAll = await this.loadDeletedProgrammeKeys();
+    const progs = Array.from(progsByKey.values()).filter((p) => !this.isProgrammeHidden(p.id, hiddenAll));
     progs.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     this.allProgrammesCache = progs;
     return progs;
@@ -1765,6 +1822,7 @@ class AdminCatalogueService {
     try {
       const snap = await this.getDocFromBothDatabases('programmes', cleanId);
       if (snap) {
+        if ((snap.data as any)?.deleted === true) return null;
         return {
           id: snap.id,
           ...(snap.data as any),
@@ -1778,6 +1836,8 @@ class AdminCatalogueService {
       progAliases.has(p.id.toLowerCase())
     );
     if (auditedMatch) {
+      const hiddenById = await this.loadDeletedProgrammeKeys();
+      if (this.isProgrammeHidden(auditedMatch.id, hiddenById)) return null;
       return { ...auditedMatch };
     }
     return null;
@@ -1798,7 +1858,7 @@ class AdminCatalogueService {
     try {
       // 1. Direct ID check
       const idSnap = await getDoc(doc(db, 'programmes', cleanSlug));
-      if (idSnap.exists() && (!excludeId || idSnap.id !== excludeId.toLowerCase().trim())) {
+      if (idSnap.exists() && (idSnap.data() as any)?.deleted !== true && (!excludeId || idSnap.id !== excludeId.toLowerCase().trim())) {
         return {
           exists: true,
           conflictingProgramme: { id: idSnap.id, ...(idSnap.data() as any) },
@@ -2041,12 +2101,14 @@ class AdminCatalogueService {
       academicYear: '2025/2026',
       verified: true,
       source: 'Official Academic Catalogue',
+      deleted: false,
       createdAt: nowIso,
       updatedAt: nowIso,
-    };
+    } as any;
 
     try {
       await this.setDocInBothDatabases('programmes', proposedId, record, { merge: true });
+      this.deletedProgrammeKeys = null;
       // Invalidate caches
       this.programmesByDeptCache.delete(cleanDeptId);
       this.allProgrammesCache = null;
@@ -2214,6 +2276,17 @@ class AdminCatalogueService {
         }
       }
       await this.deleteDocInBothDatabases('programmes', cleanId);
+
+      // Built-in programmes would come back from the app's seed data: leave a "deleted" marker.
+      const builtIn = AUDITED_PROGRAMMES.some((p) => getProgrammeAliases(cleanId).has(p.id.toLowerCase()));
+      if (builtIn) {
+        await setDoc(
+          doc(db, 'programmes', cleanId),
+          { id: cleanId, deleted: true, deletedAt: new Date().toISOString(), deletedBy: auth.currentUser?.uid || '' },
+          { merge: false }
+        );
+      }
+      this.deletedProgrammeKeys = null;
 
       // Invalidate caches
       if (departmentId) {
@@ -2702,6 +2775,7 @@ class AdminCatalogueService {
     try {
       // 1. Direct ID lookup in canonical_courses across both databases
       const snapDirect = await this.getDocFromBothDatabases('canonical_courses', cleanId);
+      if (snapDirect && (snapDirect.data as any)?.deleted === true) return null;
       if (snapDirect) {
         return { id: snapDirect.id, ...(snapDirect.data as any) };
       }
@@ -2777,6 +2851,10 @@ class AdminCatalogueService {
         )
       );
       codeDocs.forEach((d) => {
+        if ((d.data as any)?.deleted === true) {
+          resultsMap.delete(d.id);
+          return;
+        }
         resultsMap.set(d.id, { id: d.id, ...(d.data as any) });
       });
 
@@ -2875,7 +2953,9 @@ class AdminCatalogueService {
       departmentId: data.departmentId,
       verified: true,
       source: 'Official Academic Catalogue',
-    };
+      deleted: false,
+    } as any;
+    this.deletedCourseCodes = null;
 
     try {
       await this.setDocInBothDatabases('canonical_courses', cleanId, record);
@@ -3618,6 +3698,31 @@ class AdminCatalogueService {
         this.coursesCache.clear();
       }
       await this.deleteDocInBothDatabases('canonical_courses', cleanId);
+
+      // Built-in courses would come back from the app's seed data: leave a "deleted" marker.
+      const builtInCourse = AUDITED_CANONICAL_COURSES.some(
+        (c) =>
+          (c.code || c.courseCode || '').trim().toUpperCase().replace(/[\s_-]+/g, ' ') === cleanCode ||
+          c.id.toLowerCase() === cleanId
+      );
+      const usedInStaticLinks = AUDITED_PROGRAMME_COURSES.some(
+        (r) => (r.code || r.courseCode || '').trim().toUpperCase().replace(/[\s_-]+/g, ' ') === cleanCode
+      );
+      if (builtInCourse || usedInStaticLinks) {
+        await setDoc(
+          doc(db, 'canonical_courses', cleanId),
+          {
+            id: cleanId,
+            code: cleanCode,
+            deleted: true,
+            deletedAt: new Date().toISOString(),
+            deletedBy: auth.currentUser?.uid || '',
+          },
+          { merge: false }
+        );
+      }
+      this.deletedCourseCodes = null;
+      this.coursesCache.clear();
 
       await this.recordCatalogueAuditLog({
         action: 'delete_course',
