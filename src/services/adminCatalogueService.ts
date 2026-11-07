@@ -457,6 +457,62 @@ class AdminCatalogueService {
     return false;
   }
 
+  /**
+   * Self-check after a delete/removal: re-reads the term and explains, in plain words,
+   * where the course is still coming from if it did not disappear.
+   */
+  async verifyCourseGone(
+    programmeId: string,
+    code: string,
+    year: number,
+    semester: number
+  ): Promise<{ gone: boolean; report: string }> {
+    const norm = (c?: string) => String(c || '').trim().toUpperCase().replace(/[\s_-]+/g, ' ');
+    const target = norm(code);
+    const progId = programmeId.toLowerCase().trim();
+    this.coursesCache.clear();
+    const list = await this.getCoursesByTerm(progId, year, semester);
+    const still = list.some((c) => norm(c.code || (c as any).courseCode) === target);
+    if (!still) return { gone: true, report: '' };
+
+    const lines: string[] = [`${code} is still listed for Year ${year}, Semester ${semester}.`];
+    const aliases = Array.from(getProgrammeAliases(progId));
+    const inSeed =
+      AUDITED_PROGRAMME_COURSES.some(
+        (r) =>
+          aliases.includes((r.programmeId || '').toLowerCase().trim()) &&
+          norm((r as any).code || (r as any).courseCode) === target
+      ) ||
+      (UDSM_VERIFIED_COURSES || []).some(
+        (r: any) =>
+          aliases.includes(String(r.programmeId || '').toLowerCase().trim()) &&
+          norm(r.code || r.courseCode) === target
+      );
+    lines.push(`Built-in list: ${inSeed ? 'yes' : 'no'}.`);
+    try {
+      const [cat, rel] = await Promise.all([
+        this.queryBothDatabases('catalogue_courses', (c) => query(c, where('programmeId', 'in', aliases.slice(0, 10)))),
+        this.queryBothDatabases('programme_courses', (c) => query(c, where('programmeId', 'in', aliases.slice(0, 10)))),
+      ]);
+      const match = (d: any) => norm(d.data?.code || d.data?.courseCode) === target;
+      const catHits = cat.filter(match);
+      const relHits = rel.filter(match);
+      lines.push(
+        `Saved copies: ${catHits.filter((d: any) => !d.data?.deleted).length} course record(s), ` +
+          `${relHits.filter((d: any) => !d.data?.deleted).length} link(s).`
+      );
+      const markers = relHits.filter((d: any) => d.data?.deleted === true);
+      lines.push(
+        markers.length
+          ? `Removal marker found for: ${markers.map((d: any) => `Y${d.data?.yearOfStudy}S${d.data?.semester}`).join(', ')}.`
+          : 'No removal marker was saved.'
+      );
+    } catch (e: any) {
+      lines.push(`Could not read saved records (${e?.code || e?.message || 'unknown error'}).`);
+    }
+    return { gone: false, report: lines.join(' ') };
+  }
+
   private async deleteDocInBothDatabases(
     collectionName: string,
     docId: string

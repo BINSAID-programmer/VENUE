@@ -93,6 +93,19 @@ export const DeleteCourseModal: React.FC<DeleteCourseModalProps> = ({
         return;
       }
 
+      const check = await adminCatalogueService.verifyCourseGone(
+        programme.id,
+        code,
+        Number(course.yearOfStudy || year || 1),
+        Number(course.semester || semester || 1)
+      );
+      if (!check.gone) {
+        setErrorMessage(check.report + ' Please send this message to the developer.');
+        setSubmitting(false);
+        onCourseRemovedFromProg(course);
+        return;
+      }
+
       onCourseRemovedFromProg(course);
       onClose();
     } catch (err: any) {
