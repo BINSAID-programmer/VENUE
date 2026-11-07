@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { auth } from '../../services/firebase';
+import { adminAuthService } from '../../services/adminAuthService';
 import { premiumService } from '../../services/premiumService';
 import {
   Calendar,
@@ -33,7 +35,27 @@ interface MoreScreenProps {
 }
 
 export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onLogout }) => {
-  const sections = [
+  // "Platform Administration" is shown only to verified active admins.
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        if (typeof auth.authStateReady === 'function') await auth.authStateReady();
+        const u = auth.currentUser;
+        if (!u) return;
+        const ok = await adminAuthService.isSuperAdmin(u.uid, u.email);
+        if (alive) setIsAdmin(ok);
+      } catch {
+        if (alive) setIsAdmin(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const allSections = [
     {
       title: 'Academic & Learning Tools',
       items: [
@@ -183,6 +205,10 @@ export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onL
       ],
     },
   ];
+  const sections = allSections.map((sec) => ({
+    ...sec,
+    items: sec.items.filter((it) => it.id !== ('admin' as ScreenId) || isAdmin),
+  }));
 
   return (
     <div className="p-4 sm:p-6 space-y-6 pb-24">
