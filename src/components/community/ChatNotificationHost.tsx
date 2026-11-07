@@ -9,6 +9,7 @@ import {
   showSystemNotification,
   vibrate,
 } from '../../services/chatNotifier';
+import { registerPush } from '../../services/pushService';
 import type { RealChatConversation } from '../../types';
 
 interface Props {
@@ -41,6 +42,11 @@ export default function ChatNotificationHost({ uid, onCommunityScreen, onOpenCom
   useEffect(() => {
     onScreenRef.current = onCommunityScreen;
   }, [onCommunityScreen]);
+
+  // Already allowed on this device: make sure background push is registered.
+  useEffect(() => {
+    if (uid && getNotificationPermission() === 'granted') void registerPush();
+  }, [uid]);
 
   // Ask once (politely) for permission to show phone notifications.
   useEffect(() => {
@@ -114,7 +120,8 @@ export default function ChatNotificationHost({ uid, onCommunityScreen, onOpenCom
   }, [uid]);
 
   const enable = async () => {
-    await requestNotificationPermission();
+    const result = await requestNotificationPermission();
+    if (result === 'granted') void registerPush();
     setShowPrompt(false);
     try {
       localStorage.setItem(PROMPT_DISMISSED_KEY, '1');

@@ -6,7 +6,7 @@ interface Health {
   hasGeminiKey?: boolean;
   firebaseAdminReady?: boolean;
   persistence?: { mode?: string; reason?: string; pausedStores?: string[]; lastError?: string | null };
-  features?: { premium?: boolean; tutorLimits?: boolean; uptimeSeconds?: number };
+  features?: { premium?: boolean; tutorLimits?: boolean; push?: boolean; uptimeSeconds?: number };
 }
 
 type Level = 'ok' | 'warn' | 'bad';
@@ -102,6 +102,15 @@ export function ServerStatusCard() {
           {health.persistence?.lastError && (
             <Row level="warn" title="Last save error" detail={String(health.persistence.lastError)} />
           )}
+          <Row
+            level={health.features?.push ? 'ok' : 'warn'}
+            title="Background notifications (push)"
+            detail={
+              health.features?.push
+                ? 'Server is ready to send chat alerts when the app is closed.'
+                : 'Server push is not ready yet (needs the Firestore link and the latest version).'
+            }
+          />
           <Row
             level={health.hasGeminiKey ? 'ok' : 'bad'}
             title="AI key (Gemini)"
