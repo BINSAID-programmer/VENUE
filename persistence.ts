@@ -37,6 +37,7 @@ const STORE_DEFS: Record<string, StoreDef> = {
   'audit_logs.json': { kind: 'array' },
   'analytics_events.json': { kind: 'array' },
   'ai_usage_logs.json': { kind: 'array' },
+  'push_tokens.json': { kind: 'map', shards: 8 },
   'subscriptions.json': { kind: 'map', shards: 16 },
   'payment_requests.json': { kind: 'map', shards: 8 },
 };
@@ -425,3 +426,10 @@ export function getPersistenceStatus() {
 
 // exported for tests only
 export const __test = { toDocs, fromDocs };
+
+
+/** Firebase Admin app used for server-side Firestore/Storage/Messaging (null when not configured). */
+export function getStoreAdminApp(): App | null {
+  if (!firestore) return null;
+  return getApps().find((a) => a.name === 'venue-store') || null;
+}

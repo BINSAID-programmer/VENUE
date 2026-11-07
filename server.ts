@@ -8,6 +8,7 @@ import { createServer as createViteServer } from 'vite';
 import { runReconcile, getReconcileStatus } from './reconcile';
 import { backupMaterialFile, restoreMaterialFile, removeMaterialBackup } from './persistence';
 import * as subs from './subscriptions';
+import * as push from './push';
 import { initPersistence, hydrateFromFirestore, saveStoreFile, flushPersistence, getPersistenceStatus } from './persistence';
 import { AUDITED_PROGRAMMES, AUDITED_DEPARTMENTS, AUDITED_ACADEMIC_UNITS } from './src/data/udsmAuditedCatalogue2025';
 import { SAMPLE_COURSES } from './src/data/mockData';
@@ -47,6 +48,7 @@ const ANALYTICS_EVENTS_FILE = path.join(PROFILES_DIR, 'analytics_events.json');
 const AUDIT_LOGS_FILE = path.join(PROFILES_DIR, 'audit_logs.json');
 initPersistence(PROFILES_DIR);
 subs.initSubscriptions(PROFILES_DIR);
+push.initPush(PROFILES_DIR);
 
 // Helper to safely read AI Tutor usage telemetry logs
 function readAiUsageLogs(): any[] {
@@ -679,7 +681,7 @@ app.get('/api/health', (_req, res) => {
     projectId: FIREBASE_PROJECT_ID,
     persistence: getPersistenceStatus(),
     dbReconcile: getReconcileStatus(),
-    features: { premium: true, tutorLimits: true, uptimeSeconds: Math.round(process.uptime()) },
+    features: { premium: true, tutorLimits: true, push: push.isPushReady(), uptimeSeconds: Math.round(process.uptime()) },
   });
 });
 
@@ -721,6 +723,27 @@ app.post('/api/subscription/admin/requests/:id/decision', requireAuth, (req, res
   const result = subs.decideRequest(req.params.id, Boolean(req.body?.approve), req.user.uid, req.body?.note);
   if (!result.ok) return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: result.error });
   return res.json({ success: true, request: result.request });
+});
+
+// ---- Push notifications (chat) ----
+app.post('/api/push/register', requireAuth, (req, res) => {
+  const ok = push.registerToken(req.user!.uid, String(req.body?.token || ''));
+  return res.status(ok ? 200 : 400).json({ success: ok });
+});
+
+app.post('/api/push/unregister', requireAuth, (req, res) => {
+  push.unregisterToken(req.user!.uid, String(req.body?.token || ''));
+  return res.json({ success: true });
+});
+
+app.post('/api/push/notify-chat', requireAuth, async (req, res) => {
+  try {
+    const result = await push.notifyChat(req.user!.uid, String(req.body?.conversationId || ''));
+    return res.json({ success: result.ok, sent: result.sent, reason: result.reason });
+  } catch (err: any) {
+    console.warn('[push] notify failed:', err?.message || err);
+    return res.json({ success: false, sent: 0, reason: 'error' });
+  }
 });
 
 // AI usage gate: free students get a daily allowance, Premium is unlimited.

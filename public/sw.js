@@ -10,7 +10,7 @@
  *   user storage, IndexedDB, Firestore, or localStorage.
  */
 
-const CACHE_NAME = 'venue-shell-v3';
+const CACHE_NAME = 'venue-shell-v4';
 
 // Minimum safe static application shell assets
 const PRECACHE_ASSETS = [
@@ -181,6 +181,29 @@ self.addEventListener('notificationclick', (event) => {
         if ('focus' in client) return client.focus();
       }
       return self.clients.openWindow(target);
+    })
+  );
+});
+
+// Background push (Firebase Cloud Messaging): show the chat alert even when the app is closed.
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (e) {
+    payload = {};
+  }
+  const d = payload.data || payload.notification || payload || {};
+  const title = d.title || 'VENUE';
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: d.body || 'You have a new message',
+      tag: d.tag || 'venue-chat',
+      renotify: true,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      vibrate: [120, 60, 120],
+      data: { url: d.url || '/#community' },
     })
   );
 });

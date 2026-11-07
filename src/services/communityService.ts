@@ -1,4 +1,5 @@
 import { isFirestoreQuotaPaused, reportFirestoreError } from './quotaGuard';
+import { notifyChatMessage } from './pushService';
 import {
   collection,
   doc,
@@ -4299,6 +4300,9 @@ class CommunityService {
 
       // Clear sender's typing indicator immediately on send
       this.setTypingStatus(conversationId, identity.name, false).catch(() => {});
+
+      // Background push (phone alert even when the app is closed)
+      notifyChatMessage(conversationId);
 
       // Dispatch mute-aware notifications for direct messages, replies, and @mentions
       this.dispatchMessageNotifications({
