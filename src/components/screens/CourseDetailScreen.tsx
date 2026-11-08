@@ -33,6 +33,7 @@ import { courseCurriculumService, CourseLiveMetadata } from '../../services/cour
 import { StudentMaterialDetailModal } from '../student/StudentMaterialDetailModal';
 import { PremiumDownloadModal } from '../student/PremiumDownloadModal';
 import { analyticsTracker } from '../../services/analyticsTrackerService';
+import { StudentUploadModal } from '../materials/StudentUploadModal';
 
 const ALL_MATERIAL_TYPES: (AcademicMaterialType | 'ALL')[] = [
   'ALL',
@@ -77,6 +78,7 @@ export const CourseDetailScreen: React.FC<CourseDetailScreenProps> = ({
   const [materialsTypeFilter, setMaterialsTypeFilter] = useState<AcademicMaterialType | 'ALL'>('ALL');
   const [selectedMaterialDetail, setSelectedMaterialDetail] = useState<AcademicMaterialRecord | null>(null);
   const [premiumGateMaterial, setPremiumGateMaterial] = useState<AcademicMaterialRecord | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const realNotesAndHandouts = useMemo(
     () =>
@@ -302,7 +304,15 @@ export const CourseDetailScreen: React.FC<CourseDetailScreenProps> = ({
             <Sparkles className="w-4 h-4 text-white animate-pulse" />
             <span>Ask AI Tutor About {course.code}</span>
           </button>
+          <button
+            id="course-share-material-btn"
+            onClick={() => setShareOpen(true)}
+            className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 font-semibold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+          >
+            <span>Share material</span>
+          </button>
         </div>
+        {shareOpen && <StudentUploadModal course={course} profile={profile} onClose={() => setShareOpen(false)} />}
       </div>
 
       {/* Tabs Navigation */}

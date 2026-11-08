@@ -23,6 +23,7 @@ import { adminAuthService, ADMIN_ROLE_HIERARCHY } from '../../services/adminAuth
 import { DatabaseMigrationCard } from './DatabaseMigrationCard';
 import { PaymentRequestsCard } from './PaymentRequestsCard';
 import { LecturerApplicationsCard } from './LecturerApplicationsCard';
+import { MaterialReviewCard } from './MaterialReviewCard';
 import { ServerStatusCard } from './ServerStatusCard';
 import { auth, isVerifiedOwnerAccount } from '../../services/firebase';
 
@@ -99,6 +100,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateSectio
 
       {isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email) && <PaymentRequestsCard />}
       {isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email) && <LecturerApplicationsCard />}
+      <MaterialReviewCard />
       {isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email) && <ServerStatusCard />}
       {isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email) && <DatabaseMigrationCard />}
 

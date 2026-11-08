@@ -2744,6 +2744,9 @@ app.get('/api/materials/metadata', (req, res) => {
 
     if (status && status !== 'ALL') {
       list = list.filter((m: any) => (m.status || 'active') === status);
+    } else if (!status) {
+      // Student submissions under review (or rejected) are never part of default listings.
+      list = list.filter((m: any) => !STUDENT_REVIEW_STATUSES.has(m.status));
     }
     if (universityId && universityId !== 'ALL') {
       const target = String(universityId).trim().toLowerCase();
@@ -2845,6 +2848,123 @@ app.get('/api/materials/metadata/:id', (req, res) => {
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err?.message || 'Error retrieving material metadata' });
   }
+});
+
+// ---- Student uploads (Pending Review → admin approval) ----
+const STUDENT_REVIEW_STATUSES = new Set(['pending_review', 'rejected', 'changes_requested']);
+const MAX_PENDING_PER_STUDENT = 5;
+
+app.post('/api/materials/student-submit', requireAuth, (req, res) => {
+  try {
+    const uid = req.user!.uid;
+    const p = req.body || {};
+    const id = String(p.id || '').trim();
+    if (!/^[A-Za-z0-9_-]{6,80}$/.test(id)) {
+      return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: 'Invalid material ID.' });
+    }
+    const title = String(p.title || '').replace(/\s+/g, ' ').trim().slice(0, 140);
+    if (title.length < 3 || !p.courseId || !p.storagePath) {
+      return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: 'Title, course and file are required.' });
+    }
+    if (!String(p.storagePath).startsWith(`materials/student/${uid}/`)) {
+      return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: 'Invalid file location.' });
+    }
+    const resolved = resolveOrRestoreMaterialFileOnDisk(p.storagePath, id);
+    if (!resolved || !fs.existsSync(resolved.fullPath)) {
+      return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: 'Uploaded file could not be verified. Please upload again.' });
+    }
+
+    const store = readAllMaterialsMetadata();
+    const existing = store[id];
+    if (existing && existing.uploadedByUid !== uid) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+    }
+    const pendingCount = Object.values(store).filter(
+      (m: any) => m.uploadedByUid === uid && m.uploaderRole === 'student' && m.status === 'pending_review' && m.id !== id
+    ).length;
+    if (pendingCount >= MAX_PENDING_PER_STUDENT) {
+      return res.status(429).json({
+        success: false,
+        error: 'TOO_MANY_PENDING',
+        message: `You already have ${MAX_PENDING_PER_STUDENT} files waiting for review. Please wait for them to be reviewed.`,
+      });
+    }
+
+    const pick = (k: string, max = 120) => (p[k] == null ? undefined : String(p[k]).slice(0, max));
+    const now = new Date().toISOString();
+    const record: any = {
+      id,
+      materialId: id,
+      title,
+      description: String(p.description || '').slice(0, 500),
+      materialType: pick('materialType', 40) || 'Lecture Notes',
+      courseId: String(p.courseId).slice(0, 120),
+      courseCode: pick('courseCode', 40),
+      courseName: pick('courseName', 160),
+      canonicalCourseId: pick('canonicalCourseId', 120),
+      universityId: pick('universityId'),
+      academicUnitId: pick('academicUnitId'),
+      departmentId: pick('departmentId'),
+      programmeId: pick('programmeId'),
+      yearId: p.yearId,
+      semesterId: p.semesterId,
+      fileUrl: `/api/materials/file?path=${encodeURIComponent(p.storagePath)}&materialId=${encodeURIComponent(id)}`,
+      storagePath: String(p.storagePath),
+      fileName: pick('fileName', 200),
+      fileSize: Number(p.fileSize) || undefined,
+      mimeType: pick('mimeType', 120),
+      uploadedByUid: uid,
+      uploadedBy: { uid, email: req.user!.email, name: req.user!.name || '', role: 'student' },
+      uploaderRole: 'student',
+      verified: false,
+      status: 'pending_review',
+      reviewNote: '',
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+    };
+    store[id] = record;
+    writeAllMaterialsMetadata(store);
+    return res.json({ success: true, material: record });
+  } catch (err: any) {
+    console.error('Error saving student submission:', err);
+    return res.status(500).json({ success: false, error: 'SERVER_ERROR', message: 'Could not save your submission.' });
+  }
+});
+
+app.get('/api/materials/mine', requireAuth, (req, res) => {
+  const uid = req.user!.uid;
+  const list = Object.values(readAllMaterialsMetadata())
+    .filter((m: any) => m.uploadedByUid === uid && m.uploaderRole === 'student')
+    .sort((a: any, b: any) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
+    .slice(0, 50);
+  return res.json({ success: true, materials: list });
+});
+
+app.get('/api/materials/review', ...requireAdminAuth, (req, res) => {
+  const status = String(req.query.status || 'pending_review');
+  const list = Object.values(readAllMaterialsMetadata())
+    .filter((m: any) => m.uploaderRole === 'student' && (status === 'ALL' ? true : m.status === status))
+    .sort((a: any, b: any) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
+    .slice(0, 200);
+  return res.json({ success: true, materials: list });
+});
+
+app.post('/api/materials/review/:id/decision', ...requireAdminAuth, (req, res) => {
+  const action = String(req.body?.action || '');
+  const map: Record<string, string> = { approve: 'active', reject: 'rejected', changes: 'changes_requested' };
+  if (!map[action]) return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: 'Unknown action.' });
+  const store = readAllMaterialsMetadata();
+  const m = store[req.params.id];
+  if (!m || m.uploaderRole !== 'student') return res.status(404).json({ success: false, error: 'NOT_FOUND' });
+  m.status = map[action];
+  m.verified = action === 'approve';
+  m.reviewNote = String(req.body?.note || '').slice(0, 300);
+  m.reviewedBy = req.user!.uid;
+  m.reviewedAt = new Date().toISOString();
+  m.updatedAt = m.reviewedAt;
+  store[req.params.id] = m;
+  writeAllMaterialsMetadata(store);
+  return res.json({ success: true, material: m });
 });
 
 app.post('/api/materials/metadata', requireAuth, requireRoles(['admin', 'super_admin', 'lecturer']), (req, res) => {
