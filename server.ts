@@ -594,6 +594,20 @@ function writeAllResults(results: Record<string, any[]>) {
   }
 }
 
+// Speed: the chart/diagram parts of the tutor schema make every answer slower.
+// Only include them when the student's message actually asks for a visual.
+function slimChatParams(params: any, intent: { wantsDiagram?: boolean; wantsFlowchart?: boolean; wantsGraphOrChart?: boolean }): any {
+  if (intent?.wantsDiagram || intent?.wantsFlowchart || intent?.wantsGraphOrChart) return params;
+  const props = params?.config?.responseSchema?.properties;
+  if (!props) return params;
+  const { chart: _c, diagramSvg: _d, ...rest } = props;
+  return {
+    ...params,
+    config: { ...params.config, responseSchema: { ...params.config.responseSchema, properties: rest } },
+  };
+}
+
+
 // Lazy-initialize Gemini client to prevent crashes if GEMINI_API_KEY is unset at startup
 let geminiClient: GoogleGenAI | null = null;
 
@@ -618,13 +632,14 @@ function getGeminiClient(): GoogleGenAI {
     // Speed + reliability for EVERY tutor endpoint:
     //  - cap "thinking" effort (the default dynamic thinking is the main cause of slow answers),
     //  - give each attempt a time limit so a hung model falls through to the next candidate quickly.
-    const GEMINI_ATTEMPT_TIMEOUT_MS = Number(process.env.GEMINI_ATTEMPT_TIMEOUT_MS || 40000);
+    const GEMINI_ATTEMPT_TIMEOUT_MS = Number(process.env.GEMINI_ATTEMPT_TIMEOUT_MS || 28000);
+    const GEMINI_IMAGE_TIMEOUT_MS = Number(process.env.GEMINI_IMAGE_TIMEOUT_MS || 60000);
     const originalGenerate = client.models.generateContent.bind(client.models);
-    const withTimeout = <T,>(p: Promise<T>): Promise<T> =>
+    const withTimeout = <T,>(p: Promise<T>, ms: number = GEMINI_ATTEMPT_TIMEOUT_MS): Promise<T> =>
       new Promise<T>((resolve, reject) => {
         const timer = setTimeout(
           () => reject(new Error('Gemini request timed out. Please try again.')),
-          GEMINI_ATTEMPT_TIMEOUT_MS
+          ms
         );
         p.then(
           (v) => {
@@ -641,7 +656,8 @@ function getGeminiClient(): GoogleGenAI {
       const modelName = String(params?.model || '');
       const isTextModel = /gemini/i.test(modelName) && !/image/i.test(modelName);
       const hasThinking = Boolean(params?.config?.thinkingConfig);
-      if (!isTextModel || hasThinking) return withTimeout(originalGenerate(params));
+      if (!isTextModel) return withTimeout(originalGenerate(params), GEMINI_IMAGE_TIMEOUT_MS);
+      if (hasThinking) return withTimeout(originalGenerate(params));
       try {
         return await withTimeout(
           originalGenerate({
@@ -4696,7 +4712,7 @@ When an image is provided, transcribe the question accurately, inspect any handw
 
     for (const modelName of candidateModels) {
       try {
-        const response = await ai.models.generateContent({
+        const response = await ai.models.generateContent(slimChatParams({
           model: modelName,
           contents,
           config: {
@@ -4785,7 +4801,7 @@ When an image is provided, transcribe the question accurately, inspect any handw
               required: ['text'],
             },
           },
-        });
+        }, userIntent));
 
         if (response && response.text) {
           responseText = response.text;
