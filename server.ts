@@ -9,6 +9,7 @@ import { runReconcile, getReconcileStatus } from './reconcile';
 import { backupMaterialFile, restoreMaterialFile, removeMaterialBackup } from './persistence';
 import * as subs from './subscriptions';
 import * as push from './push';
+import * as lecApps from './lecturerApplications';
 import { initPersistence, hydrateFromFirestore, saveStoreFile, flushPersistence, getPersistenceStatus } from './persistence';
 import { AUDITED_PROGRAMMES, AUDITED_DEPARTMENTS, AUDITED_ACADEMIC_UNITS } from './src/data/udsmAuditedCatalogue2025';
 import { SAMPLE_COURSES } from './src/data/mockData';
@@ -48,6 +49,7 @@ const ANALYTICS_EVENTS_FILE = path.join(PROFILES_DIR, 'analytics_events.json');
 const AUDIT_LOGS_FILE = path.join(PROFILES_DIR, 'audit_logs.json');
 initPersistence(PROFILES_DIR);
 subs.initSubscriptions(PROFILES_DIR);
+lecApps.initLecturerApplications(PROFILES_DIR);
 push.initPush(PROFILES_DIR);
 
 // Helper to safely read AI Tutor usage telemetry logs
@@ -739,6 +741,29 @@ app.post('/api/subscription/admin/requests/:id/decision', requireAuth, (req, res
   const result = subs.decideRequest(req.params.id, Boolean(req.body?.approve), req.user.uid, req.body?.note);
   if (!result.ok) return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: result.error });
   return res.json({ success: true, request: result.request });
+});
+
+// ---- Lecturer self-service applications ----
+app.post('/api/lecturer/apply', requireAuth, (req, res) => {
+  const result = lecApps.submitApplication({ uid: req.user!.uid, email: req.user!.email }, req.body || {});
+  if (!result.ok) return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: result.error });
+  return res.json({ success: true, application: result.application });
+});
+
+app.get('/api/lecturer/apply/mine', requireAuth, (req, res) => {
+  return res.json({ success: true, applications: lecApps.listMine(req.user!.uid) });
+});
+
+app.get('/api/lecturer/admin/applications', requireAuth, (req, res) => {
+  if (!req.user?.isOwner) return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+  return res.json({ success: true, applications: lecApps.listAll() });
+});
+
+app.post('/api/lecturer/admin/applications/:id/decision', requireAuth, (req, res) => {
+  if (!req.user?.isOwner) return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+  const result = lecApps.decide(req.params.id, Boolean(req.body?.approve), req.user.uid, req.body?.note);
+  if (!result.ok) return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: result.error });
+  return res.json({ success: true, application: result.application });
 });
 
 // ---- Push notifications (chat) ----
