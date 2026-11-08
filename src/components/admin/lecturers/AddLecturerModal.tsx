@@ -33,12 +33,15 @@ interface AddLecturerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (newLecturer: LecturerRecord) => void;
+  /** Optional values to pre-fill the form (e.g. when approving an application). */
+  prefill?: { fullName?: string; email?: string; phone?: string; staffId?: string; title?: string };
 }
 
 export const AddLecturerModal: React.FC<AddLecturerModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  prefill,
 }) => {
   const uniSelectId = useId();
   const unitSelectId = useId();
@@ -77,6 +80,16 @@ export const AddLecturerModal: React.FC<AddLecturerModalProps> = ({
   const [position, setPosition] = useState<string>('Lecturer');
   const [status, setStatus] = useState<LecturerStatus>('active');
   const [verificationStatus, setVerificationStatus] = useState<LecturerVerificationStatus>('verified');
+
+  useEffect(() => {
+    if (!isOpen || !prefill) return;
+    if (prefill.fullName) setFullName(prefill.fullName);
+    if (prefill.email) setEmail(prefill.email);
+    if (prefill.phone) setPhone(prefill.phone);
+    if (prefill.staffId) setStaffId(prefill.staffId);
+    if (prefill.title && (LECTURER_TITLES as readonly string[]).includes(prefill.title)) setTitle(prefill.title);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   // Load Universities on Mount
   useEffect(() => {

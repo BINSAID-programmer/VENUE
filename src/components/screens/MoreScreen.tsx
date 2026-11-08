@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { auth } from '../../services/firebase';
+import { LecturerApplyModal } from '../lecturer/LecturerApplyModal';
 import { adminAuthService } from '../../services/adminAuthService';
 import { premiumService } from '../../services/premiumService';
 import {
@@ -37,6 +38,7 @@ interface MoreScreenProps {
 export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onLogout }) => {
   // "Platform Administration" is shown only to verified active admins.
   const [isAdmin, setIsAdmin] = useState(false);
+  const [applyOpen, setApplyOpen] = useState(false);
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -196,6 +198,13 @@ export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onL
           color: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
         },
         {
+          id: 'lecturer-apply' as any,
+          name: 'Apply as Lecturer',
+          desc: 'Teach at a university? Request verification and upload materials for your courses',
+          icon: UserCheck,
+          color: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
+        },
+        {
           id: 'admin' as ScreenId,
           name: 'Platform Administration',
           desc: 'Institutional Super Admin dashboard, academic telemetry & controls',
@@ -263,7 +272,13 @@ export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onL
               return (
                 <button
                   key={item.id}
-                  onClick={() => (item.id === ('premium' as any) ? premiumService.openPremium() : onNavigate(item.id))}
+                  onClick={() =>
+                    item.id === ('premium' as any)
+                      ? premiumService.openPremium()
+                      : item.id === ('lecturer-apply' as any)
+                      ? setApplyOpen(true)
+                      : onNavigate(item.id)
+                  }
                   className="w-full p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 hover:bg-slate-850 text-left transition-all flex items-center justify-between group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
@@ -303,6 +318,8 @@ export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onL
           VENUE v1.0 • Your Academic Space
         </p>
       </div>
+
+      {applyOpen && <LecturerApplyModal onClose={() => setApplyOpen(false)} />}
     </div>
   );
 };
