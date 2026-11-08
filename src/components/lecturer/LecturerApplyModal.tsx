@@ -5,13 +5,16 @@ import { lecturerApplicationService, LecturerApplicationItem } from '../../servi
 
 interface Props {
   onClose: () => void;
+  /** Render as a page section (no overlay/close button) – used during staff sign-up. */
+  embedded?: boolean;
+  onSubmitted?: () => void;
 }
 
 const inputCls =
   'w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-rose-400';
 
 /** A signed-in user asks to become a verified VENUE lecturer. The platform owner reviews it. */
-export const LecturerApplyModal: React.FC<Props> = ({ onClose }) => {
+export const LecturerApplyModal: React.FC<Props> = ({ onClose, embedded, onSubmitted }) => {
   const [mine, setMine] = useState<LecturerApplicationItem[] | null>(null);
   const [form, setForm] = useState({
     fullName: auth.currentUser?.displayName || '',
@@ -46,6 +49,7 @@ export const LecturerApplyModal: React.FC<Props> = ({ onClose }) => {
     try {
       await lecturerApplicationService.submit(form);
       setSent(true);
+      onSubmitted?.();
     } catch (err: any) {
       setError(err?.message || 'Could not send your application.');
     } finally {
@@ -61,16 +65,24 @@ export const LecturerApplyModal: React.FC<Props> = ({ onClose }) => {
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto overscroll-contain">
-      <div className="w-full max-w-lg my-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl text-slate-100">
+    <div
+      className={
+        embedded
+          ? 'w-full'
+          : 'fixed inset-0 z-50 flex items-start justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto overscroll-contain'
+      }
+    >
+      <div className="w-full max-w-lg mx-auto my-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl text-slate-100">
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <UserCheck className="w-5 h-5 text-rose-400" />
             <h3 className="text-base font-bold">Apply as Lecturer</h3>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 text-slate-400 cursor-pointer">
-            <X className="w-5 h-5" />
-          </button>
+          {!embedded && (
+            <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 text-slate-400 cursor-pointer">
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         <div className="p-4 space-y-3">

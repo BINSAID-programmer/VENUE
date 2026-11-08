@@ -58,6 +58,8 @@ import { LoginScreen } from './components/screens/LoginScreen';
 import { CreateAccountScreen } from './components/screens/CreateAccountScreen';
 import { VerifyEmailScreen } from './components/screens/VerifyEmailScreen';
 import { OnboardingScreen } from './components/screens/OnboardingScreen';
+import { StaffOnboardingScreen, isStaffSignupIntent, clearStaffSignupIntent } from './components/screens/StaffOnboardingScreen';
+import { lecturerApplicationService } from './services/lecturerApplicationService';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { CoursesScreen } from './components/screens/CoursesScreen';
 import { CourseDetailScreen } from './components/screens/CourseDetailScreen';
@@ -93,6 +95,8 @@ import { TempAuthDiagnosticPanel } from './components/TempAuthDiagnosticPanel';
 export const App: React.FC = () => {
   // Navigation State
   const [currentScreen, setCurrentScreen] = useState<ScreenId>('splash');
+  // Staff / Lecturer sign-up: show the staff application flow instead of student onboarding.
+  const [staffMode, setStaffMode] = useState<boolean>(() => isStaffSignupIntent());
   const [navigationHistory, setNavigationHistory] = useState<ScreenId[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [activeMaterial, setActiveMaterial] = useState<AcademicMaterialRecord | null>(null);
@@ -776,6 +780,17 @@ export const App: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (currentScreen !== 'onboarding' || staffMode) return;
+    let alive = true;
+    void lecturerApplicationService.mine().then((apps) => {
+      if (alive && apps.some((a) => a.status === 'pending' || a.status === 'approved')) setStaffMode(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [currentScreen, staffMode]);
+
   // Header & BottomNav display conditions
   const authScreens = [
     'splash',
@@ -1035,7 +1050,19 @@ export const App: React.FC = () => {
         )}
 
         {/* Step 5 - 7: Multi-Step University, Programme & Year Onboarding */}
-        {currentScreen === 'onboarding' && (
+        {currentScreen === 'onboarding' && staffMode && (
+          <StaffOnboardingScreen
+            onOpenLecturerPortal={() => {
+              setStaffMode(false);
+              handleNavigate('lecturer');
+            }}
+            onContinueAsStudent={() => {
+              clearStaffSignupIntent();
+              setStaffMode(false);
+            }}
+          />
+        )}
+        {currentScreen === 'onboarding' && !staffMode && (
           <OnboardingScreen
             initialProfile={profile}
             onComplete={async (updated) => {

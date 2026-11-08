@@ -35,6 +35,16 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [role, setRole] = useState<'student' | 'staff'>('student');
+  const chooseRole = (r: 'student' | 'staff') => {
+    setRole(r);
+    try {
+      if (r === 'staff') localStorage.setItem('venue:signup-role', 'staff');
+      else localStorage.removeItem('venue:signup-role');
+    } catch {
+      /* storage unavailable */
+    }
+  };
 
   const handleGoogleClick = async () => {
     setErrorMsg('');
@@ -160,6 +170,35 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
             <span className="leading-relaxed">{errorMsg}</span>
           </div>
         )}
+
+        {/* Who is signing up? */}
+        <div>
+          <p className="text-[11px] text-slate-400 mb-1.5">I am a…</p>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              ['student', 'Student'],
+              ['staff', 'Staff / Lecturer'],
+            ] as const).map(([val, label]) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => chooseRole(val)}
+                className={`py-2.5 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                  role === val
+                    ? 'bg-blue-600 border-blue-400 text-white'
+                    : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {role === 'staff' && (
+            <p className="text-[11px] text-slate-400 mt-1.5">
+              After creating your account you will send your staff details. Upload access starts once VENUE verifies you.
+            </p>
+          )}
+        </div>
 
         {/* Primary Google Authentication Button */}
         <button
