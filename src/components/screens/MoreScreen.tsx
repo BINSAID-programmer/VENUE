@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { auth } from '../../services/firebase';
 import { LecturerApplyModal } from '../lecturer/LecturerApplyModal';
+import { lecturerAuthService } from '../../services/lecturerAuthService';
 import { adminAuthService } from '../../services/adminAuthService';
 import { premiumService } from '../../services/premiumService';
 import {
@@ -39,6 +40,7 @@ export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onL
   // "Platform Administration" is shown only to verified active admins.
   const [isAdmin, setIsAdmin] = useState(false);
   const [applyOpen, setApplyOpen] = useState(false);
+  const [isLecturer, setIsLecturer] = useState(false);
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -48,6 +50,8 @@ export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onL
         if (!u) return;
         const ok = await adminAuthService.isSuperAdmin(u.uid, u.email);
         if (alive) setIsAdmin(ok);
+        const lec = await lecturerAuthService.getLecturerByUid(u.uid).catch(() => null);
+        if (alive) setIsLecturer(Boolean(lec));
       } catch {
         if (alive) setIsAdmin(false);
       }
@@ -216,7 +220,12 @@ export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onL
   ];
   const sections = allSections.map((sec) => ({
     ...sec,
-    items: sec.items.filter((it) => it.id !== ('admin' as ScreenId) || isAdmin),
+    items: sec.items.filter((it) => {
+      if (it.id === ('admin' as ScreenId)) return isAdmin;
+      if (it.id === ('lecturer' as ScreenId)) return isLecturer;
+      if (it.id === ('lecturer-apply' as any)) return !isLecturer;
+      return true;
+    }),
   }));
 
   return (
