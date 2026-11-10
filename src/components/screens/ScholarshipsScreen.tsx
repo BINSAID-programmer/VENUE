@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Award,
   Calendar,
@@ -22,6 +22,7 @@ import {
   OpportunityStudyLevel,
 } from '../../types';
 import { careerHubService } from '../../services/careerHubService';
+import { opportunitiesService, PostedOpportunity } from '../../services/opportunitiesService';
 
 interface ScholarshipsScreenProps {
   profile?: StudentProfile;
@@ -41,6 +42,15 @@ export const ScholarshipsScreen: React.FC<ScholarshipsScreenProps> = ({
   const [selectedFunding, setSelectedFunding] = useState<'ALL' | 'Fully Funded' | 'Loan / Grant'>('ALL');
   const [eligibleOnly, setEligibleOnly] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EvaluatedCareerOpportunity | null>(null);
+  const [posted, setPosted] = useState<PostedOpportunity[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    void opportunitiesService.list().then((l) => alive && setPosted(l));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const evaluatedOpportunities = useMemo(() => {
     const safeProfile: StudentProfile = profile || ({
@@ -70,8 +80,11 @@ export const ScholarshipsScreen: React.FC<ScholarshipsScreenProps> = ({
       achievements: [],
     } as StudentProfile);
 
-    return careerHubService.evaluateOpportunitiesForStudent(safeProfile, courses);
-  }, [profile, courses]);
+    const base = careerHubService.evaluateOpportunitiesForStudent(safeProfile, courses);
+    const extra = posted.map((p) => opportunitiesService.toEvaluated(p));
+    // Featured posts first, then the rest of the posted items, then the curated list.
+    return [...extra.filter((e) => e.opportunity.featured), ...extra.filter((e) => !e.opportunity.featured), ...base];
+  }, [profile, courses, posted]);
 
   const filteredOpportunities = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -161,6 +174,9 @@ export const ScholarshipsScreen: React.FC<ScholarshipsScreenProps> = ({
             <option value="Fellowship">Fellowships</option>
             <option value="Competition">Competitions</option>
             <option value="Internship">Internships</option>
+            <option value="Attachment">Attachments (field)</option>
+            <option value="Job">Jobs</option>
+            <option value="Training">Training</option>
           </select>
 
           <select
@@ -192,6 +208,7 @@ export const ScholarshipsScreen: React.FC<ScholarshipsScreenProps> = ({
             <option value="ALL">All Funding Types</option>
             <option value="Fully Funded">Fully Funded</option>
             <option value="Loan / Grant">Loans & Grants</option>
+            <option value="Paid / Stipend">Paid / Stipend</option>
           </select>
         </div>
       </div>
@@ -233,6 +250,9 @@ export const ScholarshipsScreen: React.FC<ScholarshipsScreenProps> = ({
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5">
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                      {opp.featured && (
+                        <span className="px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">Featured</span>
+                      )}
                       <span className="font-semibold text-sky-400">{opp.type}</span>
                       <span>·</span>
                       <span>{opp.regionScope}</span>
@@ -306,9 +326,10 @@ export const ScholarshipsScreen: React.FC<ScholarshipsScreenProps> = ({
                       href={opp.officialApplicationUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => opp.id.startsWith('opp_') && opportunitiesService.trackClick(opp.id)}
                       className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition"
                     >
-                      <span>Official Portal</span>
+                      <span>{opp.id.startsWith('opp_') ? 'Apply Now' : 'Official Portal'}</span>
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   </div>

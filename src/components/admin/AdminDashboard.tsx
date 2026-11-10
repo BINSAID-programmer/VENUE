@@ -25,6 +25,7 @@ import { PaymentRequestsCard } from './PaymentRequestsCard';
 import { LecturerApplicationsCard } from './LecturerApplicationsCard';
 import { MaterialReviewCard } from './MaterialReviewCard';
 import { SponsorsCard } from './SponsorsCard';
+import { OpportunitiesCard } from './OpportunitiesCard';
 import { ServerStatusCard } from './ServerStatusCard';
 import { auth, isVerifiedOwnerAccount } from '../../services/firebase';
 
@@ -103,6 +104,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateSectio
       {isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email) && <LecturerApplicationsCard />}
       <MaterialReviewCard />
       {isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email) && <SponsorsCard />}
+      {isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email) && <OpportunitiesCard />}
       {isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email) && <ServerStatusCard />}
       {isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email) && <DatabaseMigrationCard />}
 

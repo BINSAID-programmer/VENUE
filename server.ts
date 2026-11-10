@@ -12,6 +12,7 @@ import * as push from './push';
 import * as lecApps from './lecturerApplications';
 import * as sponsors from './sponsors';
 import * as daily from './daily';
+import * as opps from './opportunities';
 import { initPersistence, hydrateFromFirestore, saveStoreFile, flushPersistence, getPersistenceStatus } from './persistence';
 import { AUDITED_PROGRAMMES, AUDITED_DEPARTMENTS, AUDITED_ACADEMIC_UNITS } from './src/data/udsmAuditedCatalogue2025';
 import { SAMPLE_COURSES } from './src/data/mockData';
@@ -54,6 +55,7 @@ subs.initSubscriptions(PROFILES_DIR);
 lecApps.initLecturerApplications(PROFILES_DIR);
 sponsors.initSponsors(PROFILES_DIR);
 daily.initDaily(PROFILES_DIR);
+opps.initOpportunities(PROFILES_DIR);
 push.initPush(PROFILES_DIR);
 
 // Helper to safely read AI Tutor usage telemetry logs
@@ -745,6 +747,39 @@ app.post('/api/subscription/admin/requests/:id/decision', requireAuth, (req, res
   const result = subs.decideRequest(req.params.id, Boolean(req.body?.approve), req.user.uid, req.body?.note);
   if (!result.ok) return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: result.error });
   return res.json({ success: true, request: result.request });
+});
+
+// ---- Posted opportunities (internships, attachments, jobs...) ----
+const oppClickLog = new Map<string, number>();
+app.get('/api/opportunities', (_req, res) => {
+  res.set('Cache-Control', 'public, max-age=60');
+  return res.json({ success: true, opportunities: opps.listPublic().map(({ clicks, active, ...o }) => o) });
+});
+
+app.post('/api/opportunities/:id/click', (req, res) => {
+  const key = `${req.ip}:${req.params.id}`;
+  if (Date.now() - (oppClickLog.get(key) || 0) < 30_000) return res.json({ success: true });
+  oppClickLog.set(key, Date.now());
+  if (oppClickLog.size > 5000) oppClickLog.clear();
+  opps.recordClick(req.params.id);
+  return res.json({ success: true });
+});
+
+app.get('/api/opportunities/admin/list', requireAuth, (req, res) => {
+  if (!req.user?.isOwner) return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+  return res.json({ success: true, opportunities: opps.listAdmin() });
+});
+
+app.post('/api/opportunities/admin', requireAuth, (req, res) => {
+  if (!req.user?.isOwner) return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+  const r = opps.upsert(req.body || {});
+  if (!r.ok) return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: r.error });
+  return res.json({ success: true, opportunity: r.item });
+});
+
+app.delete('/api/opportunities/admin/:id', requireAuth, (req, res) => {
+  if (!req.user?.isOwner) return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+  return res.json({ success: opps.remove(req.params.id) });
 });
 
 // ---- Daily Challenge (XP + streak) ----

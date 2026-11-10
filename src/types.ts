@@ -2262,6 +2262,8 @@ export interface StudentCareerRoadmap {
 export type OpportunityCategoryType =
   | 'Scholarship'
   | 'Internship'
+  | 'Attachment'
+  | 'Job'
   | 'Fellowship'
   | 'Competition'
   | 'Graduate Programme'
@@ -2276,6 +2278,7 @@ export type OpportunityFundingType =
   | 'Partially Funded'
   | 'Paid / Stipend'
   | 'Loan / Grant'
+  | 'Unpaid / Experience'
   | 'Training / Certificate';
 
 export interface CareerOpportunityRecord {
@@ -2299,6 +2302,8 @@ export interface CareerOpportunityRecord {
   source: string;
   lastVerifiedDate: string;
   dataStatus: CareerDataStatus;
+  /** Posted on VENUE and highlighted at the top of the list. */
+  featured?: boolean;
 }
 
 export interface EvaluatedCareerOpportunity {
