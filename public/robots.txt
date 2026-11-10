@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /learn/
+Allow: /about/
+Allow: /contact/
+Allow: /terms/
+Allow: /privacy.html
+Disallow: /api/
+
+Sitemap: https://venue-umber.vercel.app/sitemap.xml
