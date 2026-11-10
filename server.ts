@@ -745,6 +745,39 @@ app.post('/api/subscription/admin/requests/:id/decision', requireAuth, (req, res
   return res.json({ success: true, request: result.request });
 });
 
+// ---- Posted opportunities (internships, attachments, jobs...) ----
+const oppClickLog = new Map<string, number>();
+app.get('/api/opportunities', (_req, res) => {
+  res.set('Cache-Control', 'public, max-age=60');
+  return res.json({ success: true, opportunities: opps.listPublic().map(({ clicks, active, ...o }) => o) });
+});
+
+app.post('/api/opportunities/:id/click', (req, res) => {
+  const key = `${req.ip}:${req.params.id}`;
+  if (Date.now() - (oppClickLog.get(key) || 0) < 30_000) return res.json({ success: true });
+  oppClickLog.set(key, Date.now());
+  if (oppClickLog.size > 5000) oppClickLog.clear();
+  opps.recordClick(req.params.id);
+  return res.json({ success: true });
+});
+
+app.get('/api/opportunities/admin/list', requireAuth, (req, res) => {
+  if (!req.user?.isOwner) return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+  return res.json({ success: true, opportunities: opps.listAdmin() });
+});
+
+app.post('/api/opportunities/admin', requireAuth, (req, res) => {
+  if (!req.user?.isOwner) return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+  const r = opps.upsert(req.body || {});
+  if (!r.ok) return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: r.error });
+  return res.json({ success: true, opportunity: r.item });
+});
+
+app.delete('/api/opportunities/admin/:id', requireAuth, (req, res) => {
+  if (!req.user?.isOwner) return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+  return res.json({ success: opps.remove(req.params.id) });
+});
+
 // ---- Sponsor banners ----
 const sponsorClickLog = new Map<string, number>();
 app.get('/api/sponsors', (_req, res) => {
