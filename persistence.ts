@@ -41,6 +41,7 @@ const STORE_DEFS: Record<string, StoreDef> = {
   'subscriptions.json': { kind: 'map', shards: 16 },
   'payment_requests.json': { kind: 'map', shards: 8 },
   'lecturer_applications.json': { kind: 'map', shards: 4 },
+  'sponsors.json': { kind: 'map', shards: 2 },
 };
 
 let firestore: Firestore | null = null;

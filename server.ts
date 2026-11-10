@@ -10,6 +10,7 @@ import { backupMaterialFile, restoreMaterialFile, removeMaterialBackup } from '.
 import * as subs from './subscriptions';
 import * as push from './push';
 import * as lecApps from './lecturerApplications';
+import * as sponsors from './sponsors';
 import { initPersistence, hydrateFromFirestore, saveStoreFile, flushPersistence, getPersistenceStatus } from './persistence';
 import { AUDITED_PROGRAMMES, AUDITED_DEPARTMENTS, AUDITED_ACADEMIC_UNITS } from './src/data/udsmAuditedCatalogue2025';
 import { SAMPLE_COURSES } from './src/data/mockData';
@@ -50,6 +51,7 @@ const AUDIT_LOGS_FILE = path.join(PROFILES_DIR, 'audit_logs.json');
 initPersistence(PROFILES_DIR);
 subs.initSubscriptions(PROFILES_DIR);
 lecApps.initLecturerApplications(PROFILES_DIR);
+sponsors.initSponsors(PROFILES_DIR);
 push.initPush(PROFILES_DIR);
 
 // Helper to safely read AI Tutor usage telemetry logs
@@ -741,6 +743,41 @@ app.post('/api/subscription/admin/requests/:id/decision', requireAuth, (req, res
   const result = subs.decideRequest(req.params.id, Boolean(req.body?.approve), req.user.uid, req.body?.note);
   if (!result.ok) return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: result.error });
   return res.json({ success: true, request: result.request });
+});
+
+// ---- Sponsor banners ----
+const sponsorClickLog = new Map<string, number>();
+app.get('/api/sponsors', (_req, res) => {
+  res.set('Cache-Control', 'public, max-age=60');
+  return res.json({ success: true, sponsors: sponsors.listPublic() });
+});
+
+app.post('/api/sponsors/:id/click', (req, res) => {
+  // Light per-IP throttle so counts are not trivially inflated.
+  const key = `${req.ip}:${req.params.id}`;
+  const last = sponsorClickLog.get(key) || 0;
+  if (Date.now() - last < 30_000) return res.json({ success: true });
+  sponsorClickLog.set(key, Date.now());
+  if (sponsorClickLog.size > 5000) sponsorClickLog.clear();
+  sponsors.recordClick(req.params.id);
+  return res.json({ success: true });
+});
+
+app.get('/api/sponsors/admin/list', requireAuth, (req, res) => {
+  if (!req.user?.isOwner) return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+  return res.json({ success: true, sponsors: sponsors.listAdmin() });
+});
+
+app.post('/api/sponsors/admin', requireAuth, largePayloadJson, (req, res) => {
+  if (!req.user?.isOwner) return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+  const r = sponsors.upsert(req.body || {});
+  if (!r.ok) return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: r.error });
+  return res.json({ success: true, sponsor: r.sponsor });
+});
+
+app.delete('/api/sponsors/admin/:id', requireAuth, (req, res) => {
+  if (!req.user?.isOwner) return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+  return res.json({ success: sponsors.remove(req.params.id) });
 });
 
 // ---- Lecturer self-service applications ----
