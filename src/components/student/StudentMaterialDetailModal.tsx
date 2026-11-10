@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { VerifiedBadge, getUploaderInfo } from '../materials/VerifiedBadge';
 import {
   X,
   Download,
@@ -51,12 +52,8 @@ export const StudentMaterialDetailModal: React.FC<StudentMaterialDetailModalProp
 
   const typeBadge = studentMaterialsService.getMaterialTypeBadge(material.materialType);
   const fileBadge = studentMaterialsService.getFileTypeBadge(material.fileName, material.mimeType);
-  const uploaderName =
-    typeof material.uploadedBy === 'object'
-      ? material.uploadedBy.name || material.uploadedBy.email || 'University Faculty'
-      : material.uploaderRole === 'lecturer'
-      ? 'Course Lecturer'
-      : 'University Repository';
+  const uploader = getUploaderInfo(material);
+  const uploaderName = uploader.label;
 
   const handleDownloadClick = async () => {
     if (checkingDownload) return;
@@ -191,6 +188,7 @@ export const StudentMaterialDetailModal: React.FC<StudentMaterialDetailModalProp
                   <User className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                   <span className="text-slate-400">Uploaded By:</span>
                   <span className="font-medium text-white truncate">{uploaderName}</span>
+                  <VerifiedBadge text={uploader.badge} className="ml-1.5" />
                 </div>
 
                 <div className="flex items-center gap-2 text-slate-300">

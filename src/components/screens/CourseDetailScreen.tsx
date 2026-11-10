@@ -34,6 +34,7 @@ import { StudentMaterialDetailModal } from '../student/StudentMaterialDetailModa
 import { PremiumDownloadModal } from '../student/PremiumDownloadModal';
 import { analyticsTracker } from '../../services/analyticsTrackerService';
 import { StudentUploadModal } from '../materials/StudentUploadModal';
+import { VerifiedBadge, getUploaderInfo } from '../materials/VerifiedBadge';
 
 const ALL_MATERIAL_TYPES: (AcademicMaterialType | 'ALL')[] = [
   'ALL',
@@ -481,12 +482,7 @@ export const CourseDetailScreen: React.FC<CourseDetailScreenProps> = ({
               {filteredCourseMaterials.map((item) => {
                 const typeBadge = studentMaterialsService.getMaterialTypeBadge(item.materialType);
                 const fileBadge = studentMaterialsService.getFileTypeBadge(item.fileName, item.mimeType);
-                const uploaderLabel =
-                  typeof item.uploadedBy === 'object'
-                    ? item.uploadedBy.name || item.uploadedBy.email || 'Course Faculty'
-                    : item.uploaderRole === 'lecturer'
-                    ? 'Verified Lecturer'
-                    : 'University Repository';
+                const uploader = getUploaderInfo(item);
 
                 return (
                   <div
@@ -502,7 +498,8 @@ export const CourseDetailScreen: React.FC<CourseDetailScreenProps> = ({
                             {item.materialType}
                           </span>
                           <span className="text-[10px] text-slate-400">{item.fileSize || 'Standard'}</span>
-                          <span className="text-[10px] text-slate-400">• {uploaderLabel}</span>
+                          <span className="text-[10px] text-slate-400">• {uploader.label}</span>
+                          <VerifiedBadge text={uploader.badge} />
                           <span className="text-[10px] text-slate-500">
                             • {studentMaterialsService.formatDate(item.createdAt)}
                           </span>
