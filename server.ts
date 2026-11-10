@@ -12,6 +12,7 @@ import * as push from './push';
 import * as lecApps from './lecturerApplications';
 import * as sponsors from './sponsors';
 import * as daily from './daily';
+import * as opps from './opportunities';
 import { initPersistence, hydrateFromFirestore, saveStoreFile, flushPersistence, getPersistenceStatus } from './persistence';
 import { AUDITED_PROGRAMMES, AUDITED_DEPARTMENTS, AUDITED_ACADEMIC_UNITS } from './src/data/udsmAuditedCatalogue2025';
 import { SAMPLE_COURSES } from './src/data/mockData';
@@ -54,6 +55,7 @@ subs.initSubscriptions(PROFILES_DIR);
 lecApps.initLecturerApplications(PROFILES_DIR);
 sponsors.initSponsors(PROFILES_DIR);
 daily.initDaily(PROFILES_DIR);
+opps.initOpportunities(PROFILES_DIR);
 push.initPush(PROFILES_DIR);
 
 // Helper to safely read AI Tutor usage telemetry logs
