@@ -11,6 +11,7 @@ import * as subs from './subscriptions';
 import * as push from './push';
 import * as lecApps from './lecturerApplications';
 import * as sponsors from './sponsors';
+import * as daily from './daily';
 import { initPersistence, hydrateFromFirestore, saveStoreFile, flushPersistence, getPersistenceStatus } from './persistence';
 import { AUDITED_PROGRAMMES, AUDITED_DEPARTMENTS, AUDITED_ACADEMIC_UNITS } from './src/data/udsmAuditedCatalogue2025';
 import { SAMPLE_COURSES } from './src/data/mockData';
@@ -52,6 +53,7 @@ initPersistence(PROFILES_DIR);
 subs.initSubscriptions(PROFILES_DIR);
 lecApps.initLecturerApplications(PROFILES_DIR);
 sponsors.initSponsors(PROFILES_DIR);
+daily.initDaily(PROFILES_DIR);
 push.initPush(PROFILES_DIR);
 
 // Helper to safely read AI Tutor usage telemetry logs
@@ -776,6 +778,78 @@ app.post('/api/opportunities/admin', requireAuth, (req, res) => {
 app.delete('/api/opportunities/admin/:id', requireAuth, (req, res) => {
   if (!req.user?.isOwner) return res.status(403).json({ success: false, error: 'FORBIDDEN' });
   return res.json({ success: opps.remove(req.params.id) });
+});
+
+// ---- Daily Challenge (XP + streak) ----
+async function generateDailyQuestions(courseCode: string, courseName: string): Promise<daily.DailyQuestion[]> {
+  const ai = getGeminiClient();
+  const schema = {
+    type: Type.OBJECT,
+    properties: {
+      questions: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            q: { type: Type.STRING },
+            options: { type: Type.ARRAY, items: { type: Type.STRING } },
+            correctIndex: { type: Type.INTEGER },
+            explanation: { type: Type.STRING },
+          },
+          required: ['q', 'options', 'correctIndex', 'explanation'],
+        },
+      },
+    },
+    required: ['questions'],
+  };
+  const prompt = `Write exactly 5 multiple-choice questions for a university student studying "${courseCode}${courseName ? ' - ' + courseName : ''}". Cover different core topics of a typical first-to-second year syllabus for this course. Mix easy and medium difficulty. Each question must have exactly 4 distinct options (no letter prefixes) and exactly one correct option; correctIndex is the 0-based index of the correct option. Add a one-sentence explanation. Use plain text (no LaTeX, no markdown). Make every question self-contained and factually correct.`;
+  let lastErr: any = null;
+  for (const model of ['gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest']) {
+    try {
+      const r = await ai.models.generateContent({
+        model,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        config: { responseMimeType: 'application/json', responseSchema: schema },
+      });
+      const parsed = JSON.parse(r.text || '{}');
+      const qs = (parsed.questions || [])
+        .filter(
+          (x: any) =>
+            x && typeof x.q === 'string' && Array.isArray(x.options) && x.options.length === 4 &&
+            Number.isInteger(x.correctIndex) && x.correctIndex >= 0 && x.correctIndex < 4
+        )
+        .slice(0, 5)
+        .map((x: any) => ({
+          q: String(x.q).slice(0, 400),
+          options: x.options.map((o: any) => String(o).slice(0, 160)),
+          correctIndex: x.correctIndex,
+          explanation: String(x.explanation || '').slice(0, 300),
+        }));
+      if (qs.length === 5) return qs;
+      lastErr = new Error('Incomplete question set');
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('generation failed');
+}
+
+app.get('/api/daily/state', requireAuth, (req, res) => {
+  return res.json({ success: true, ...daily.getState(req.user!.uid) });
+});
+
+app.post('/api/daily/challenge', requireAuth, async (req, res) => {
+  const state = daily.getState(req.user!.uid);
+  if (state.doneToday) return res.json({ success: true, alreadyDone: true, state });
+  const r = await daily.getChallenge(String(req.body?.courseCode || ''), String(req.body?.courseName || ''), generateDailyQuestions);
+  if (!r.ok) return res.status(503).json({ success: false, error: 'UNAVAILABLE', message: r.error });
+  return res.json({ success: true, alreadyDone: false, questions: r.questions, state });
+});
+
+app.post('/api/daily/submit', requireAuth, (req, res) => {
+  const r = daily.submit(req.user!.uid, String(req.body?.courseCode || ''), req.body?.answers);
+  if (!r.ok) return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: r.error });
+  return res.json({ success: true, ...r });
 });
 
 // ---- Sponsor banners ----

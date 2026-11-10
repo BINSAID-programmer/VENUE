@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import PremiumBanner from '../premium/PremiumBanner';
 import { SponsorBanner } from '../sponsors/SponsorBanner';
+import { DailyChallenge } from '../daily/DailyChallenge';
 import {
   BookOpen,
   Sparkles,
@@ -886,6 +887,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         )}
       </section>
+
+      <DailyChallenge courses={courses} />
 
       <PremiumBanner />
 
