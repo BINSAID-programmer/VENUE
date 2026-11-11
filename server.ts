@@ -2762,13 +2762,14 @@ app.get('/api/materials/file', async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', 'private, max-age=300');
 
-    // Stage 8B: Record material view/stream event in analytics
-    try {
+    // Stage 8B: Record material view/stream event in analytics (deferred so the file is sent first)
+    const viewUserId = (req.query.userId as string) || 'student_user';
+    setImmediate(() => { try {
       const currentEvents = readAllAnalyticsEvents();
       currentEvents.push({
         id: `evt_view_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
         eventType: 'material_view',
-        userId: (req.query.userId as string) || 'student_user',
+        userId: viewUserId,
         userRole: 'student',
         feature: 'materials',
         timestamp: new Date().toISOString(),
@@ -2781,7 +2782,7 @@ app.get('/api/materials/file', async (req, res) => {
       writeAllAnalyticsEvents(currentEvents);
     } catch {
       // Non-blocking analytics telemetry
-    }
+    } });
 
     return res.sendFile(fullPath);
   } catch (err: any) {

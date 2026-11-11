@@ -90,7 +90,40 @@ class StudentMaterialsService {
    * Enforces status === 'active' at both query and in-memory level.
    * Preserves shared canonical-course materials across all programmes that take the course.
    */
+  private materialsCache = new Map<string, { at: number; data: AcademicMaterialRecord[] }>();
+  private materialsInflight = new Map<string, Promise<AcademicMaterialRecord[]>>();
+
+  /** Forget cached lists (call after an upload/approval so fresh data shows). */
+  clearMaterialsCache() {
+    this.materialsCache.clear();
+    this.materialsInflight.clear();
+  }
+
   async getStudentMaterials(
+    context: StudentAcademicContext,
+    filters?: StudentMaterialQueryFilters
+  ): Promise<AcademicMaterialRecord[]> {
+    let key = '';
+    try {
+      key = JSON.stringify([context, filters || null]);
+    } catch {
+      return this.loadStudentMaterials(context, filters);
+    }
+    const hit = this.materialsCache.get(key);
+    if (hit && Date.now() - hit.at < 45000) return hit.data;
+    const running = this.materialsInflight.get(key);
+    if (running) return running;
+    const p = this.loadStudentMaterials(context, filters)
+      .then((data) => {
+        if (data.length > 0) this.materialsCache.set(key, { at: Date.now(), data });
+        return data;
+      })
+      .finally(() => this.materialsInflight.delete(key));
+    this.materialsInflight.set(key, p);
+    return p;
+  }
+
+  private async loadStudentMaterials(
     context: StudentAcademicContext,
     filters?: StudentMaterialQueryFilters
   ): Promise<AcademicMaterialRecord[]> {
@@ -112,6 +145,12 @@ class StudentMaterialsService {
     const targetCanonId = (targetCourseCode || targetCourseId || '')
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '_');
+
+    // Start the broad Firestore query now so it runs while the server (which may be waking up) answers.
+    const defaultSnapPromise: Promise<any> = getDocs(
+      query(collection(dbDefault, 'materials'), where('status', '==', 'active'), limit(pageSize))
+    );
+    defaultSnapPromise.catch(() => {});
 
     try {
       // 0. Query persistent server metadata repository first so uploaded materials are always found
@@ -213,10 +252,7 @@ class StudentMaterialsService {
       // 2. Also query active materials across the university so shared canonical course materials
       // uploaded under another programme (or general university scope) are never missed
       try {
-        const defaultSnap = await getDocs(
-          query(collection(dbDefault, 'materials'), where('status', '==', 'active'), limit(pageSize))
-        );
-        addSnapDocs(defaultSnap);
+        addSnapDocs(await defaultSnapPromise);
       } catch {
         try {
           const allDefaultSnap = await getDocs(query(collection(dbDefault, 'materials'), limit(pageSize)));
