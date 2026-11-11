@@ -4,6 +4,7 @@ import {
   Course,
   StudentProfile,
   StudyTask,
+  ExamCountdown,
   FinancialTransaction,
   CommunityPost,
   AcademicMaterialRecord,
@@ -658,6 +659,25 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleAddExam = async (exam: ExamCountdown) => {
+    try {
+      const updated = await studentDashboardService.saveStudentExam(exam, profile?.uid);
+      setExams(updated);
+    } catch (err) {
+      console.warn('Failed to save exam:', err);
+    }
+  };
+
+  const handleDeleteExam = async (examId: string) => {
+    setExams((prev) => prev.filter((e) => e.id !== examId));
+    try {
+      const updated = await studentDashboardService.deleteStudentExam(examId, profile?.uid);
+      setExams(updated);
+    } catch (err) {
+      console.warn('Failed to delete exam:', err);
+    }
+  };
+
   const handleAddCommunityPost = (newPost: CommunityPost) => {
     setCommunityPosts((prev) => [newPost, ...prev]);
   };
@@ -1253,6 +1273,8 @@ export const App: React.FC = () => {
             onToggleTask={handleToggleTask}
             onAddTask={handleAddTask}
             onDeleteTask={handleDeleteTask}
+            onAddExam={handleAddExam}
+            onDeleteExam={handleDeleteExam}
           />
         )}
 

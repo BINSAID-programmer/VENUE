@@ -608,12 +608,38 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
           </div>
           <div className="text-right shrink-0">
-            <div className="text-2xl font-black text-amber-400 font-['Space_Grotesk'] leading-none">
+            <div
+              className={`text-2xl font-black font-['Space_Grotesk'] leading-none ${
+                nextExam.daysRemaining <= 3 ? 'text-rose-400' : 'text-amber-400'
+              }`}
+            >
               {nextExam.daysRemaining}
             </div>
             <div className="text-[10px] text-slate-400 uppercase font-semibold mt-0.5">
-              Days Left
+              {nextExam.daysRemaining === 0 ? 'Today' : 'Days Left'}
             </div>
+          </div>
+        </section>
+      )}
+
+      {!nextExam && (
+        <section
+          onClick={() => {
+            try {
+              sessionStorage.setItem('venue:planner-tab', 'exams');
+            } catch {
+              /* ignore */
+            }
+            onNavigate('planner');
+          }}
+          className="p-4 rounded-xl bg-slate-900/70 border border-dashed border-amber-500/30 flex items-center gap-3 cursor-pointer hover:border-amber-500/50 transition-all"
+        >
+          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-white">Add your next test or exam date</p>
+            <p className="text-[11px] text-slate-400">Start a countdown and study with a plan.</p>
           </div>
         </section>
       )}
