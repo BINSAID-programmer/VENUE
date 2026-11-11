@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import {
   ScreenId,
   Course,
@@ -64,34 +64,42 @@ import { lecturerApplicationService } from './services/lecturerApplicationServic
 import { HomeScreen } from './components/screens/HomeScreen';
 import { CoursesScreen } from './components/screens/CoursesScreen';
 import { CourseDetailScreen } from './components/screens/CourseDetailScreen';
-import { AITutorScreen } from './components/screens/AITutorScreen';
-import { ResourcesScreen } from './components/screens/ResourcesScreen';
-import { BrowseMaterialsScreen } from './components/screens/BrowseMaterialsScreen';
-import { MaterialViewerScreen } from './components/screens/MaterialViewerScreen';
-import { PastPapersScreen } from './components/screens/PastPapersScreen';
-import { SearchScreen } from './components/screens/SearchScreen';
 import { MoreScreen } from './components/screens/MoreScreen';
-import { StudyPlannerScreen } from './components/screens/StudyPlannerScreen';
-import { QuizScreen } from './components/screens/QuizScreen';
-import { FlashcardsScreen } from './components/screens/FlashcardsScreen';
-import { ScholarshipsScreen } from './components/screens/ScholarshipsScreen';
-import { CareerHubScreen } from './components/screens/CareerHubScreen';
-import { UniversityHubScreen } from './components/screens/UniversityHubScreen';
-import { CommunityScreen } from './components/screens/CommunityScreen';
 import { ScreenErrorBoundary } from './components/common/ScreenErrorBoundary';
-import { ProfileScreen } from './components/screens/ProfileScreen';
-import { EditProfileScreen } from './components/screens/EditProfileScreen';
-import { FinancialPlannerScreen } from './components/screens/FinancialPlannerScreen';
-import { NotificationsScreen } from './components/screens/NotificationsScreen';
-import { SettingsScreen } from './components/screens/SettingsScreen';
-import { AdminGuard } from './components/admin';
-import { LecturerGuard } from './components/lecturer';
 import { lecturerAuthService } from './services/lecturerAuthService';
 import { ThemeProvider } from './context/ThemeContext';
 import { installGlobalQuotaWatcher, isFirestoreQuotaPaused, onQuotaStateChange } from './services/quotaGuard';
 import { ShieldAlert, CheckCircle2, AlertTriangle } from 'lucide-react';
 // [TEMPORARY STAGE 1 DIAGNOSTIC PANEL — REMOVE AFTER VERIFICATION]
 import { TempAuthDiagnosticPanel } from './components/TempAuthDiagnosticPanel';
+
+// Heavy screens load on demand so the first screen opens fast.
+const AITutorScreen = React.lazy(() => import('./components/screens/AITutorScreen').then(m => ({ default: m.AITutorScreen })));
+const ResourcesScreen = React.lazy(() => import('./components/screens/ResourcesScreen').then(m => ({ default: m.ResourcesScreen })));
+const BrowseMaterialsScreen = React.lazy(() => import('./components/screens/BrowseMaterialsScreen').then(m => ({ default: m.BrowseMaterialsScreen })));
+const MaterialViewerScreen = React.lazy(() => import('./components/screens/MaterialViewerScreen').then(m => ({ default: m.MaterialViewerScreen })));
+const PastPapersScreen = React.lazy(() => import('./components/screens/PastPapersScreen').then(m => ({ default: m.PastPapersScreen })));
+const SearchScreen = React.lazy(() => import('./components/screens/SearchScreen').then(m => ({ default: m.SearchScreen })));
+const StudyPlannerScreen = React.lazy(() => import('./components/screens/StudyPlannerScreen').then(m => ({ default: m.StudyPlannerScreen })));
+const QuizScreen = React.lazy(() => import('./components/screens/QuizScreen').then(m => ({ default: m.QuizScreen })));
+const FlashcardsScreen = React.lazy(() => import('./components/screens/FlashcardsScreen').then(m => ({ default: m.FlashcardsScreen })));
+const ScholarshipsScreen = React.lazy(() => import('./components/screens/ScholarshipsScreen').then(m => ({ default: m.ScholarshipsScreen })));
+const CareerHubScreen = React.lazy(() => import('./components/screens/CareerHubScreen').then(m => ({ default: m.CareerHubScreen })));
+const UniversityHubScreen = React.lazy(() => import('./components/screens/UniversityHubScreen').then(m => ({ default: m.UniversityHubScreen })));
+const CommunityScreen = React.lazy(() => import('./components/screens/CommunityScreen').then(m => ({ default: m.CommunityScreen })));
+const ProfileScreen = React.lazy(() => import('./components/screens/ProfileScreen').then(m => ({ default: m.ProfileScreen })));
+const EditProfileScreen = React.lazy(() => import('./components/screens/EditProfileScreen').then(m => ({ default: m.EditProfileScreen })));
+const FinancialPlannerScreen = React.lazy(() => import('./components/screens/FinancialPlannerScreen').then(m => ({ default: m.FinancialPlannerScreen })));
+const NotificationsScreen = React.lazy(() => import('./components/screens/NotificationsScreen').then(m => ({ default: m.NotificationsScreen })));
+const SettingsScreen = React.lazy(() => import('./components/screens/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
+const AdminGuard = React.lazy(() => import('./components/admin').then(m => ({ default: m.AdminGuard })));
+const LecturerGuard = React.lazy(() => import('./components/lecturer').then(m => ({ default: m.LecturerGuard })));
+
+const ScreenLoading: React.FC = () => (
+  <div className="flex items-center justify-center py-24">
+    <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" />
+  </div>
+);
 
 export const App: React.FC = () => {
   // Navigation State
@@ -846,6 +854,7 @@ export const App: React.FC = () => {
         }
       >
         <ScreenErrorBoundary resetKey={currentScreen} screenName="This screen">
+          <Suspense fallback={<ScreenLoading />}>
         {/* App Header for Authenticated Screens */}
       {showHeader && (
         <Header
@@ -1477,6 +1486,7 @@ export const App: React.FC = () => {
       {typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('diag') && (
         <TempAuthDiagnosticPanel />
       )}
+          </Suspense>
         </ScreenErrorBoundary>
     </DeviceWrapper>
   </ThemeProvider>
