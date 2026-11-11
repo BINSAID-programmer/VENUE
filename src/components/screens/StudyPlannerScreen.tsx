@@ -22,6 +22,8 @@ interface StudyPlannerScreenProps {
   onToggleTask: (taskId: string) => void;
   onAddTask: (task: StudyTask) => void;
   onDeleteTask: (taskId: string) => void;
+  onAddExam?: (exam: ExamCountdown) => Promise<void> | void;
+  onDeleteExam?: (examId: string) => void;
 }
 
 export const StudyPlannerScreen: React.FC<StudyPlannerScreenProps> = ({
@@ -32,8 +34,52 @@ export const StudyPlannerScreen: React.FC<StudyPlannerScreenProps> = ({
   onToggleTask,
   onAddTask,
   onDeleteTask,
+  onAddExam,
+  onDeleteExam,
 }) => {
-  const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'exams'>('daily');
+  const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'exams'>(() => {
+    try {
+      if (sessionStorage.getItem('venue:planner-tab') === 'exams') {
+        sessionStorage.removeItem('venue:planner-tab');
+        return 'exams';
+      }
+    } catch {
+      /* ignore */
+    }
+    return 'daily';
+  });
+  const [examFormOpen, setExamFormOpen] = useState(false);
+  const [examCourse, setExamCourse] = useState(courses[0]?.code || '');
+  const [examKind, setExamKind] = useState('Test (CA)');
+  const [examDate, setExamDate] = useState('');
+  const [examTime, setExamTime] = useState('');
+  const [examVenue, setExamVenue] = useState('');
+  const [examError, setExamError] = useState('');
+
+  const submitExam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!examDate) return setExamError('Choose the exam date.');
+    const code = (examCourse || '').trim();
+    if (!code) return setExamError('Choose a course.');
+    const d = new Date(examDate);
+    if (isNaN(d.getTime()) || d.getTime() < new Date(new Date().toDateString()).getTime()) {
+      return setExamError('The date must be today or later.');
+    }
+    await onAddExam?.({
+      id: `exam_${Date.now()}`,
+      examName: `${code} ${examKind}`,
+      courseCode: code,
+      date: examDate,
+      daysRemaining: 0,
+      venue: examVenue.trim() || 'TBA',
+      sessionTime: examTime.trim() || 'TBA',
+    });
+    setExamFormOpen(false);
+    setExamDate('');
+    setExamTime('');
+    setExamVenue('');
+    setExamError('');
+  };
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskCourse, setNewTaskCourse] = useState(courses[0]?.code || 'General');
@@ -282,9 +328,68 @@ export const StudyPlannerScreen: React.FC<StudyPlannerScreenProps> = ({
       {/* Tab 3: Exam Countdown */}
       {activeTab === 'exams' && (
         <div className="space-y-3">
-          <p className="text-xs text-slate-400">
-            University Examinations (UE) & Continuous Assessment (CA) schedules
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-slate-400">University Examinations (UE) & Continuous Assessment (CA) schedules</p>
+            {onAddExam && (
+              <button
+                type="button"
+                onClick={() => setExamFormOpen((o) => !o)}
+                className="shrink-0 px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 text-xs font-bold cursor-pointer"
+              >
+                + Add exam
+              </button>
+            )}
+          </div>
+
+          {examFormOpen && (
+            <form onSubmit={submitExam} className="p-3 rounded-xl bg-slate-900 border border-slate-700 space-y-2">
+              <select
+                value={examCourse}
+                onChange={(e) => setExamCourse(e.target.value)}
+                className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white"
+              >
+                {courses.length === 0 && <option value="">No courses yet</option>}
+                {courses.map((c) => (
+                  <option key={c.id} value={c.code}>
+                    {c.code} - {c.title}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={examKind}
+                onChange={(e) => setExamKind(e.target.value)}
+                className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white"
+              >
+                {['Test (CA)', 'Quiz', 'Assignment due', 'University Exam (UE)', 'Practical'].map((k) => (
+                  <option key={k}>{k}</option>
+                ))}
+              </select>
+              <input
+                type="date"
+                value={examDate}
+                onChange={(e) => setExamDate(e.target.value)}
+                className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  value={examTime}
+                  onChange={(e) => setExamTime(e.target.value)}
+                  placeholder="Time (e.g. 09:00)"
+                  className="rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500"
+                />
+                <input
+                  value={examVenue}
+                  onChange={(e) => setExamVenue(e.target.value)}
+                  placeholder="Venue (optional)"
+                  className="rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder-slate-500"
+                />
+              </div>
+              {examError && <p className="text-xs text-rose-300">{examError}</p>}
+              <button type="submit" className="w-full py-2.5 rounded-xl bg-amber-500 text-slate-950 text-sm font-bold cursor-pointer">
+                Save
+              </button>
+            </form>
+          )}
 
           {exams.length === 0 ? (
             <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 text-center space-y-2">
@@ -309,13 +414,30 @@ export const StudyPlannerScreen: React.FC<StudyPlannerScreenProps> = ({
                 <h4 className="text-xs sm:text-sm font-bold text-white">{exam.examName}</h4>
                 <p className="text-[11px] text-slate-400">Venue: {exam.venue}</p>
                 <p className="text-[10px] text-slate-500">{exam.sessionTime}</p>
+                {onDeleteExam && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm('Remove this exam?')) onDeleteExam(exam.id);
+                    }}
+                    className="text-[10px] text-rose-300 underline cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                )}
               </div>
 
               <div className="text-right shrink-0 p-3 rounded-xl bg-slate-950 border border-slate-850">
-                <div className="text-2xl font-black text-amber-400 font-['Space_Grotesk'] leading-none">
+                <div
+                  className={`text-2xl font-black font-['Space_Grotesk'] leading-none ${
+                    exam.daysRemaining <= 3 ? 'text-rose-400' : 'text-amber-400'
+                  }`}
+                >
                   {exam.daysRemaining}
                 </div>
-                <div className="text-[9px] uppercase font-bold text-slate-400 mt-1">Days Left</div>
+                <div className="text-[9px] uppercase font-bold text-slate-400 mt-1">
+                  {exam.daysRemaining === 0 ? 'Today' : 'Days Left'}
+                </div>
               </div>
             </div>
             ))
