@@ -687,6 +687,11 @@ function getGeminiClient(): GoogleGenAI {
   return geminiClient;
 }
 
+// Ultra-light keep-alive endpoint for uptime monitors (no auth, no disk, no database).
+app.get('/api/ping', (_req, res) => {
+  res.set('Cache-Control', 'no-store').type('text/plain').send('ok');
+});
+
 // Stage 1 Security Foundation: Attach verified req.user when a valid Firebase Bearer token is sent
 app.use(
   '/api',
