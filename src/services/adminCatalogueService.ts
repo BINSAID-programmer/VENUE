@@ -3305,6 +3305,8 @@ class AdminCatalogueService {
   async updateProgrammeCourseRelationship(params: {
     programmeId: string;
     code: string;
+    /** The course code before this edit (needed so a code change replaces the old entry instead of adding a second one). */
+    oldCode?: string;
     canonicalCourseId?: string;
     oldYearOfStudy: number;
     oldSemester: number;
@@ -3456,6 +3458,61 @@ class AdminCatalogueService {
           await this.deleteDocInBothDatabases('programme_courses', markerId(newYear, newSem));
         } catch {
           /* no marker in target term */
+        }
+      }
+
+      // Code changed: replace the old entry instead of leaving it next to the new one.
+      const normCode = (c?: string) => String(c || '').trim().toUpperCase().replace(/[\s_-]+/g, ' ');
+      const oldCodeClean = String(params.oldCode || '').trim().toUpperCase();
+      if (oldCodeClean && normCode(oldCodeClean) !== normCode(cleanCode)) {
+        const oldCodeSlug = oldCodeClean.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const oldCcId = `udsm_${cleanProgId}_${oldCodeSlug}`;
+        // 1. Remove stored catalogue entries that still carry the old code
+        const oldCc = await this.queryBothDatabases('catalogue_courses', (colRef) =>
+          query(colRef, where('programmeId', '==', cleanProgId), where('code', '==', oldCodeClean))
+        );
+        const oldCcIds = new Set<string>([oldCcId, ...oldCc.filter((d) => (d.data as any)?.deleted !== true).map((d) => d.id)]);
+        oldCcIds.delete(ccId);
+        for (const id of oldCcIds) {
+          try {
+            await this.deleteDocInBothDatabases('catalogue_courses', id);
+          } catch {
+            /* entry may not exist */
+          }
+        }
+        // 2. Remove stored programme links (other than the one just updated) with the old code in the old term
+        const oldPc = await this.queryBothDatabases('programme_courses', (colRef) =>
+          query(colRef, where('programmeId', '==', cleanProgId), where('code', '==', oldCodeClean))
+        );
+        for (const d of oldPc) {
+          const data = d.data as any;
+          if (d.id === pcId || data?.deleted === true) continue;
+          try {
+            await this.deleteDocInBothDatabases('programme_courses', d.id);
+          } catch {
+            /* ignore */
+          }
+        }
+        // 3. Hide the old code in the old term (built-in/seed data cannot be deleted)
+        await setDoc(
+          doc(db, 'programme_courses', `${cleanProgId}__removed__${oldCodeSlug}_y${oldYear}s${oldSem}`.replace(/[^a-zA-Z0-9_-]/g, '-')),
+          {
+            deleted: true,
+            programmeId: cleanProgId,
+            code: oldCodeClean,
+            yearOfStudy: oldYear,
+            semester: oldSem,
+            deletedAt: nowIso,
+            deletedBy: auth.currentUser?.uid || '',
+            reason: 'renamed',
+          },
+          { merge: false }
+        );
+        // 4. Make sure the new code is not hidden in its term
+        try {
+          await this.deleteDocInBothDatabases('programme_courses', markerId(newYear, newSem));
+        } catch {
+          /* no marker */
         }
       }
 

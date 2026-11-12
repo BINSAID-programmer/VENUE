@@ -111,6 +111,7 @@ export const EditCourseModal: React.FC<EditCourseModalProps> = ({
         const relRes = await adminCatalogueService.updateProgrammeCourseRelationship({
           programmeId: targetProgId,
           code: cleanCode,
+          oldCode: originalCode,
           canonicalCourseId: canonicalId,
           oldYearOfStudy: Number(course.yearOfStudy) || 1,
           oldSemester: Number(course.semester) || 1,
