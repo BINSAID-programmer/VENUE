@@ -3,6 +3,7 @@ import { Loader2, AlertCircle, Mail } from 'lucide-react';
 import { motion } from 'motion/react';
 import { getFirebaseAuthErrorMessage } from '../../services/firebase';
 import { VenueLogo } from '../common/VenueLogo';
+import { CAMPUS_BG } from '../../assets_campusBg';
 
 interface WelcomeScreenProps {
   onGetStarted: () => void;
@@ -33,7 +34,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   return (
     <div className="min-h-full min-h-screen sm:min-h-full flex-1 flex flex-col justify-between relative overflow-hidden bg-[#070b14]">
       <img
-        src="/assets/campus-bg.webp"
+        src={CAMPUS_BG}
         alt=""
         aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover"
@@ -117,7 +118,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           </button>
         </div>
 
-        <p className="text-center text-[11px] text-slate-400 pt-1">By Binsaid</p>
       </div>
     </div>
   );

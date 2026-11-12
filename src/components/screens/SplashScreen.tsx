@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
 import { VenueLogo } from '../common/VenueLogo';
+import { CAMPUS_BG } from '../../assets_campusBg';
 
 interface SplashScreenProps {
   onContinue: () => void;
@@ -21,7 +22,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onContinue }) => {
     >
       {/* Campus photo + dark blue tint so text stays readable */}
       <img
-        src="/assets/campus-bg.webp"
+        src={CAMPUS_BG}
         alt=""
         aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover"
@@ -65,7 +66,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onContinue }) => {
       >
         <p className="text-sm font-medium text-white/90">Built for Students</p>
         <p className="text-sm font-medium text-white/90">Designed for Your Future</p>
-        <p className="text-xs text-slate-300 pt-2">By Binsaid</p>
       </motion.div>
     </div>
   );
