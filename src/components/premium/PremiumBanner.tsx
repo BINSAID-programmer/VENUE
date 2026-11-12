@@ -41,7 +41,7 @@ export default function PremiumBanner() {
   }
 
   if (status.isPremium) {
-    const until = status.premiumUntil ? new Date(status.premiumUntil).toLocaleDateString() : '';
+    const until = status.premiumUntil ? new Date(status.premiumUntil).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
     return (
       <button
         type="button"

@@ -62,7 +62,7 @@ export default function PremiumHost() {
   const display = '0' + number.replace(/^255/, '').replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
   const isPremium = Boolean(status?.isPremium);
   const pendingKinds = (status?.pending || []).map((p) => p.kind);
-  const until = status?.premiumUntil ? new Date(status.premiumUntil).toLocaleDateString() : '';
+  const until = status?.premiumUntil ? new Date(status.premiumUntil).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
 
   const submit = async () => {
     setError('');
@@ -126,7 +126,7 @@ export default function PremiumHost() {
             <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-200 space-y-0.5">
               <p className="font-bold">Premium is active{until ? ` until ${until}` : ''}</p>
               <p>
-                Downloads left: <b>{status?.downloadsLeft ?? 0}</b> of {status?.downloadsAllowed ?? 5}
+                {(status?.downloadsAllowed ?? 0) >= 9999 ? <>Downloads: <b>Unlimited</b></> : <>Downloads left: <b>{status?.downloadsLeft ?? 0}</b> of {status?.downloadsAllowed ?? 5}</>}
               </p>
             </div>
           )}
