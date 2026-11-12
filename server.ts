@@ -730,12 +730,13 @@ app.get('/api/subscription/status', requireAuth, (req, res) => {
 });
 
 app.post('/api/subscription/request', requireAuth, (req, res) => {
-  const { kind, reference, senderPhone } = req.body || {};
+  const { kind, reference, senderPhone, plan } = req.body || {};
   const result = subs.createRequest(
     { uid: req.user!.uid, email: req.user!.email, name: req.user!.name },
     kind,
     reference,
-    senderPhone
+    senderPhone,
+    plan
   );
   if (!result.ok) return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: result.error });
   return res.json({ success: true, request: result.request });

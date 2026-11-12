@@ -1,8 +1,12 @@
 import { authenticatedFetch } from './apiClient';
 
+export type PlanId = 'day' | 'week' | 'month' | 'semester';
+export interface PlanInfo { id: PlanId; label: string; days: number; priceTzs: number; downloads: number }
+
 export interface PaymentRequestItem {
   id: string;
   kind: 'premium' | 'download_pack';
+  plan?: PlanId;
   amountTzs: number;
   reference: string;
   senderPhone: string;
@@ -16,6 +20,7 @@ export interface PaymentRequestItem {
 }
 
 export interface PremiumStatus {
+  plans?: PlanInfo[];
   isPremium: boolean;
   premiumUntil: string | null;
   downloadsAllowed: number;
@@ -58,11 +63,11 @@ export const premiumService = {
     cache = null;
   },
 
-  async submitRequest(kind: 'premium' | 'download_pack', reference: string, senderPhone: string) {
+  async submitRequest(kind: 'premium' | 'download_pack', reference: string, senderPhone: string, plan?: PlanId) {
     const res = await authenticatedFetch('/api/subscription/request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kind, reference, senderPhone }),
+      body: JSON.stringify({ kind, reference, senderPhone, plan }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data?.message || 'Could not send your request. Please try again.');

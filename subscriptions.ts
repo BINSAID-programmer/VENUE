@@ -12,6 +12,16 @@ import { saveStoreFile } from './persistence';
 // ---- Plan configuration (change here to change prices/limits) ----
 export const PREMIUM_PRICE_TZS = 1500;
 export const PREMIUM_DAYS = 30;
+
+// Premium bundles. Change prices / days / included downloads here.
+export type PlanId = 'day' | 'week' | 'month' | 'semester';
+export interface PlanDef { id: PlanId; label: string; days: number; priceTzs: number; downloads: number }
+export const PLANS: Record<PlanId, PlanDef> = {
+  day: { id: 'day', label: 'Day', days: 1, priceTzs: 300, downloads: 2 },
+  week: { id: 'week', label: 'Week', days: 7, priceTzs: 800, downloads: 3 },
+  month: { id: 'month', label: 'Month', days: 30, priceTzs: PREMIUM_PRICE_TZS, downloads: 5 },
+  semester: { id: 'semester', label: 'Semester (4 months)', days: 120, priceTzs: 4500, downloads: 20 },
+};
 export const BASE_DOWNLOADS = 5; // downloads included per paid month
 export const DOWNLOAD_PACK_SIZE = 5; // extra downloads per pack
 export const DOWNLOAD_PACK_PRICE_TZS = 1500;
@@ -27,6 +37,7 @@ export interface SubscriptionRecord {
   email?: string;
   premiumUntil?: string;
   periodStart?: string;
+  baseDownloads?: number; // downloads included by the plan(s) bought
   downloadedIds: string[];
   extraDownloads: number;
   aiDay?: string;
@@ -40,6 +51,7 @@ export interface PaymentRequest {
   email: string;
   name: string;
   kind: RequestKind;
+  plan?: PlanId;
   amountTzs: number;
   reference: string;
   senderPhone: string;
@@ -88,6 +100,7 @@ export function isPremiumActive(rec: SubscriptionRecord): boolean {
 }
 
 export interface SubscriptionStatus {
+  plans: PlanDef[];
   isPremium: boolean;
   premiumUntil: string | null;
   downloadsAllowed: number;
@@ -107,7 +120,7 @@ export interface SubscriptionStatus {
 export function getStatus(uid: string, isOwner: boolean): SubscriptionStatus {
   const rec = getRecord(uid);
   const premium = isOwner || isPremiumActive(rec);
-  const allowed = BASE_DOWNLOADS + (rec.extraDownloads || 0);
+  const allowed = (rec.baseDownloads ?? BASE_DOWNLOADS) + (rec.extraDownloads || 0);
   const used = rec.downloadedIds.length;
   const requests = Object.values(readJson<PaymentRequest>(reqFile()))
     .filter((r) => r.uid === uid)
@@ -115,6 +128,7 @@ export function getStatus(uid: string, isOwner: boolean): SubscriptionStatus {
   const today = eatDay();
   const aiUsed = rec.aiDay === today ? rec.aiCount || 0 : 0;
   return {
+    plans: Object.values(PLANS),
     isPremium: premium,
     premiumUntil: rec.premiumUntil || null,
     downloadsAllowed: isOwner ? 9999 : allowed,
@@ -158,7 +172,7 @@ export function checkDownload(uid: string, isOwner: boolean, materialKey: string
   if (isOwner) return { allowed: true, alreadyHad: false, left: 9999 };
   const rec = getRecord(uid);
   if (!isPremiumActive(rec)) return { allowed: false, reason: 'PREMIUM_REQUIRED', left: 0 };
-  const allowed = BASE_DOWNLOADS + (rec.extraDownloads || 0);
+  const allowed = (rec.baseDownloads ?? BASE_DOWNLOADS) + (rec.extraDownloads || 0);
   if (materialKey && rec.downloadedIds.includes(materialKey)) {
     return { allowed: true, alreadyHad: true, left: Math.max(0, allowed - rec.downloadedIds.length) };
   }
@@ -180,7 +194,8 @@ export function createRequest(
   user: { uid: string; email: string; name?: string },
   kind: RequestKind,
   reference: string,
-  senderPhone: string
+  senderPhone: string,
+  planId?: string
 ): { ok: true; request: PaymentRequest } | { ok: false; error: string } {
   const ref = String(reference || '').trim().toUpperCase();
   const phone = String(senderPhone || '').replace(/[^0-9+]/g, '');
@@ -188,6 +203,8 @@ export function createRequest(
   if (!/^[A-Z0-9]{6,20}$/.test(ref)) {
     return { ok: false, error: 'Enter the transaction ID from your payment message (6–20 letters/numbers).' };
   }
+  const plan: PlanId = (planId && planId in PLANS ? planId : 'month') as PlanId;
+  if (planId && !(planId in PLANS)) return { ok: false, error: 'Invalid plan.' };
   if (phone.replace('+', '').length < 9) return { ok: false, error: 'Enter the phone number you paid from.' };
 
   const all = readJson<PaymentRequest>(reqFile());
@@ -208,7 +225,8 @@ export function createRequest(
     email: user.email,
     name: user.name || '',
     kind,
-    amountTzs: kind === 'premium' ? PREMIUM_PRICE_TZS : DOWNLOAD_PACK_PRICE_TZS,
+    plan: kind === 'premium' ? plan : undefined,
+    amountTzs: kind === 'premium' ? PLANS[plan].priceTzs : DOWNLOAD_PACK_PRICE_TZS,
     reference: ref,
     senderPhone: phone,
     status: 'pending',
@@ -241,11 +259,19 @@ export function decideRequest(
     const rec = getRecord(r.uid);
     rec.email = r.email;
     if (r.kind === 'premium') {
-      const base = isPremiumActive(rec) ? new Date(rec.premiumUntil as string).getTime() : Date.now();
-      rec.premiumUntil = new Date(base + PREMIUM_DAYS * 86400000).toISOString();
-      rec.periodStart = new Date().toISOString();
-      rec.downloadedIds = [];
-      rec.extraDownloads = 0;
+      const plan = PLANS[(r.plan as PlanId) || 'month'] || PLANS.month;
+      const wasActive = isPremiumActive(rec);
+      const base = wasActive ? new Date(rec.premiumUntil as string).getTime() : Date.now();
+      rec.premiumUntil = new Date(base + plan.days * 86400000).toISOString();
+      if (wasActive) {
+        // Extending: keep what was already used, add the new plan's downloads.
+        rec.baseDownloads = (rec.baseDownloads ?? BASE_DOWNLOADS) + plan.downloads;
+      } else {
+        rec.periodStart = new Date().toISOString();
+        rec.downloadedIds = [];
+        rec.extraDownloads = 0;
+        rec.baseDownloads = plan.downloads;
+      }
     } else {
       rec.extraDownloads = (rec.extraDownloads || 0) + DOWNLOAD_PACK_SIZE;
     }

@@ -76,7 +76,7 @@ export function PaymentRequestsCard() {
           </div>
           <div className="text-xs text-slate-300 space-y-0.5">
             <p>
-              {r.kind === 'premium' ? 'Premium — 1 month' : 'Extra downloads pack'} · ID <b className="font-mono">{r.reference}</b>
+              {r.kind === 'premium' ? `Premium — ${({ day: '1 day', week: '1 week', month: '1 month', semester: 'Semester (4 months)' } as Record<string, string>)[r.plan || 'month']}` : 'Extra downloads pack'} · ID <b className="font-mono">{r.reference}</b>
             </p>
             <p>Paid from {r.senderPhone} · {new Date(r.createdAt).toLocaleString()}</p>
           </div>

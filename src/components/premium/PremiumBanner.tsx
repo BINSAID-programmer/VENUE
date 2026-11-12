@@ -31,7 +31,7 @@ export default function PremiumBanner() {
       >
         <Crown className="w-6 h-6 text-amber-400 shrink-0" />
         <span className="flex-1 text-xs text-amber-100 leading-relaxed">
-          <b className="text-sm text-white">Get VENUE Premium · TZS 1,500/month</b>
+          <b className="text-sm text-white">Get VENUE Premium · from TZS 300</b>
           <br />
           Unlimited AI Tutor, file downloads and all career paths.
         </span>
@@ -67,7 +67,7 @@ export default function PremiumBanner() {
     >
       <Crown className="w-6 h-6 text-amber-400 shrink-0" />
       <span className="flex-1 text-xs text-amber-100 leading-relaxed">
-        <b className="text-sm text-white">Get VENUE Premium · TZS {status.priceTzs.toLocaleString()}/month</b>
+        <b className="text-sm text-white">Get VENUE Premium · from TZS 300</b>
         <br />
         Unlimited AI Tutor, file downloads and all career paths.
         {status.aiRemainingToday !== null && ` Free AI left today: ${status.aiRemainingToday}.`}

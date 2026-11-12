@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Crown, X, Check, Copy, Sparkles, Download, Bot, Compass, Clock } from 'lucide-react';
-import { premiumService, PremiumStatus } from '../../services/premiumService';
+import { premiumService, PremiumStatus, PlanInfo, PlanId } from '../../services/premiumService';
 
 /**
  * Global Premium sheet: plan, how to pay (mobile money), submit the transaction ID,
@@ -11,6 +11,7 @@ export default function PremiumHost() {
   const [notice, setNotice] = useState('');
   const [status, setStatus] = useState<PremiumStatus | null>(null);
   const [kind, setKind] = useState<'premium' | 'download_pack'>('premium');
+  const [plan, setPlan] = useState<PlanId>('month');
   const [reference, setReference] = useState('');
   const [phone, setPhone] = useState('');
   const [busy, setBusy] = useState(false);
@@ -47,7 +48,16 @@ export default function PremiumHost() {
 
   if (!open) return null;
 
-  const price = status?.priceTzs ?? 1500;
+  const plans: PlanInfo[] = status?.plans?.length
+    ? status.plans
+    : [
+        { id: 'day', label: 'Day', days: 1, priceTzs: 300, downloads: 2 },
+        { id: 'week', label: 'Week', days: 7, priceTzs: 800, downloads: 3 },
+        { id: 'month', label: 'Month', days: 30, priceTzs: 1500, downloads: 5 },
+        { id: 'semester', label: 'Semester (4 months)', days: 120, priceTzs: 4500, downloads: 20 },
+      ];
+  const selectedPlan = plans.find((p) => p.id === plan) || plans[2] || plans[0];
+  const price = selectedPlan.priceTzs;
   const number = status?.paymentNumber || '255795995278';
   const display = '0' + number.replace(/^255/, '').replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
   const isPremium = Boolean(status?.isPremium);
@@ -58,7 +68,7 @@ export default function PremiumHost() {
     setError('');
     setBusy(true);
     try {
-      await premiumService.submitRequest(kind, reference, phone);
+      await premiumService.submitRequest(kind, reference, phone, kind === 'premium' ? plan : undefined);
       setDone('Request sent. We will confirm your payment and activate it shortly.');
       setReference('');
       await load(true);
@@ -97,7 +107,7 @@ export default function PremiumHost() {
             </div>
             <div>
               <h3 className="text-lg font-bold text-white">VENUE Premium</h3>
-              <p className="text-xs text-amber-300 font-semibold">TZS {price.toLocaleString()} / month</p>
+              <p className="text-xs text-amber-300 font-semibold">From TZS {Math.min(...plans.map((p) => p.priceTzs)).toLocaleString()} · choose a plan</p>
             </div>
           </div>
           <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="p-1.5 text-slate-400 cursor-pointer">
@@ -116,16 +126,35 @@ export default function PremiumHost() {
             <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-200 space-y-0.5">
               <p className="font-bold">Premium is active{until ? ` until ${until}` : ''}</p>
               <p>
-                Downloads left this month: <b>{status?.downloadsLeft ?? 0}</b> of {status?.downloadsAllowed ?? 5}
+                Downloads left: <b>{status?.downloadsLeft ?? 0}</b> of {status?.downloadsAllowed ?? 5}
               </p>
             </div>
           )}
 
           <ul className="space-y-2 text-xs text-slate-300">
             <li className="flex gap-2.5"><Bot className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" /> Unlimited AI Tutor (free plan: {status?.aiDailyLimit ?? 10} requests per day)</li>
-            <li className="flex gap-2.5"><Download className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" /> Download original files — 5 per month, buy {status?.downloadPackSize ?? 5} more anytime for TZS {(status?.downloadPackPriceTzs ?? 1500).toLocaleString()}</li>
+            <li className="flex gap-2.5"><Download className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" /> Download original files — {selectedPlan.downloads} included in this plan, buy {status?.downloadPackSize ?? 5} more anytime for TZS {(status?.downloadPackPriceTzs ?? 1500).toLocaleString()}</li>
             <li className="flex gap-2.5"><Compass className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" /> All career paths and the AI Career Advisor (free plan: {status?.freeCareerPaths ?? 3} paths)</li>
           </ul>
+
+          {kind === 'premium' && (
+            <div className="grid grid-cols-2 gap-2">
+              {plans.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPlan(p.id)}
+                  className={`p-3 rounded-xl border text-left cursor-pointer ${
+                    plan === p.id ? 'bg-amber-500/20 border-amber-500/60' : 'bg-slate-950 border-slate-800'
+                  }`}
+                >
+                  <p className={`text-xs font-bold ${plan === p.id ? 'text-amber-200' : 'text-slate-200'}`}>{p.label}</p>
+                  <p className="text-base font-extrabold text-white">TZS {p.priceTzs.toLocaleString()}</p>
+                  <p className="text-[10px] text-slate-400">{p.days === 1 ? '24 hours' : `${p.days} days`} · {p.downloads} downloads</p>
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2.5">
             <p className="text-xs font-bold text-white">How to pay</p>
@@ -150,7 +179,7 @@ export default function PremiumHost() {
             {isPremium && (
               <div className="grid grid-cols-2 gap-2">
                 {([
-                  ['premium', 'Renew month'],
+                  ['premium', 'Buy / extend plan'],
                   ['download_pack', `+${status?.downloadPackSize ?? 5} downloads`],
                 ] as const).map(([k, label]) => (
                   <button
@@ -199,7 +228,7 @@ export default function PremiumHost() {
               {[...(status?.pending || []), ...(status?.recent || [])].map((r) => (
                 <div key={r.id} className="flex items-center justify-between text-xs px-3 py-2 rounded-lg bg-slate-950/70 border border-slate-800">
                   <span className="text-slate-300">
-                    {r.kind === 'premium' ? 'Premium month' : 'Extra downloads'} · {r.reference}
+                    {r.kind === 'premium' ? `Premium ${plans.find((p) => p.id === (r.plan || 'month'))?.label || 'month'}` : 'Extra downloads'} · {r.reference}
                   </span>
                   <span
                     className={`font-bold flex items-center gap-1 ${

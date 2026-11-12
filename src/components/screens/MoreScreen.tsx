@@ -169,7 +169,7 @@ export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onL
         {
           id: 'premium' as any,
           name: 'VENUE Premium',
-          desc: 'Unlimited AI Tutor, downloads and all career paths · TZS 1,500/month',
+          desc: 'Unlimited AI Tutor, downloads and all career paths · from TZS 300',
           icon: Crown,
           color: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
         },
