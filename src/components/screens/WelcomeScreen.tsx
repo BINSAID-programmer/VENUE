@@ -38,7 +38,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#070b14]/60 via-[#0b1329]/80 to-[#070b14]/97" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#070b14]/10 via-[#0b1329]/45 to-[#070b14]/92" />
 
       {/* Logo + brand */}
       <div className="relative z-10 flex flex-col items-center pt-14 px-6">

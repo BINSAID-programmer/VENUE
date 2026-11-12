@@ -10,7 +10,7 @@
  *   user storage, IndexedDB, Firestore, or localStorage.
  */
 
-const CACHE_NAME = 'venue-shell-v4';
+const CACHE_NAME = 'venue-shell-v5';
 
 // Minimum safe static application shell assets
 const PRECACHE_ASSETS = [
