@@ -101,6 +101,9 @@ const ScreenLoading: React.FC = () => (
   </div>
 );
 
+const APP_START_TIME = Date.now();
+const SPLASH_MIN_MS = 2200;
+
 export const App: React.FC = () => {
   // Navigation State
   const [currentScreen, setCurrentScreen] = useState<ScreenId>('splash');
@@ -379,7 +382,7 @@ export const App: React.FC = () => {
 
           // Requirements 3, 9, 10: Check real verification status for returning users
           // Do NOT allow an unverified user to access the main VENUE Dashboard.
-          setCurrentScreen((prevScreen) => {
+          const applyScreen = () => setCurrentScreen((prevScreen) => {
             if (!isVerified) {
               // Redirect unverified users to verify-email
               const screensToIntercept: ScreenId[] = [
@@ -426,6 +429,8 @@ export const App: React.FC = () => {
             }
             return prevScreen;
           });
+          // Keep the Splash visible for a moment so returning users see it too.
+          setTimeout(applyScreen, Math.max(0, SPLASH_MIN_MS - (Date.now() - APP_START_TIME)));
         } catch (err) {
           console.warn('Error syncing Firebase Auth user session:', err);
         }
