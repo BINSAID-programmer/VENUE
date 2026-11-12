@@ -630,7 +630,7 @@ export const CareerHubScreen: React.FC<CareerHubScreenProps> = ({
                   <Crown className="w-5 h-5 text-amber-400 shrink-0" />
                   <span className="text-xs text-amber-100 leading-relaxed">
                     You are seeing {visibleRecommendations.length} of {recommendations.length} career paths.{' '}
-                    <b>Get Premium (TZS 1,500/month)</b> to unlock the rest.
+                    <b>Get Premium (from TZS 300)</b> to unlock the rest.
                   </span>
                 </button>
               )}
@@ -1307,7 +1307,7 @@ export const CareerHubScreen: React.FC<CareerHubScreenProps> = ({
             onClick={() => premiumService.openPremium('Unlock the AI Career Advisor with VENUE Premium.')}
             className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-xs font-extrabold cursor-pointer"
           >
-            Get Premium · TZS 1,500/month
+            Get Premium · from TZS 300
           </button>
         </div>
       )}

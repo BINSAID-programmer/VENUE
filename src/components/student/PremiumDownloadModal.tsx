@@ -133,7 +133,7 @@ export const PremiumDownloadModal: React.FC<PremiumDownloadModalProps> = ({
             className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
           >
             <Sparkles className="w-4 h-4" />
-            <span>Get Premium · TZS 1,500/month</span>
+            <span>Get Premium · from TZS 300</span>
           </button>
         </div>
       </div>
