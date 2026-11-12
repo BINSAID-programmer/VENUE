@@ -27,7 +27,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onContinue }) => {
         aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#070b14]/10 via-[#0b1329]/35 to-[#070b14]/90" />
+      <div
+        className="absolute inset-0"
+        style={{ backgroundImage: 'linear-gradient(to bottom, rgba(7,11,20,0.10), rgba(11,19,41,0.35) 50%, rgba(7,11,20,0.90))' }}
+      />
 
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pt-16">
         <motion.div
