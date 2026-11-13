@@ -898,7 +898,7 @@ export const AUDITED_UDSM_PROGRAMMES: ProgrammeRecord[] = [
     universityId: 'udsm',
     academicUnitId: 'conas',
     departmentId: 'dept-math',
-    name: 'Bachelor of Science with Education',
+    name: 'Bachelor of Science with Education (Mathematics)',
     shortName: 'BSc Ed',
     awardLevel: 'Bachelor Degree',
     durationYears: 3,
