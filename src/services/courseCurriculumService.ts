@@ -598,7 +598,10 @@ class CourseCurriculumService {
       );
 
       if (snapshot && !snapshot.empty) {
-        const firestoreCourses: CourseRecord[] = snapshot.docs.map((d) => {
+        const firestoreCourses: CourseRecord[] = snapshot.docs.filter((d) => {
+          const x = d.data() as any;
+          return x?.deleted !== true && x?.active !== false;
+        }).map((d) => {
           const data = d.data() as CourseRecord;
           return {
             ...data,
