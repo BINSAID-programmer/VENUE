@@ -624,9 +624,12 @@ class CourseCurriculumService {
           const exact = wanted ? firestoreCourses.filter((c) => ayOf(c) === wanted) : [];
           if (exact.length > 0) pool = exact;
           else {
-            const unlabelled = firestoreCourses.filter((c) => !ayOf(c));
-            const latest = labelled.map(ayOf).sort().pop() as string;
-            pool = unlabelled.length > 0 ? unlabelled : firestoreCourses.filter((c) => ayOf(c) === latest);
+            // No curriculum for this exact intake: use the closest official Prospectus that is not newer
+            // than the student's intake, else the latest one. Old unlabelled records are a last resort.
+            const years = Array.from(new Set(labelled.map(ayOf))).sort();
+            const olderOrSame = wanted ? years.filter((y) => y <= wanted) : [];
+            const chosen = olderOrSame.length > 0 ? olderOrSame[olderOrSame.length - 1] : years[years.length - 1];
+            pool = firestoreCourses.filter((c) => ayOf(c) === chosen);
           }
         }
 
