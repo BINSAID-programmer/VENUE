@@ -4179,6 +4179,78 @@ class AdminCatalogueService {
     onProgress?.(jobs.length, jobs.length);
     return { written, failed };
   }
+  /**
+   * Finds courses of the bundle's programmes that are NOT in the Prospectus bundle:
+   * stored catalogue docs (same intake or unlabelled) and built-in seed courses.
+   */
+  async findStaleProspectusCourses(
+    bundle: ProspectusBundle
+  ): Promise<Array<{ programmeId: string; code: string; yearOfStudy: number; semester: number; docIds: string[]; duplicateOnly?: boolean }>> {
+    const norm = (c: string) => String(c || '').toUpperCase().replace(/[\s_-]+/g, ' ').trim();
+    const out: Array<{ programmeId: string; code: string; yearOfStudy: number; semester: number; docIds: string[]; duplicateOnly?: boolean }> = [];
+    for (const prog of bundle.programmes) {
+      const keep = new Set(prog.courses.map((c) => norm(c.code)));
+      const found = new Map<string, { programmeId: string; code: string; yearOfStudy: number; semester: number; docIds: string[]; duplicateOnly?: boolean }>();
+      for (const r of AUDITED_COURSE_RECORDS as any[]) {
+        if (String(r.programmeId).toLowerCase() !== prog.programmeId) continue;
+        const code = norm(r.code || r.courseCode);
+        if (!code || keep.has(code)) continue;
+        found.set(code, { programmeId: prog.programmeId, code, yearOfStudy: Number(r.yearOfStudy ?? r.year), semester: Number(r.semester), docIds: [] });
+      }
+      const live = await this.queryBothDatabases('catalogue_courses', (col) =>
+        query(col, where('programmeId', '==', prog.programmeId))
+      );
+      for (const d of live) {
+        const data = d.data as any;
+        if (data?.deleted === true) continue;
+        const ay = String(data.academicYear || '').replace(/\s/g, '');
+        if (ay && ay !== bundle.intake) continue;
+        const code = norm(data.code || data.courseCode);
+        if (!code) continue;
+        if (keep.has(code)) {
+          // Same course stored under another id (older import/edit): hide the extra copy so it never shows twice.
+          const wantedId = this.prospectusCourseId(prog.programmeId, code, bundle.intake);
+          const exists = live.some((x) => x.id === wantedId && (x.data as any)?.deleted !== true);
+          if (d.id !== wantedId && exists) {
+            const dup = found.get('DUP ' + code) || { programmeId: prog.programmeId, code, yearOfStudy: Number(data.yearOfStudy), semester: Number(data.semester), docIds: [], duplicateOnly: true };
+            dup.docIds.push(d.id);
+            found.set('DUP ' + code, dup);
+          }
+          continue;
+        }
+        const cur = found.get(code) || { programmeId: prog.programmeId, code, yearOfStudy: Number(data.yearOfStudy), semester: Number(data.semester), docIds: [] };
+        if (!cur.docIds.includes(d.id)) cur.docIds.push(d.id);
+        found.set(code, cur);
+      }
+      out.push(...found.values());
+    }
+    return out;
+  }
+
+  /** Hides stale courses (never deletes): stored docs get deleted:true/active:false, built-ins get removal markers. */
+  async hideStaleProspectusCourses(
+    stale: Array<{ programmeId: string; code: string; yearOfStudy: number; semester: number; docIds: string[]; duplicateOnly?: boolean }>
+  ): Promise<{ hidden: number; failed: number }> {
+    const nowIso = new Date().toISOString();
+    let hidden = 0;
+    let failed = 0;
+    for (const s of stale) {
+      try {
+        for (const id of s.docIds) {
+          await this.setDocInBothDatabases('catalogue_courses', id, { deleted: true, active: false, deletedAt: nowIso, deletedBy: auth.currentUser?.uid || '', reason: 'not_in_prospectus' }, { merge: true });
+        }
+        if (s.duplicateOnly) { hidden++; continue; }
+        const slug = s.code.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const markerId = `${s.programmeId}__removed__${slug}_y${s.yearOfStudy}s${s.semester}`.replace(/[^a-zA-Z0-9_-]/g, '-');
+        await this.setDocInBothDatabases('programme_courses', markerId, { deleted: true, programmeId: s.programmeId, code: s.code, yearOfStudy: s.yearOfStudy, semester: s.semester, deletedAt: nowIso, deletedBy: auth.currentUser?.uid || '', reason: 'not_in_prospectus' }, { merge: false });
+        hidden++;
+      } catch {
+        failed++;
+      }
+    }
+    this.coursesCache.clear();
+    return { hidden, failed };
+  }
 }
 
 export const adminCatalogueService = new AdminCatalogueService();

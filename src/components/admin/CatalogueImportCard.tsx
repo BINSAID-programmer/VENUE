@@ -18,7 +18,7 @@ export const CatalogueImportCard: React.FC = () => {
   const [bundleId, setBundleId] = useState(BUNDLES[0].id);
   const [bundle, setBundle] = useState<ProspectusBundle | null>(null);
   const [preview, setPreview] = useState<ProspectusPreview | null>(null);
-  const [busy, setBusy] = useState<'check' | 'import' | null>(null);
+  const [busy, setBusy] = useState<'check' | 'import' | 'hide' | null>(null);
   const [progress, setProgress] = useState<[number, number] | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -55,6 +55,27 @@ export const CatalogueImportCard: React.FC = () => {
     } finally {
       setBusy(null);
       setProgress(null);
+    }
+  };
+
+  const hideOld = async () => {
+    if (!bundle) return;
+    setBusy('hide');
+    setMessage(null);
+    try {
+      const stale = await adminCatalogueService.findStaleProspectusCourses(bundle);
+      if (stale.length === 0) {
+        setMessage({ ok: true, text: 'No old courses to hide.' });
+        return;
+      }
+      const list = stale.slice(0, 40).map((s) => `${s.programmeId}: ${s.code}`).join('\n');
+      if (!window.confirm(`Hide ${stale.length} courses that are not in the Prospectus?\n\n${list}${stale.length > 40 ? '\n...' : ''}\n\nThey are hidden, not deleted.`)) return;
+      const res = await adminCatalogueService.hideStaleProspectusCourses(stale);
+      setMessage({ ok: res.failed === 0, text: `${res.hidden} old courses hidden${res.failed ? `, ${res.failed} failed — run again` : ''}.` });
+    } catch (e: any) {
+      setMessage({ ok: false, text: e?.message || 'Could not hide old courses.' });
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -107,6 +128,14 @@ export const CatalogueImportCard: React.FC = () => {
           )}
         </button>
       </div>
+
+      <button
+        onClick={hideOld}
+        disabled={!bundle || busy !== null}
+        className="w-full py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-slate-100 cursor-pointer disabled:opacity-40"
+      >
+        {busy === 'hide' ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : '3. Hide old courses not in Prospectus'}
+      </button>
 
       {message && (
         <div
