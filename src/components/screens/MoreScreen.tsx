@@ -5,6 +5,7 @@ import { lecturerAuthService } from '../../services/lecturerAuthService';
 import { adminAuthService } from '../../services/adminAuthService';
 import { premiumService } from '../../services/premiumService';
 import {
+  GraduationCap,
   Calendar,
   HelpCircle,
   Layers,
@@ -132,6 +133,13 @@ export const MoreScreen: React.FC<MoreScreenProps> = ({ profile, onNavigate, onL
           desc: 'Undergraduate funding, BoT actuarial internships & fellowships',
           icon: Award,
           color: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
+        },
+        {
+          id: 'learn' as ScreenId,
+          name: 'Learn (Python, HTML, CSS, JS)',
+          desc: 'Short lessons with examples you can run on your phone',
+          icon: GraduationCap,
+          color: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
         },
         {
           id: 'career' as ScreenId,
