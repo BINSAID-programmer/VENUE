@@ -7,6 +7,8 @@ export interface LearnLesson {
   body: string[];
   /** Kwa kifupi — one-line Swahili summary. */
   sw: string;
+  /** Optional richer layout: headed sections, each with its own runnable example. */
+  sections?: Array<{ h: string; p: string[]; code?: string; note?: string }>;
   /** Editable example the learner can run. */
   code: string;
   /** Small exercise. */
