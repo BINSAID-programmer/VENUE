@@ -168,6 +168,7 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
     profile?.academicUnitId,
     profile?.institutionId,
     profile?.universityId,
+    profile?.yearOfStudy,
   ]);
 
   // Navigation helpers
