@@ -40,6 +40,7 @@ import {
 } from './services/firebase';
 import { firestoreCatalogueService } from './services/firestoreCatalogueService';
 import { courseCurriculumService } from './services/courseCurriculumService';
+import { guessIntake } from './utils/intake';
 import { degreeProgrammeService } from './services/degreeProgrammeService';
 import { studentDashboardService } from './services/studentDashboardService';
 import { communityService } from './services/communityService';
@@ -199,6 +200,7 @@ export const App: React.FC = () => {
           semester: sem,
           universityId: profile?.universityId,
           userId: profile?.uid,
+          intake: (profile as any)?.intake || guessIntake(profile?.yearOfStudy),
         });
 
         if (isMounted) {

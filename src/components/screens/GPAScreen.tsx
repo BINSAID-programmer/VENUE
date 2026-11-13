@@ -43,6 +43,7 @@ import {
   isValidGrade,
 } from '../../services/gradingService';
 import { courseCurriculumService } from '../../services/courseCurriculumService';
+import { guessIntake } from '../../utils/intake';
 
 interface GPAScreenProps {
   profile: StudentProfile;
@@ -160,6 +161,7 @@ export const GPAScreen: React.FC<GPAScreenProps> = ({
           yearOfStudy: selectedYear,
           semester: selectedSemester,
           universityId: profile.universityId,
+          intake: (profile as any)?.intake || guessIntake(profile?.yearOfStudy),
         });
         if (isMounted) {
           setCatalogueCourses(res.courses);

@@ -489,7 +489,7 @@ class CourseCurriculumService {
   }): string {
     const cleanUniId = (params.universityId || 'udsm').toLowerCase().trim();
     const cleanProgId = this.normalizeProgrammeId(params.programmeId, params.programmeName);
-    const cleanAcadYear = (params.academicYear || 'current').toLowerCase().trim();
+    const cleanAcadYear = (params.intake || params.academicYear || 'current').toLowerCase().trim();
     const y = Number(params.yearOfStudy);
     const s = Number(params.semester);
 
@@ -540,6 +540,8 @@ class CourseCurriculumService {
     bypassCache?: boolean;
     academicYear?: string;
     programmeName?: string;
+    /** Curriculum year the student was admitted under, e.g. "2025/2026". */
+    intake?: string;
   }): Promise<{
     courses: CourseRecord[];
     source: 'firestore' | 'cache' | 'catalogue_fallback';
@@ -551,7 +553,7 @@ class CourseCurriculumService {
     const rawProgId = (params.programmeId || '').trim();
     const cleanProgId = this.normalizeProgrammeId(rawProgId, params.programmeName);
     const cleanUniId = (params.universityId || 'udsm').toLowerCase().trim();
-    const cleanAcadYear = (params.academicYear || 'current').toLowerCase().trim();
+    const cleanAcadYear = (params.intake || params.academicYear || 'current').toLowerCase().trim();
 
     if (!cleanProgId || !yearOfStudy || !semester) {
       return { courses: [], source: 'cache', verified: false };
@@ -587,7 +589,7 @@ class CourseCurriculumService {
         where('programmeId', '==', cleanProgId),
         where('yearOfStudy', '==', Number(yearOfStudy)),
         where('semester', '==', Number(semester)),
-        limit(params.pageSize || 50),
+        limit(params.pageSize || 150),
       ];
 
       const snapshot = await this.queryCollectionWithFallback(
@@ -609,10 +611,26 @@ class CourseCurriculumService {
           };
         });
 
+        // Several curricula (intakes) can exist for the same term: prefer the student's intake,
+        // then courses without an intake label, then the most recent intake available.
+        const ayOf = (c: CourseRecord) => String((c as any).academicYear || '').replace(/\s/g, '');
+        const wanted = String(params.intake || '').replace(/\s/g, '');
+        let pool = firestoreCourses;
+        const labelled = firestoreCourses.filter((c) => ayOf(c));
+        if (labelled.length > 0) {
+          const exact = wanted ? firestoreCourses.filter((c) => ayOf(c) === wanted) : [];
+          if (exact.length > 0) pool = exact;
+          else {
+            const unlabelled = firestoreCourses.filter((c) => !ayOf(c));
+            const latest = labelled.map(ayOf).sort().pop() as string;
+            pool = unlabelled.length > 0 ? unlabelled : firestoreCourses.filter((c) => ayOf(c) === latest);
+          }
+        }
+
         // Deduplicate courses by normalized course code to prevent duplicate entries
         const seenCodes = new Set<string>();
         const uniqueCourses: CourseRecord[] = [];
-        for (const c of firestoreCourses) {
+        for (const c of pool) {
           const codeKey = normalizeCourseCode(c.courseCode || c.code || c.id);
           if (!seenCodes.has(codeKey)) {
             seenCodes.add(codeKey);

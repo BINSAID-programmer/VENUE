@@ -35,6 +35,7 @@ import {
   AUDITED_PROGRAMMES,
   AUDITED_CANONICAL_COURSES,
   AUDITED_PROGRAMME_COURSES,
+  AUDITED_COURSE_RECORDS,
 } from '../data/udsmAuditedCatalogue2025';
 import {
   UDSM_PROGRAMMES,
@@ -284,6 +285,44 @@ export interface CanonicalCourseDependencyCheckResult {
   materialCount: number;
   lecturerAssignmentCount: number;
   totalDependencies: number;
+}
+
+export interface ProspectusCourse {
+  code: string;
+  title: string;
+  credits: number;
+  yearOfStudy: number;
+  semester: number;
+  status: 'Core' | 'Elective';
+}
+export interface ProspectusProgramme {
+  programmeId: string;
+  name: string;
+  departmentId: string;
+  courses: ProspectusCourse[];
+  needsReview?: string[];
+}
+export interface ProspectusBundle {
+  id: string;
+  label: string;
+  intake: string;
+  universityId: string;
+  academicUnitId: string;
+  source: string;
+  programmes: ProspectusProgramme[];
+}
+export interface ProspectusPreviewRow {
+  programmeId: string;
+  name: string;
+  total: number;
+  fresh: number;
+  changed: number;
+  same: number;
+  needsReview: string[];
+}
+export interface ProspectusPreview {
+  intake: string;
+  rows: ProspectusPreviewRow[];
 }
 
 class AdminCatalogueService {
@@ -4020,6 +4059,125 @@ class AdminCatalogueService {
     } else {
       this.coursesCache.clear();
     }
+  }
+
+  // ==========================================================================
+  // PROSPECTUS IMPORT (bulk catalogue load, per intake)
+  // ==========================================================================
+
+  private prospectusCourseId(programmeId: string, code: string, intake: string): string {
+    const slug = code.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const base = `udsm_${programmeId}_${slug}`;
+    // The 2025/2026 curriculum already uses the plain id; other intakes get a suffix so versions never collide.
+    return intake === '2025/2026' ? base : `${base}__${intake.replace(/[^0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
+  }
+
+  async previewProspectusImport(bundle: ProspectusBundle): Promise<ProspectusPreview> {
+    const norm = (c: string) => String(c || '').toUpperCase().replace(/[\s_-]+/g, ' ').trim();
+    const rows: ProspectusPreviewRow[] = [];
+    for (const prog of bundle.programmes) {
+      const existing = new Map<string, any>();
+      for (const r of AUDITED_COURSE_RECORDS as any[]) {
+        if (String(r.programmeId).toLowerCase() === prog.programmeId) existing.set(norm(r.code || r.courseCode), r);
+      }
+      try {
+        const live = await this.queryBothDatabases('catalogue_courses', (col) =>
+          query(col, where('programmeId', '==', prog.programmeId))
+        );
+        for (const d of live) {
+          if ((d.data as any)?.deleted === true) continue;
+          const dataAy = String((d.data as any).academicYear || '');
+          if (dataAy && dataAy.replace(/\s/g, '') !== bundle.intake) continue; // another intake
+          existing.set(norm((d.data as any).code || (d.data as any).courseCode), d.data);
+        }
+      } catch {
+        /* preview still works from built-in data */
+      }
+      let fresh = 0;
+      let changed = 0;
+      let same = 0;
+      for (const c of prog.courses) {
+        const e = existing.get(norm(c.code));
+        if (!e) fresh++;
+        else if (
+          Number(e.yearOfStudy ?? e.year) !== c.yearOfStudy ||
+          Number(e.semester) !== c.semester ||
+          Number(e.credits) !== c.credits ||
+          String(e.status || e.courseType || '').toLowerCase().slice(0, 4) !== c.status.toLowerCase().slice(0, 4)
+        )
+          changed++;
+        else same++;
+      }
+      rows.push({
+        programmeId: prog.programmeId,
+        name: prog.name,
+        total: prog.courses.length,
+        fresh,
+        changed,
+        same,
+        needsReview: prog.needsReview || [],
+      });
+    }
+    return { intake: bundle.intake, rows };
+  }
+
+  async applyProspectusImport(
+    bundle: ProspectusBundle,
+    onProgress?: (done: number, total: number) => void
+  ): Promise<{ written: number; failed: number }> {
+    const nowIso = new Date().toISOString();
+    const jobs: Array<{ id: string; payload: Record<string, any> }> = [];
+    for (const prog of bundle.programmes) {
+      for (const c of prog.courses) {
+        const id = this.prospectusCourseId(prog.programmeId, c.code, bundle.intake);
+        jobs.push({
+          id,
+          payload: {
+            id,
+            universityId: bundle.universityId,
+            academicUnitId: bundle.academicUnitId,
+            departmentId: prog.departmentId,
+            programmeId: prog.programmeId,
+            canonicalCourseId: c.code.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''),
+            code: c.code,
+            courseCode: c.code,
+            title: c.title,
+            courseTitle: c.title,
+            credits: c.credits,
+            yearOfStudy: c.yearOfStudy,
+            semester: c.semester,
+            status: c.status,
+            courseType: c.status,
+            active: true,
+            verified: true,
+            academicYear: bundle.intake,
+            source: `${bundle.source} (imported)`,
+            sourceType: 'official_prospectus',
+            updatedAt: nowIso,
+          },
+        });
+      }
+    }
+    let done = 0;
+    let written = 0;
+    let failed = 0;
+    const queue = [...jobs];
+    const worker = async () => {
+      while (queue.length) {
+        const job = queue.shift()!;
+        try {
+          await this.setDocInBothDatabases('catalogue_courses', job.id, job.payload, { merge: true });
+          written++;
+        } catch {
+          failed++;
+        }
+        done++;
+        if (onProgress && done % 5 === 0) onProgress(done, jobs.length);
+      }
+    };
+    await Promise.all(Array.from({ length: 8 }, worker));
+    onProgress?.(jobs.length, jobs.length);
+    return { written, failed };
   }
 }
 
