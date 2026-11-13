@@ -85,6 +85,7 @@ const StudyPlannerScreen = React.lazy(() => import('./components/screens/StudyPl
 const QuizScreen = React.lazy(() => import('./components/screens/QuizScreen').then(m => ({ default: m.QuizScreen })));
 const FlashcardsScreen = React.lazy(() => import('./components/screens/FlashcardsScreen').then(m => ({ default: m.FlashcardsScreen })));
 const ScholarshipsScreen = React.lazy(() => import('./components/screens/ScholarshipsScreen').then(m => ({ default: m.ScholarshipsScreen })));
+const LearnScreen = React.lazy(() => import('./components/screens/LearnScreen').then(m => ({ default: m.LearnScreen })));
 const CareerHubScreen = React.lazy(() => import('./components/screens/CareerHubScreen').then(m => ({ default: m.CareerHubScreen })));
 const UniversityHubScreen = React.lazy(() => import('./components/screens/UniversityHubScreen').then(m => ({ default: m.UniversityHubScreen })));
 const CommunityScreen = React.lazy(() => import('./components/screens/CommunityScreen').then(m => ({ default: m.CommunityScreen })));
@@ -402,6 +403,8 @@ export const App: React.FC = () => {
                 'flashcards',
                 'scholarships',
                 'career',
+      'learn',
+                'learn',
                 'university-hub',
                 'community',
                 'profile',
@@ -892,6 +895,8 @@ export const App: React.FC = () => {
               ? 'Flashcards'
               : currentScreen === 'scholarships'
               ? 'Scholarships'
+              : currentScreen === 'learn'
+              ? 'Learn'
               : currentScreen === 'career'
               ? 'Career Hub'
               : currentScreen === 'university-hub'
@@ -1312,6 +1317,8 @@ export const App: React.FC = () => {
             courses={courses}
           />
         )}
+
+        {currentScreen === 'learn' && <LearnScreen />}
 
         {/* Core Dashboard Card: Career */}
         {currentScreen === 'career' && (

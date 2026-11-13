@@ -15,6 +15,7 @@ export type ScreenId =
   | 'flashcards'
   | 'scholarships'
   | 'career'
+  | 'learn'
   | 'university-hub'
   | 'community'
   | 'profile'
