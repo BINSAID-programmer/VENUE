@@ -1333,3 +1333,34 @@ pre code {
   color: #a7f3d0 !important;
   background-color: transparent !important;
 }
+
+/* ============================================================
+   Campus backdrop — a faint distant view of the UDSM building behind every screen.
+   Sits under all content (z-index -1) and is tinted with the active theme's page colour,
+   so it works in all 8 themes and never changes text/card colours.
+   ============================================================ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to bottom, var(--venue-bg-page) 0%, transparent 35%, transparent 60%, var(--venue-bg-page) 100%),
+    url('/assets/campus-bg.webp');
+  background-size: cover, cover;
+  background-position: center, center bottom;
+  background-repeat: no-repeat;
+  opacity: 0.22;
+}
+html.light body::before,
+html[data-theme='light'] body::before,
+html[class*='theme-blue'] body::before,
+html[class*='theme-green'] body::before,
+html[class*='theme-purple'] body::before,
+html[class*='theme-beige'] body::before {
+  opacity: 0.16;
+}
+@media print {
+  body::before { display: none; }
+}
