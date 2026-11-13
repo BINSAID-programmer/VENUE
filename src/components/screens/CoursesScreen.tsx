@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Course, CourseRecord, StudentProfile } from '../../types';
 import { courseCurriculumService, ProgrammeCurriculumSummary } from '../../services/courseCurriculumService';
+import { guessIntake } from '../../utils/intake';
 import { academicStructureService } from '../../services/academicStructureService';
 
 interface CoursesScreenProps {
@@ -137,6 +138,7 @@ export const CoursesScreen: React.FC<CoursesScreenProps> = ({
           yearOfStudy: selectedYear,
           semester: selectedSemester,
           universityId: profile?.universityId,
+          intake: (profile as any)?.intake || guessIntake(profile?.yearOfStudy),
         });
 
         if (isMounted) {

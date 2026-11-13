@@ -22,6 +22,7 @@ import { AdminPlatformStats, AdminSectionId } from '../../types';
 import { adminAuthService, ADMIN_ROLE_HIERARCHY } from '../../services/adminAuthService';
 import { DatabaseMigrationCard } from './DatabaseMigrationCard';
 import { PaymentRequestsCard } from './PaymentRequestsCard';
+import { CatalogueImportCard } from './CatalogueImportCard';
 import { LecturerApplicationsCard } from './LecturerApplicationsCard';
 import { MaterialReviewCard } from './MaterialReviewCard';
 import { SponsorsCard } from './SponsorsCard';
@@ -101,6 +102,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateSectio
       </div>
 
       {isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email) && <PaymentRequestsCard />}
+      {isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email) && <CatalogueImportCard />}
       {isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email) && <LecturerApplicationsCard />}
       <MaterialReviewCard />
       {isVerifiedOwnerAccount(auth.currentUser?.uid, auth.currentUser?.email) && <SponsorsCard />}
