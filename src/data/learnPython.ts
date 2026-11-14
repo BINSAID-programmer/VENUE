@@ -1,17 +1,7 @@
 import type { LearnLesson } from './learnLessons';
+import { L } from './learnHelpers';
 
-type Sec = { h: string; p: string[]; code?: string; note?: string };
-const L = (id: string, title: string, sw: string, task: string, sections: Sec[]): LearnLesson => ({
-  id: `py-${id}`,
-  title,
-  sw,
-  task,
-  sections,
-  body: sections[0].p,
-  code: sections.find((s) => s.code)?.code || '',
-});
-
-export const PYTHON_LESSONS: LearnLesson[] = [
+const REST: LearnLesson[] = [
   L('intro', 'Introduction', 'Python ni lugha rahisi, inatumika kila mahali: data, AI, wavuti.', 'Print a sentence about why you want to learn Python.', [
     { h: 'What is Python?', p: ['Python is a programming language created by Guido van Rossum in 1991. It reads almost like English, which is why beginners love it.', 'It is used for data analysis, statistics, artificial intelligence, websites, automation and much more.'] },
     { h: 'Your first program', p: ['A program is a list of instructions. The computer follows them one by one, from top to bottom.'], code: `print("Hello, VENUE!")`, note: 'Press “Try it Yourself” to run this right here on your phone.' },
@@ -20,36 +10,11 @@ export const PYTHON_LESSONS: LearnLesson[] = [
     { h: 'Indentation matters', p: ['Python uses spaces at the start of a line to group code. Lines that belong together must be indented by the same amount (4 spaces is the usual choice).', 'Wrong indentation gives an IndentationError.'], code: `if 5 > 2:\n    print("Five is greater than two")\n    print("Still inside the if")\nprint("Outside the if")` },
     { h: 'Comments', p: ['Everything after # on a line is ignored by Python. Use comments to explain your code to humans.'], code: `# This line is a comment\nprint("Comments are ignored")  # even at the end of a line` },
   ]),
-  L('variables', 'Variables', 'Variable ni jina linalohifadhi thamani.', 'Create variables for your name, year of study and GPA, then print them in one sentence.', [
-    { h: 'Creating variables', p: ['A variable is a name that points to a value. You create it by assigning with =. There is no need to declare a type first.', 'Names may contain letters, digits and underscores, cannot start with a digit, and are case-sensitive: age and Age are different.'], code: `name = "Asha"\nyear = 2\ngpa = 4.1\nprint(name, year, gpa)` },
-    { h: 'Many at once', p: ['You can assign several variables in one line, or give the same value to several names.'], code: `a, b, c = 1, 2, 3\nx = y = z = 0\nprint(a, b, c, x, y, z)` },
-  ]),
-  L('types', 'Data types', 'Aina kuu: int, float, str, bool, list, dict.', 'Use type() on five different values and print the results.', [
-    { h: 'Built-in types', p: ['Every value has a type. The most common are int (whole numbers), float (decimals), str (text), bool (True/False), list, tuple, set and dict.', 'type() tells you the type of a value.'], code: `print(type(10))\nprint(type(3.14))\nprint(type("hi"))\nprint(type(True))\nprint(type([1, 2]))\nprint(type({"a": 1}))` },
-  ]),
-  L('numbers', 'Numbers and maths', 'Python inaweza kufanya hesabu zote za kawaida.', 'Compute the area of a circle with radius 7 using math.pi.', [
-    { h: 'Arithmetic', p: ['+ add, - subtract, * multiply, / divide (always gives a float), // floor division, % remainder, ** power.'], code: `print(7 + 3, 7 - 3, 7 * 3)\nprint(7 / 2)\nprint(7 // 2)\nprint(7 % 2)\nprint(2 ** 10)` },
-    { h: 'The math module', p: ['import brings in extra tools. The math module has sqrt, pi, sin, cos, log and more.'], code: `import math\nprint(math.sqrt(144))\nprint(math.pi)\nprint(math.factorial(5))\nprint(round(3.14159, 2))` },
-  ]),
-  L('casting', 'Casting (changing type)', 'int(), float(), str() hubadilisha aina ya thamani.', 'Convert the string "42" to a number and add 8.', [
-    { h: 'Converting types', p: ['Use int(), float() and str() to convert between types. This is important when you read text and need to calculate with it.'], code: `a = int("42")\nb = float("3.5")\nc = str(100)\nprint(a + 8, b * 2, c + " marks")` },
-  ]),
-  L('strings', 'Strings (text)', 'String ni maandishi; ina njia nyingi: upper, replace, split.', 'Take "  data science  " and print it clean, in capital letters.', [
-    { h: 'Basics', p: ['Text goes in single or double quotes. Triple quotes allow several lines. len() gives the length.'], code: `s = "Statistics"\nprint(len(s))\nprint(s[0], s[-1])\nprint(s[0:4])\nprint("stat" in s.lower())` },
-    { h: 'Useful methods', p: ['Strings have methods: upper(), lower(), strip(), replace(), split(), join(), find(), startswith().', 'Strings never change in place; methods return a new string.'], code: `t = "  Hello, World  "\nprint(t.strip())\nprint(t.upper())\nprint(t.replace("World", "VENUE"))\nprint("a,b,c".split(","))\nprint("-".join(["x", "y", "z"]))` },
-  ]),
   L('booleans', 'Booleans and comparisons', 'True/False ndiyo msingi wa maamuzi.', 'Check whether 15 is between 10 and 20 using and.', [
     { h: 'True and False', p: ['A comparison such as 5 > 3 gives a bool. Combine with and, or, not.', 'Empty things (0, "", [], None) count as False; most other values count as True.'], code: `print(5 > 3, 5 == 3, 5 != 3)\nprint(5 > 3 and 2 > 1)\nprint(not True)\nprint(bool(0), bool("hello"), bool([]))` },
   ]),
   L('operators', 'Operators', 'Operator zinafanya kazi kwenye thamani: hesabu, kulinganisha, mantiki.', 'Use += to add 5 to a variable three times.', [
     { h: 'Assignment shortcuts', p: ['x += 3 means x = x + 3. The same works for -=, *=, /=.', 'Membership: in and not in. Identity: is checks whether two names point to the very same object.'], code: `x = 10\nx += 3\nx *= 2\nprint(x)\nprint(3 in [1, 2, 3])\nprint("z" not in "abc")` },
-  ]),
-  L('lists', 'Lists', 'List ni mkusanyiko wa vitu unaoweza kubadilishwa.', 'Make a list of 5 marks, sort it and print the highest.', [
-    { h: 'Creating and indexing', p: ['A list keeps items in order and can be changed. Index starts at 0; negative indexes count from the end.'], code: `marks = [55, 72, 40, 88]\nprint(marks[0], marks[-1])\nprint(marks[1:3])\nmarks.append(91)\nmarks.remove(40)\nprint(marks, len(marks))` },
-    { h: 'Sorting and comprehension', p: ['sort() sorts in place; sorted() returns a new list. A list comprehension builds a list in one line.'], code: `nums = [5, 2, 9, 1]\nprint(sorted(nums))\nprint(sorted(nums, reverse=True))\nsquares = [n ** 2 for n in nums]\nprint(squares)\nprint([n for n in nums if n > 2])` },
-  ]),
-  L('tuples', 'Tuples', 'Tuple ni kama list lakini haibadiliki.', 'Unpack a tuple (x, y) into two variables and print their sum.', [
-    { h: 'Fixed collections', p: ['A tuple uses round brackets and cannot be changed after creation. Good for things that should stay fixed, like coordinates.'], code: `point = (3, 4)\nx, y = point\nprint(x, y)\nprint(point[0])\nprint((x ** 2 + y ** 2) ** 0.5)` },
   ]),
   L('sets', 'Sets', 'Set haina vitu vilivyojirudia.', 'Remove duplicates from [1,2,2,3,3,3] using a set.', [
     { h: 'Unique items', p: ['A set stores each value only once and has no order. It is great for removing duplicates and for maths-style operations: union, intersection, difference.'], code: `a = {1, 2, 3, 4}\nb = {3, 4, 5}\nprint(a | b)\nprint(a & b)\nprint(a - b)\nprint(set([1, 2, 2, 3, 3, 3]))` },
@@ -66,10 +31,6 @@ export const PYTHON_LESSONS: LearnLesson[] = [
   ]),
   L('while', 'While loops', 'while inarudia mradi sharti ni kweli.', 'Print the numbers 10 down to 1.', [
     { h: 'Repeat while true', p: ['A while loop repeats as long as its condition stays true. Make sure something inside changes the condition, or it will never stop.', 'break leaves the loop; continue skips to the next round.'], code: `n = 1\nwhile n <= 5:\n    print(n)\n    n += 1\nprint("done")` },
-  ]),
-  L('for', 'For loops', 'for inapitia kila kitu kwenye mkusanyiko.', 'Print the multiplication table of 7 up to 7 × 10.', [
-    { h: 'Loop over items', p: ['for visits every item of a list, string, tuple, dictionary or range.'], code: `for fruit in ["mango", "banana", "pawpaw"]:\n    print(fruit)\nfor ch in "VENUE":\n    print(ch, end=" ")` },
-    { h: 'range()', p: ['range(n) counts from 0 to n-1. range(a, b) starts at a; range(a, b, step) jumps by step.', 'enumerate() gives both position and item.'], code: `for i in range(1, 6):\n    print(i, i ** 2)\nfor pos, name in enumerate(["Asha", "Juma"], start=1):\n    print(pos, name)` },
   ]),
   L('functions', 'Functions', 'Function ni code unayoitumia tena na tena.', 'Write a function that returns the average of a list.', [
     { h: 'Defining and calling', p: ['def creates a function. Parameters go in brackets; return sends a result back.', 'Call it by writing its name with brackets. Parameters can have default values.'], code: `def greet(name, greeting="Hello"):\n    return greeting + ", " + name + "!"\n\nprint(greet("Asha"))\nprint(greet("Juma", "Karibu"))` },
@@ -115,3 +76,8 @@ export const PYTHON_LESSONS: LearnLesson[] = [
     { h: 'Installing packages', p: ['pip is Python’s package installer. On your computer you type these in the terminal:', 'pip install numpy pandas matplotlib', 'A virtual environment keeps each project’s packages separate. Create one with: python -m venv myenv', 'Activate it with: source myenv/bin/activate (Linux/Mac) or myenv\\Scripts\\activate (Windows).'], note: 'These are terminal commands, so there is nothing to run inside the app. Practise them on a computer.' },
   ]),
 ];
+
+import { PYTHON_CORE } from './learnPythonCore';
+
+/** Order: intro, syntax, core notes, then the remaining topics. */
+export const PYTHON_LESSONS: LearnLesson[] = [REST[0], REST[1], ...PYTHON_CORE, ...REST.slice(2)];

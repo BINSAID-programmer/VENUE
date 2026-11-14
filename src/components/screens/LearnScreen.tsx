@@ -146,6 +146,7 @@ export const LearnScreen: React.FC = () => {
   const [code, setCode] = useState('');
   const [runKey, setRunKey] = useState(0);
   const [done, setDone] = useState<string[]>(loadDone);
+  const [shown, setShown] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     try {
@@ -267,9 +268,51 @@ export const LearnScreen: React.FC = () => {
           </section>
         ))}
 
+        {lesson.mistakes && lesson.mistakes.length > 0 && (
+          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1.5">
+            <p className="text-[11px] font-bold text-amber-300">Common mistakes</p>
+            {lesson.mistakes.map((m, i) => (
+              <p key={i} className="text-xs text-slate-300 leading-relaxed">• {m}</p>
+            ))}
+          </div>
+        )}
+
         <p className="text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2">
           Kwa kifupi: {lesson.sw}
         </p>
+
+        {lesson.exercises && lesson.exercises.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-extrabold text-slate-100 border-l-4 border-blue-500 pl-2">Practice</h3>
+            {lesson.exercises.map((ex, i) => {
+              const key = `${lesson.id}-${i}`;
+              return (
+                <div key={key} className="rounded-2xl border border-slate-800 bg-slate-900 p-3 space-y-2">
+                  <p className="text-xs text-slate-200">
+                    <b>{i + 1}.</b> {ex.q}
+                  </p>
+                  <button
+                    onClick={() => setShown((m) => ({ ...m, [key]: !m[key] }))}
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-[11px] font-bold text-slate-100 cursor-pointer"
+                  >
+                    {shown[key] ? 'Hide answer' : 'Show answer'}
+                  </button>
+                  {shown[key] && (
+                    <>
+                      <pre className="p-2.5 rounded-xl bg-slate-950 text-xs text-slate-100 font-mono overflow-x-auto whitespace-pre">{ex.a}</pre>
+                      <button
+                        onClick={() => openTry(ex.a)}
+                        className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-[11px] font-bold cursor-pointer"
+                      >
+                        Try it Yourself »
+                      </button>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex gap-2">
           <Lightbulb className="w-4 h-4 text-blue-300 shrink-0 mt-0.5" />
