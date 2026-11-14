@@ -14,7 +14,7 @@ export interface LearnLesson {
   /** Practice questions; `a` is runnable Python shown on demand. */
   exercises?: Array<{ q: string; a: string }>;
   /** Optional richer layout: headed sections, each with its own runnable example. */
-  sections?: Array<{ h: string; p: string[]; code?: string; note?: string }>;
+  sections?: Array<{ h: string; p: string[]; code?: string; note?: string; explain?: string[] }>;
   /** Editable example the learner can run. */
   code: string;
   /** Small exercise. */

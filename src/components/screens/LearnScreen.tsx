@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Play, CheckCircle2, ChevronRight, ChevronLeft, Loader2, GraduationCap, RotateCcw, Menu, X, Lightbulb } from 'lucide-react';
 import { LEARN_TRACKS, LearnLesson, LearnTrack } from '../../data/learnLessons';
+import LEARN_OUTPUTS from '../../data/learnOutputs.json';
 
 const STORE_KEY = 'venue_learn_done_v1';
 const PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js';
@@ -130,7 +131,7 @@ function loadPos(): { t: string; l: number } {
 }
 
 /** A lesson is shown as sections; older lessons are turned into one section on the fly. */
-function sectionsOf(l: LearnLesson): Array<{ h: string; p: string[]; code?: string; note?: string }> {
+function sectionsOf(l: LearnLesson): Array<{ h: string; p: string[]; code?: string; note?: string; explain?: string[] }> {
   if (l.sections && l.sections.length) return l.sections;
   return [{ h: 'Explained', p: l.body, code: l.code }];
 }
@@ -252,6 +253,12 @@ export const LearnScreen: React.FC = () => {
               <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
                 <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 border-b border-slate-800">Example</div>
                 <pre className="p-3 text-xs text-slate-100 font-mono overflow-x-auto whitespace-pre">{sec.code}</pre>
+                {(LEARN_OUTPUTS as Record<string, string>)[sec.code] !== undefined && (
+                  <div className="mx-3 mb-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <div className="px-2.5 pt-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Output</div>
+                    <pre className="px-2.5 pb-2 pt-0.5 text-xs text-emerald-200 font-mono overflow-x-auto whitespace-pre">{(LEARN_OUTPUTS as Record<string, string>)[sec.code] || '(no output)'}</pre>
+                  </div>
+                )}
                 <div className="px-3 pb-3">
                   <button
                     onClick={() => openTry(sec.code!)}
@@ -260,6 +267,16 @@ export const LearnScreen: React.FC = () => {
                     Try it Yourself »
                   </button>
                 </div>
+              </div>
+            )}
+            {sec.explain && sec.explain.length > 0 && (
+              <div className="rounded-2xl bg-blue-500/5 border border-blue-500/20 p-3 space-y-1.5">
+                <p className="text-[11px] font-bold text-blue-300">How it works</p>
+                {sec.explain.map((e, k) => (
+                  <p key={k} className="text-xs text-slate-300 leading-relaxed">
+                    <span className="text-blue-400 font-bold">{k + 1}.</span> {e}
+                  </p>
+                ))}
               </div>
             )}
             {sec.note && (
