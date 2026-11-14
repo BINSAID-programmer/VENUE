@@ -9,6 +9,10 @@ export interface LearnLesson {
   body: string[];
   /** Kwa kifupi — one-line Swahili summary. */
   sw: string;
+  /** Common mistakes shown in an amber box. */
+  mistakes?: string[];
+  /** Practice questions; `a` is runnable Python shown on demand. */
+  exercises?: Array<{ q: string; a: string }>;
   /** Optional richer layout: headed sections, each with its own runnable example. */
   sections?: Array<{ h: string; p: string[]; code?: string; note?: string }>;
   /** Editable example the learner can run. */
