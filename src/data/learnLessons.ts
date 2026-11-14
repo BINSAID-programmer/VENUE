@@ -9,6 +9,10 @@ export interface LearnLesson {
   body: string[];
   /** Kwa kifupi — one-line Swahili summary. */
   sw: string;
+  /** Multiple-choice questions shown after the lesson. */
+  quiz?: Array<{ q: string; options: string[]; answer: number; why: string }>;
+  /** Auto-checked coding challenge. `check` raises AssertionError (with a message) when wrong. */
+  challenge?: { prompt: string; starter: string; check: string; hint: string; solution: string };
   /** Common mistakes shown in an amber box. */
   mistakes?: string[];
   /** Practice questions; `a` is runnable Python shown on demand. */
