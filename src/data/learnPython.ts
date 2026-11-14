@@ -78,6 +78,7 @@ const REST: LearnLesson[] = [
 ];
 
 import { PYTHON_CORE } from './learnPythonCore';
+import { PYTHON_QUIZ } from './learnPythonQuiz';
 
 /** Order: intro, syntax, core notes, then the remaining topics. */
-export const PYTHON_LESSONS: LearnLesson[] = [REST[0], REST[1], ...PYTHON_CORE, ...REST.slice(2)];
+export const PYTHON_LESSONS: LearnLesson[] = [REST[0], REST[1], ...PYTHON_CORE, ...REST.slice(2)].map((l) => ({ ...l, ...(PYTHON_QUIZ[l.id] || {}) }));

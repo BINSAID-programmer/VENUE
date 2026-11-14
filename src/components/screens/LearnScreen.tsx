@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Play, CheckCircle2, ChevronRight, ChevronLeft, Loader2, GraduationCap, RotateCcw, Menu, X, Lightbulb } from 'lucide-react';
+import { Play, CheckCircle2, ChevronRight, ChevronLeft, Loader2, GraduationCap, RotateCcw, Menu, X, Lightbulb, Flame, Star, Search, Bookmark } from 'lucide-react';
+import { runPython } from '../learn/pyRunner';
+import { useLearnStats, levelOf } from '../learn/learnStats';
+import { Quiz } from '../learn/Quiz';
+import { Challenge } from '../learn/Challenge';
 import { LEARN_TRACKS, LearnLesson, LearnTrack } from '../../data/learnLessons';
 import LEARN_OUTPUTS from '../../data/learnOutputs.json';
 
 const STORE_KEY = 'venue_learn_done_v1';
-const PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js';
 
 function loadDone(): string[] {
   try {
@@ -20,29 +23,6 @@ function saveDone(ids: string[]) {
   } catch {
     /* storage unavailable */
   }
-}
-
-let pyodidePromise: Promise<any> | null = null;
-function getPyodide(): Promise<any> {
-  if (!pyodidePromise) {
-    pyodidePromise = new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = PYODIDE_URL;
-      s.onload = async () => {
-        try {
-          resolve(await (window as any).loadPyodide());
-        } catch (e) {
-          reject(e);
-        }
-      };
-      s.onerror = () => reject(new Error('Could not load Python. Check your internet and try again.'));
-      document.head.appendChild(s);
-    }).catch((e) => {
-      pyodidePromise = null;
-      throw e;
-    });
-  }
-  return pyodidePromise;
 }
 
 const wrapJs = (code: string) =>
@@ -69,16 +49,11 @@ const Runner: React.FC<{ lang: LearnTrack['lang']; code: string; runKey: number 
       setErr('');
       setOut('');
       try {
-        const py = await getPyodide();
-        let buf = '';
-        py.setStdout({ batched: (s: string) => (buf += s + '\n') });
-        py.setStderr({ batched: (s: string) => (buf += s + '\n') });
-        try {
-          await py.runPythonAsync(code);
-        } catch (e: any) {
-          setErr(String(e?.message || e).split('\n').slice(-3).join('\n'));
+        const r = await runPython(code);
+        if (!cancelled) {
+          setOut(r.out);
+          setErr(r.err);
         }
-        if (!cancelled) setOut(buf.trimEnd());
       } catch (e: any) {
         if (!cancelled) setErr(e?.message || 'Could not run Python.');
       } finally {
@@ -148,6 +123,9 @@ export const LearnScreen: React.FC = () => {
   const [runKey, setRunKey] = useState(0);
   const [done, setDone] = useState<string[]>(loadDone);
   const [shown, setShown] = useState<Record<string, boolean>>({});
+  const { stats, liveStreak, award, markQuiz, markChallenge, toggleBookmark } = useLearnStats();
+  const [searching, setSearching] = useState(false);
+  const [q, setQ] = useState('');
 
   useEffect(() => {
     try {
@@ -173,7 +151,21 @@ export const LearnScreen: React.FC = () => {
     const next = [...done, lesson.id];
     setDone(next);
     saveDone(next);
+    award(10);
   };
+  const bmKey = `${trackId}:${lesson.id}`;
+  const lv = levelOf(stats.xp);
+  const results = React.useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (term.length < 2) return [] as Array<{ t: LearnTrack; i: number }>;
+    const out: Array<{ t: LearnTrack; i: number }> = [];
+    for (const t of LEARN_TRACKS)
+      t.lessons.forEach((l, i) => {
+        const hay = [l.title, l.sw, ...(l.sections || []).flatMap((s) => [s.h, ...s.p]), ...l.body].join(' ').toLowerCase();
+        if (hay.includes(term)) out.push({ t, i });
+      });
+    return out.slice(0, 30);
+  }, [q]);
   const openTry = (c: string) => {
     setCode(c);
     setRunKey(0);
@@ -228,6 +220,27 @@ export const LearnScreen: React.FC = () => {
               {t.title}
             </button>
           ))}
+          <button
+            onClick={() => setSearching(true)}
+            className="shrink-0 p-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 cursor-pointer"
+            aria-label="Search lessons"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="flex items-center gap-3 px-3 pb-2 text-[11px]">
+          <span className="flex items-center gap-1 text-amber-300 font-bold">
+            <Flame className="w-3.5 h-3.5" /> {liveStreak} day{liveStreak === 1 ? '' : 's'}
+          </span>
+          <span className="flex items-center gap-1 text-yellow-300 font-bold">
+            <Star className="w-3.5 h-3.5" /> {stats.xp} XP
+          </span>
+          <div className="flex-1 flex items-center gap-2">
+            <span className="text-slate-400 font-bold">Lv {lv.level}</span>
+            <div className="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+              <div className="h-full bg-blue-500" style={{ width: `${Math.min(100, (lv.into / lv.need) * 100)}%` }} />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -238,6 +251,13 @@ export const LearnScreen: React.FC = () => {
             <p className="text-[10px] uppercase tracking-wider text-slate-500">{track.title} tutorial</p>
             <h2 className="text-xl font-extrabold text-white leading-tight">{lesson.title}</h2>
           </div>
+          <button
+            onClick={() => toggleBookmark(bmKey)}
+            className="ml-auto p-2 rounded-xl bg-slate-800 border border-slate-700 cursor-pointer"
+            aria-label="Bookmark"
+          >
+            <Bookmark className={`w-4 h-4 ${stats.bookmarks.includes(bmKey) ? 'text-amber-300 fill-amber-300' : 'text-slate-300'}`} />
+          </button>
         </div>
         {NavButtons}
 
@@ -331,6 +351,20 @@ export const LearnScreen: React.FC = () => {
           </div>
         )}
 
+        {lesson.challenge && (
+          <Challenge
+            key={lesson.id}
+            id={`${lesson.id}:c`}
+            data={lesson.challenge}
+            solved={!!stats.challenges[`${lesson.id}:c`]}
+            onSolved={markChallenge}
+          />
+        )}
+
+        {lesson.quiz && lesson.quiz.length > 0 && (
+          <Quiz key={lesson.id} lessonId={lesson.id} items={lesson.quiz} solved={stats.quiz} onCorrect={markQuiz} />
+        )}
+
         <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex gap-2">
           <Lightbulb className="w-4 h-4 text-blue-300 shrink-0 mt-0.5" />
           <div>
@@ -349,6 +383,77 @@ export const LearnScreen: React.FC = () => {
         </button>
         {NavButtons}
       </div>
+
+      {/* Search */}
+      {searching && (
+        <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
+          <div className="flex items-center gap-2 p-3 border-b border-slate-800 bg-slate-900">
+            <Search className="w-4 h-4 text-slate-400" />
+            <input
+              autoFocus
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search all lessons (e.g. list, loop, f-string)"
+              className="flex-1 bg-transparent text-sm text-slate-100 outline-none"
+            />
+            <button
+              onClick={() => {
+                setSearching(false);
+                setQ('');
+              }}
+              className="p-1.5 text-slate-400 cursor-pointer"
+              aria-label="Close search"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+            {q.trim().length < 2 && stats.bookmarks.length > 0 && (
+              <>
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Bookmarks</p>
+                {stats.bookmarks.map((b) => {
+                  const [tid, lid] = b.split(':');
+                  const t = LEARN_TRACKS.find((x) => x.id === tid);
+                  const i = t ? t.lessons.findIndex((l) => l.id === lid) : -1;
+                  if (!t || i < 0) return null;
+                  return (
+                    <button
+                      key={b}
+                      onClick={() => {
+                        setTrackId(t.id);
+                        setIdx(i);
+                        setSearching(false);
+                        setQ('');
+                      }}
+                      className="w-full text-left px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-100 cursor-pointer"
+                    >
+                      <Bookmark className="w-3.5 h-3.5 inline mr-1.5 text-amber-300 fill-amber-300" />
+                      {t.title} · {t.lessons[i].title}
+                    </button>
+                  );
+                })}
+              </>
+            )}
+            {q.trim().length >= 2 && results.length === 0 && <p className="text-xs text-slate-500 p-2">No lesson matches “{q}”.</p>}
+            {results.map(({ t, i }) => (
+              <button
+                key={t.id + i}
+                onClick={() => {
+                  setTrackId(t.id);
+                  setIdx(i);
+                  setSearching(false);
+                  setQ('');
+                }}
+                className="w-full text-left px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer"
+              >
+                <span className="text-[10px] uppercase tracking-wider text-slate-500">{t.title}</span>
+                <span className="block text-xs font-semibold text-slate-100">{t.lessons[i].title}</span>
+                <span className="block text-[11px] text-slate-400">{t.lessons[i].sw}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Topic menu (slide-in) */}
       {menu && (
