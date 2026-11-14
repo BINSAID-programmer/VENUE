@@ -79,19 +79,20 @@ const REST: LearnLesson[] = [
 
 import { PYTHON_CORE } from './learnPythonCore';
 import { PYTHON_QUIZ } from './learnPythonQuiz';
+import { EXTRA_SECTIONS, OWN_LESSONS } from './learnPythonExtras';
 
 import { PYTHON_FLOW } from './learnPythonFlow';
 import { PYTHON_CHAPTER_EXTRAS as X } from './learnPythonChapters';
 
 const byId = (() => {
   const m: Record<string, LearnLesson> = {};
-  for (const l of [...REST, ...PYTHON_CORE, ...PYTHON_FLOW, ...Object.values(X)]) m[l.id.replace(/^py-/, '')] = l;
+  for (const l of [...REST, ...PYTHON_CORE, ...PYTHON_FLOW, ...Object.values(X), ...Object.values(OWN_LESSONS)]) m[l.id.replace(/^py-/, '')] = l;
   return m;
 })();
 
 /** Main topics (chapters), each holding its subtopics in teaching order. */
 const CHAPTERS: Array<{ title: string; ids: string[] }> = [
-  { title: '1. Getting Started', ids: ['setup', 'intro', 'syntax'] },
+  { title: '1. Getting Started', ids: ['setup', 'install', 'intro', 'syntax', 'debug'] },
   { title: '2. Variables and Simple Data Types', ids: ['variables', 'strings1', 'strings2', 'numbers', 'comments', 'zen'] },
   { title: '3. Introducing Lists', ids: ['lists1', 'lists2', 'indexerr'] },
   { title: '4. Working with Lists', ids: ['loops', 'indenterr', 'ranges', 'slices', 'tuples', 'style'] },
@@ -108,6 +109,7 @@ export const PYTHON_LESSONS: LearnLesson[] = CHAPTERS.flatMap((c) =>
   c.ids.map((id) => {
     const l = byId[id];
     if (!l) throw new Error('Missing Python lesson: ' + id);
-    return { ...l, chapter: c.title, ...(PYTHON_QUIZ[l.id] || {}) };
+    const extra = EXTRA_SECTIONS[id] || [];
+    return { ...l, chapter: c.title, sections: [...(l.sections || []), ...extra], ...(PYTHON_QUIZ[l.id] || {}) };
   })
 );
