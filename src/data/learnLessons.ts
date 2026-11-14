@@ -5,6 +5,8 @@ export type LearnLang = 'python' | 'html' | 'js';
 export interface LearnLesson {
   id: string;
   title: string;
+  /** Main topic (chapter) this lesson belongs to. */
+  chapter?: string;
   /** Short explanation, one paragraph per entry. */
   body: string[];
   /** Kwa kifupi — one-line Swahili summary. */

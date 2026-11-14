@@ -248,7 +248,7 @@ export const LearnScreen: React.FC = () => {
         <div className="flex items-start gap-2">
           <GraduationCap className="w-5 h-5 text-blue-400 mt-1 shrink-0" />
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-slate-500">{track.title} tutorial</p>
+            <p className="text-[10px] uppercase tracking-wider text-slate-500">{lesson.chapter || `${track.title} tutorial`}</p>
             <h2 className="text-xl font-extrabold text-white leading-tight">{lesson.title}</h2>
           </div>
           <button
@@ -467,8 +467,11 @@ export const LearnScreen: React.FC = () => {
             </div>
             <div className="p-2 space-y-1">
               {track.lessons.map((l, i) => (
+                <React.Fragment key={l.id}>
+                {l.chapter && l.chapter !== track.lessons[i - 1]?.chapter && (
+                  <p className="px-3 pt-3 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-blue-300">{l.chapter}</p>
+                )}
                 <button
-                  key={l.id}
                   onClick={() => go(i)}
                   className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left text-xs cursor-pointer ${
                     i === idx ? 'bg-blue-600/20 text-white font-bold' : 'text-slate-300'
@@ -481,6 +484,7 @@ export const LearnScreen: React.FC = () => {
                   )}
                   <span className="flex-1">{l.title}</span>
                 </button>
+                </React.Fragment>
               ))}
             </div>
           </div>
