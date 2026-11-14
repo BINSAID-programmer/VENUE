@@ -4,6 +4,7 @@ import { runPython } from '../learn/pyRunner';
 import { useLearnStats, levelOf } from '../learn/learnStats';
 import { Quiz } from '../learn/Quiz';
 import { Challenge } from '../learn/Challenge';
+import { CodeBlock, CodeEditor, CodeLang } from '../learn/highlight';
 import { LEARN_TRACKS, LearnLesson, LearnTrack } from '../../data/learnLessons';
 import LEARN_OUTPUTS from '../../data/learnOutputs.json';
 
@@ -270,16 +271,15 @@ export const LearnScreen: React.FC = () => {
               </p>
             ))}
             {sec.code && (
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
-                <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 border-b border-slate-800">Example</div>
-                <pre className="p-3 text-xs text-slate-100 font-mono overflow-x-auto whitespace-pre">{sec.code}</pre>
+              <div className="space-y-2">
+                <CodeBlock code={sec.code} lang={track.lang as CodeLang} title={`Example · ${track.lang === 'python' ? 'Python' : track.lang === 'js' ? 'JavaScript' : 'HTML'}`} />
                 {(LEARN_OUTPUTS as Record<string, string>)[sec.code] !== undefined && (
-                  <div className="mx-3 mb-3 rounded-xl bg-slate-950 border border-slate-800">
-                    <div className="px-2.5 pt-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Output</div>
-                    <pre className="px-2.5 pb-2 pt-0.5 text-xs text-emerald-200 font-mono overflow-x-auto whitespace-pre">{(LEARN_OUTPUTS as Record<string, string>)[sec.code] || '(no output)'}</pre>
+                  <div style={{ background: '#070b16', border: '1px solid #26304f', borderRadius: 14, overflow: 'hidden' }}>
+                    <div style={{ background: '#111833', color: '#6b7a99', fontSize: 10, fontWeight: 800, letterSpacing: 1, padding: '4px 12px', textTransform: 'uppercase' }}>Output</div>
+                    <pre style={{ margin: 0, padding: '8px 14px', color: '#c5f6a0', fontFamily: "ui-monospace, Menlo, Consolas, monospace", fontSize: 12.5, lineHeight: '20px', overflowX: 'auto', whiteSpace: 'pre' }}>{(LEARN_OUTPUTS as Record<string, string>)[sec.code] || '(no output)'}</pre>
                   </div>
                 )}
-                <div className="px-3 pb-3">
+                <div>
                   <button
                     onClick={() => openTry(sec.code!)}
                     className="px-3.5 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold cursor-pointer"
@@ -336,7 +336,7 @@ export const LearnScreen: React.FC = () => {
                   </button>
                   {shown[key] && (
                     <>
-                      <pre className="p-2.5 rounded-xl bg-slate-950 text-xs text-slate-100 font-mono overflow-x-auto whitespace-pre">{ex.a}</pre>
+                      <CodeBlock code={ex.a} lang={track.lang as CodeLang} title="Answer" />
                       <button
                         onClick={() => openTry(ex.a)}
                         className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-[11px] font-bold cursor-pointer"
@@ -519,14 +519,9 @@ export const LearnScreen: React.FC = () => {
               </button>
             </div>
           </div>
-          <textarea
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            spellCheck={false}
-            autoCapitalize="off"
-            autoCorrect="off"
-            className="flex-1 min-h-[35%] w-full bg-slate-950 text-slate-100 font-mono text-xs p-3 outline-none resize-none"
-          />
+          <div className="flex-1 min-h-[35%] overflow-auto p-2">
+            <CodeEditor value={code} onChange={setCode} lang={track.lang as CodeLang} title="Editor" minLines={8} fill />
+          </div>
           <div className="flex-1 min-h-[35%] border-t border-slate-800 bg-slate-900/60 overflow-auto">
             <p className="px-3 pt-2 text-[11px] font-bold text-slate-400">Result</p>
             <Runner lang={track.lang} code={code} runKey={runKey} />
