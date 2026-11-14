@@ -1,6 +1,6 @@
 import type { LearnLesson } from './learnLessons';
 
-type Sec = { h: string; p: string[]; code?: string; note?: string };
+type Sec = { h: string; p: string[]; code?: string; note?: string; explain?: string[] };
 type Extra = { mistakes?: string[]; exercises?: Array<{ q: string; a: string }> };
 export const L = (id: string, title: string, sw: string, task: string, sections: Sec[], extra: Extra = {}): LearnLesson => ({
   ...extra,
