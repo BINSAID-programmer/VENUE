@@ -35,6 +35,8 @@ export async function runPython(code: string): Promise<PyResult> {
   let buf = '';
   py.setStdout({ batched: (s: string) => (buf += s + '\n') });
   py.setStderr({ batched: (s: string) => (buf += s + '\n') });
+  // input() asks through a browser prompt box
+  py.setStdin({ stdin: () => (typeof window !== 'undefined' ? window.prompt('Python is asking for input():') : null) ?? '' });
   let err = '';
   try {
     const ns = py.globals.get('dict')();

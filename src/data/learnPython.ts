@@ -80,5 +80,34 @@ const REST: LearnLesson[] = [
 import { PYTHON_CORE } from './learnPythonCore';
 import { PYTHON_QUIZ } from './learnPythonQuiz';
 
-/** Order: intro, syntax, core notes, then the remaining topics. */
-export const PYTHON_LESSONS: LearnLesson[] = [REST[0], REST[1], ...PYTHON_CORE, ...REST.slice(2)].map((l) => ({ ...l, ...(PYTHON_QUIZ[l.id] || {}) }));
+import { PYTHON_FLOW } from './learnPythonFlow';
+import { PYTHON_CHAPTER_EXTRAS as X } from './learnPythonChapters';
+
+const byId = (() => {
+  const m: Record<string, LearnLesson> = {};
+  for (const l of [...REST, ...PYTHON_CORE, ...PYTHON_FLOW, ...Object.values(X)]) m[l.id.replace(/^py-/, '')] = l;
+  return m;
+})();
+
+/** Main topics (chapters), each holding its subtopics in teaching order. */
+const CHAPTERS: Array<{ title: string; ids: string[] }> = [
+  { title: '1. Getting Started', ids: ['setup', 'intro', 'syntax'] },
+  { title: '2. Variables and Simple Data Types', ids: ['variables', 'strings1', 'strings2', 'numbers', 'comments', 'zen'] },
+  { title: '3. Introducing Lists', ids: ['lists1', 'lists2', 'indexerr'] },
+  { title: '4. Working with Lists', ids: ['loops', 'indenterr', 'ranges', 'slices', 'tuples', 'style'] },
+  { title: '5. if Statements', ids: ['booleans', 'if1', 'if2', 'iflists', 'match'] },
+  { title: '6. Dictionaries', ids: ['dicts1', 'dicts2'] },
+  { title: '7. User Input and while Loops', ids: ['input', 'while1', 'whilelists'] },
+  { title: '8. Functions', ids: ['functions', 'scope'] },
+  { title: '9. Classes', ids: ['oop', 'inherit'] },
+  { title: '10. Files, Exceptions and JSON', ids: ['files', 'errors', 'json'] },
+  { title: '11. More Tools', ids: ['operators', 'sets', 'modules', 'regex', 'stats', 'linreg', 'pip'] },
+];
+
+export const PYTHON_LESSONS: LearnLesson[] = CHAPTERS.flatMap((c) =>
+  c.ids.map((id) => {
+    const l = byId[id];
+    if (!l) throw new Error('Missing Python lesson: ' + id);
+    return { ...l, chapter: c.title, ...(PYTHON_QUIZ[l.id] || {}) };
+  })
+);
