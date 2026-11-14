@@ -10,7 +10,7 @@ for c in codes:
     r = subprocess.run([sys.executable, '-I', '-c', c], capture_output=True, text=True, timeout=30, cwd=tempfile.mkdtemp())
     if r.returncode:
         # Some lessons show an error on purpose; those snippets are marked.
-        expected = any(m in c for m in ('prnit(', 'courses[4]', 'empty[-1]', '# Wrong'))
+        expected = any(m in c for m in ('prnit(', 'courses[4]', 'empty[-1]', '# Wrong', 'print(10 / 0)', 'len(score)'))
         if not expected:
             print('FAILED:', c[:80], r.stderr[-200:], file=sys.stderr)
             sys.exit(1)
