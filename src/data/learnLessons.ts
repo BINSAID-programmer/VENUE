@@ -1,3 +1,5 @@
+import { PYTHON_LESSONS } from './learnPython';
+
 export type LearnLang = 'python' | 'html' | 'js';
 
 export interface LearnLesson {
@@ -34,62 +36,7 @@ export const LEARN_TRACKS: LearnTrack[] = [
     lang: 'python',
     tagline: 'The easiest language to start with — great for data and statistics.',
     color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-    lessons: [
-      {
-        id: 'py-print',
-        title: 'Print and comments',
-        body: [
-          'print() shows something on the screen. Text goes inside quotes.',
-          'Anything after # is a comment: Python ignores it, it is a note for humans.',
-        ],
-        sw: 'print() inaonyesha matokeo. # ni maelezo tu, Python haisomi.',
-        code: `# My first program\nprint("Hello, VENUE!")\nprint(2 + 3)`,
-        task: 'Change the text to your name and print your age too.',
-      },
-      {
-        id: 'py-vars',
-        title: 'Variables and numbers',
-        body: [
-          'A variable is a named box that stores a value. Use = to put a value in.',
-          'Python does maths: + - * / and ** for powers, % for the remainder.',
-        ],
-        sw: 'Variable ni sanduku lenye jina linalohifadhi thamani.',
-        code: `x = 7\ny = 3\nprint(x + y)\nprint(x ** y)\nprint(x % y)\nmean = (x + y) / 2\nprint("Mean:", mean)`,
-        task: 'Store three test marks in variables and print their average.',
-      },
-      {
-        id: 'py-if',
-        title: 'If / else decisions',
-        body: [
-          'if runs code only when a condition is true. The indented lines belong to it.',
-          'Compare with ==, !=, <, >, <=, >=. Use elif for extra choices.',
-        ],
-        sw: 'if inaamua: kama sharti ni kweli, code inafanya kazi.',
-        code: `marks = 68\nif marks >= 70:\n    print("A")\nelif marks >= 60:\n    print("B")\nelse:\n    print("Keep going")`,
-        task: 'Add grades C and D with your own cut-offs.',
-      },
-      {
-        id: 'py-loop',
-        title: 'Loops and lists',
-        body: [
-          'A list holds many values: [4, 8, 15]. A for loop visits each one.',
-          'range(n) gives 0 to n-1. sum(), len(), max(), min() work on lists.',
-        ],
-        sw: 'for inarudia kila kitu kwenye list.',
-        code: `data = [12, 15, 9, 20, 14]\ntotal = 0\nfor v in data:\n    total = total + v\nprint("Total:", total)\nprint("Mean:", total / len(data))\nprint("Max:", max(data))`,
-        task: 'Print only the values greater than the mean.',
-      },
-      {
-        id: 'py-func',
-        title: 'Functions',
-        body: [
-          'A function packages code so you can reuse it. def names it, return gives back a result.',
-        ],
-        sw: 'Function ni code unayoitumia tena na tena.',
-        code: `def variance(xs):\n    m = sum(xs) / len(xs)\n    return sum((x - m) ** 2 for x in xs) / len(xs)\n\nprint(variance([2, 4, 4, 4, 5, 5, 7, 9]))`,
-        task: 'Write std_dev(xs) that returns the square root of the variance (use ** 0.5).',
-      },
-    ],
+    lessons: PYTHON_LESSONS,
   },
   {
     id: 'html',
