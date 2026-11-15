@@ -82,11 +82,12 @@ import { PYTHON_QUIZ } from './learnPythonQuiz';
 import { EXTRA_SECTIONS, OWN_LESSONS } from './learnPythonExtras';
 
 import { PYTHON_FLOW } from './learnPythonFlow';
+import { PYTHON_FUNCTIONS } from './learnPythonFunctions';
 import { PYTHON_CHAPTER_EXTRAS as X } from './learnPythonChapters';
 
 const byId = (() => {
   const m: Record<string, LearnLesson> = {};
-  for (const l of [...REST, ...PYTHON_CORE, ...PYTHON_FLOW, ...Object.values(X), ...Object.values(OWN_LESSONS)]) m[l.id.replace(/^py-/, '')] = l;
+  for (const l of [...REST, ...PYTHON_CORE, ...PYTHON_FLOW, ...PYTHON_FUNCTIONS, ...Object.values(X), ...Object.values(OWN_LESSONS)]) m[l.id.replace(/^py-/, '')] = l;
   return m;
 })();
 
@@ -99,7 +100,7 @@ const CHAPTERS: Array<{ title: string; ids: string[] }> = [
   { title: '5. if Statements', ids: ['booleans', 'if1', 'if2', 'iflists', 'match'] },
   { title: '6. Dictionaries', ids: ['dicts1', 'dicts2'] },
   { title: '7. User Input and while Loops', ids: ['input', 'while1', 'whilelists'] },
-  { title: '8. Functions', ids: ['functions', 'scope'] },
+  { title: '8. Functions', ids: ['fdef', 'fargs', 'freturn', 'flists', 'farbitrary', 'fmodules', 'fstyle', 'scope', 'flambda'] },
   { title: '9. Classes', ids: ['oop', 'inherit'] },
   { title: '10. Files, Exceptions and JSON', ids: ['files', 'errors', 'json'] },
   { title: '11. More Tools', ids: ['operators', 'sets', 'modules', 'regex', 'stats', 'linreg', 'pip'] },
