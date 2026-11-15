@@ -1364,3 +1364,25 @@ html[class*='theme-beige'] body::before {
 @media print {
   body::before { display: none; }
 }
+
+/* Learn code editor: transparent text layer must stay transparent in every theme */
+textarea[data-code-editor],
+textarea[data-code-editor]:focus {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  caret-color: #ffffff !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+/* Learn code blocks: keep their own colours in every theme (the global pre rule must not recolour them) */
+pre[data-lpre] {
+  color: var(--lc) !important;
+  background-color: transparent !important;
+  border: 0 !important;
+}
+pre[data-lpre='g'] {
+  border-right: 1px solid #26304f !important;
+}
