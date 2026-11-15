@@ -35,8 +35,10 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { installApiInterceptor } from './services/apiClient';
+import { installContrastGuard } from './utils/contrastGuard';
 
 installApiInterceptor();
+installContrastGuard();
 
 // Register PWA service worker only in production builds to enable installability on mobile
 if (import.meta.env.PROD && typeof window !== 'undefined' && 'serviceWorker' in navigator) {
