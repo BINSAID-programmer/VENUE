@@ -276,7 +276,7 @@ export const LearnScreen: React.FC = () => {
                 {(LEARN_OUTPUTS as Record<string, string>)[sec.code] !== undefined && (
                   <div style={{ background: '#070b16', border: '1px solid #26304f', borderRadius: 14, overflow: 'hidden' }}>
                     <div style={{ background: '#111833', color: '#6b7a99', fontSize: 10, fontWeight: 800, letterSpacing: 1, padding: '4px 12px', textTransform: 'uppercase' }}>Output</div>
-                    <pre style={{ margin: 0, padding: '8px 14px', color: '#c5f6a0', fontFamily: "ui-monospace, Menlo, Consolas, monospace", fontSize: 12.5, lineHeight: '20px', overflowX: 'auto', whiteSpace: 'pre' }}>{(LEARN_OUTPUTS as Record<string, string>)[sec.code] || '(no output)'}</pre>
+                    <pre data-lpre="1" style={{ margin: 0, padding: '8px 14px', color: '#c5f6a0', ['--lc' as string]: '#c5f6a0', fontFamily: "ui-monospace, Menlo, Consolas, monospace", fontSize: 12.5, lineHeight: '20px', overflowX: 'auto', whiteSpace: 'pre' }}>{(LEARN_OUTPUTS as Record<string, string>)[sec.code] || '(no output)'}</pre>
                   </div>
                 )}
                 <div>

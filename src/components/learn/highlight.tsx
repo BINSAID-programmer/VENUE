@@ -65,10 +65,10 @@ export const CodeBlock: React.FC<{ code: string; lang: CodeLang; title?: string 
   return (
     <Chrome lang={lang} title={title} right={<CopyBtn code={text} />}>
       <div style={{ display: 'flex', overflowX: 'auto', fontFamily: FONT, fontSize: FS, lineHeight: `${LH}px` }}>
-        <pre aria-hidden style={{ margin: 0, padding: '10px 8px 10px 12px', color: C.gutter, textAlign: 'right', userSelect: 'none', borderRight: `1px solid ${C.line}`, flexShrink: 0 }}>
+        <pre aria-hidden data-lpre="g" style={{ margin: 0, padding: '10px 8px 10px 12px', color: C.gutter, ['--lc' as string]: C.gutter, textAlign: 'right', userSelect: 'none', borderRight: `1px solid ${C.line}`, flexShrink: 0 }}>
           {gutterText(lines)}
         </pre>
-        <pre style={{ margin: 0, padding: '10px 14px', color: C.text, whiteSpace: 'pre', minWidth: 0 }}>
+        <pre data-lpre="1" style={{ margin: 0, padding: '10px 14px', color: C.text, ['--lc' as string]: C.text, whiteSpace: 'pre', minWidth: 0 }}>
           <Highlighted code={text} lang={lang} />
         </pre>
       </div>
@@ -133,7 +133,7 @@ export const CodeEditor: React.FC<{
           {gutterText(lines)}
         </pre>
         <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
-          <pre aria-hidden style={{ ...box, position: 'absolute', top: 0, left: 0, color: C.text, pointerEvents: 'none' }}>
+          <pre aria-hidden data-lpre="1" style={{ ...box, position: 'absolute', top: 0, left: 0, color: C.text, ['--lc' as string]: C.text, pointerEvents: 'none' }}>
             <Highlighted code={value} lang={lang} />
           </pre>
           <textarea
@@ -145,6 +145,7 @@ export const CodeEditor: React.FC<{
             autoCapitalize="off"
             autoCorrect="off"
             wrap="off"
+            data-code-editor="1"
             style={{ ...box, position: 'relative', display: 'block', background: 'transparent', color: 'transparent', caretColor: '#fff', border: 0, outline: 'none', resize: 'none', overflow: 'hidden' }}
           />
         </div>
