@@ -83,13 +83,14 @@ import { EXTRA_SECTIONS, OWN_LESSONS } from './learnPythonExtras';
 
 import { PYTHON_FLOW } from './learnPythonFlow';
 import { PYTHON_FUNCTIONS } from './learnPythonFunctions';
+import { PYTHON_TESTING } from './learnPythonTesting';
 import { PYTHON_FILES } from './learnPythonFiles';
 import { PYTHON_CLASSES } from './learnPythonClasses';
 import { PYTHON_CHAPTER_EXTRAS as X } from './learnPythonChapters';
 
 const byId = (() => {
   const m: Record<string, LearnLesson> = {};
-  for (const l of [...REST, ...PYTHON_CORE, ...PYTHON_FLOW, ...PYTHON_FUNCTIONS, ...PYTHON_CLASSES, ...PYTHON_FILES, ...Object.values(X), ...Object.values(OWN_LESSONS)]) m[l.id.replace(/^py-/, '')] = l;
+  for (const l of [...REST, ...PYTHON_CORE, ...PYTHON_FLOW, ...PYTHON_FUNCTIONS, ...PYTHON_CLASSES, ...PYTHON_FILES, ...PYTHON_TESTING, ...Object.values(X), ...Object.values(OWN_LESSONS)]) m[l.id.replace(/^py-/, '')] = l;
   return m;
 })();
 
@@ -105,7 +106,8 @@ const CHAPTERS: Array<{ title: string; ids: string[] }> = [
   { title: '8. Functions', ids: ['fdef', 'fargs', 'freturn', 'flists', 'farbitrary', 'fmodules', 'fstyle', 'scope', 'flambda'] },
   { title: '9. Classes', ids: ['cclass', 'cwork', 'cinherit', 'ccompose', 'cspecial', 'cmodules', 'cproject'] },
   { title: '10. Files, Exceptions and JSON', ids: ['fread', 'fwrite', 'exceptions', 'fjson', 'fcsv', 'fproject'] },
-  { title: '11. More Tools', ids: ['operators', 'sets', 'modules', 'regex', 'stats', 'linreg', 'pip'] },
+  { title: '11. Testing Your Code', ids: ['tunit', 'tassert', 'tclass', 'ttdd'] },
+  { title: '12. More Tools', ids: ['operators', 'sets', 'modules', 'regex', 'stats', 'linreg', 'pip'] },
 ];
 
 export const PYTHON_LESSONS: LearnLesson[] = CHAPTERS.flatMap((c) =>
