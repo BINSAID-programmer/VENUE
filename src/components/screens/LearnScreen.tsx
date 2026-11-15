@@ -26,6 +26,12 @@ function saveDone(ids: string[]) {
   }
 }
 
+/** Short HTML snippets get a readable base style; complete pages are left exactly as written. */
+const wrapHtml = (code: string) =>
+  /<html|<!doctype/i.test(code)
+    ? code
+    : `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:system-ui,sans-serif;font-size:15px;line-height:1.5;padding:10px;margin:0;color:#111}</style></head><body>${code}</body></html>`;
+
 const wrapJs = (code: string) =>
   `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:ui-monospace,monospace;font-size:14px;padding:10px;margin:0;color:#e2e8f0;background:#020617}div{white-space:pre-wrap;margin:2px 0}.e{color:#fda4af}</style></head><body><div id="o"></div><script>
 const o=document.getElementById('o');
@@ -88,7 +94,7 @@ const Runner: React.FC<{ lang: LearnTrack['lang']; code: string; runKey: number 
       key={runKey}
       title="Result"
       sandbox="allow-scripts"
-      srcDoc={lang === 'js' ? wrapJs(code) : code}
+      srcDoc={lang === 'js' ? wrapJs(code) : wrapHtml(code)}
       className="w-full h-full min-h-[200px] bg-white"
     />
   );
@@ -273,6 +279,17 @@ export const LearnScreen: React.FC = () => {
             {sec.code && (
               <div className="space-y-2">
                 <CodeBlock code={sec.code} lang={track.lang as CodeLang} title={`Example · ${track.lang === 'python' ? 'Python' : track.lang === 'js' ? 'JavaScript' : 'HTML'}`} />
+                {(track.lang === 'html' || track.lang === 'js') && (
+                  <div style={{ border: '1px solid #26304f', borderRadius: 14, overflow: 'hidden', background: '#fff' }}>
+                    <div style={{ background: '#111833', color: '#6b7a99', fontSize: 10, fontWeight: 800, letterSpacing: 1, padding: '4px 12px', textTransform: 'uppercase' }}>Result</div>
+                    <iframe
+                      title="Result"
+                      sandbox="allow-scripts"
+                      srcDoc={track.lang === 'js' ? wrapJs(sec.code) : wrapHtml(sec.code)}
+                      style={{ width: '100%', height: 170, border: 0, background: '#fff', display: 'block' }}
+                    />
+                  </div>
+                )}
                 {(LEARN_OUTPUTS as Record<string, string>)[sec.code] !== undefined && (
                   <div style={{ background: '#070b16', border: '1px solid #26304f', borderRadius: 14, overflow: 'hidden' }}>
                     <div style={{ background: '#111833', color: '#6b7a99', fontSize: 10, fontWeight: 800, letterSpacing: 1, padding: '4px 12px', textTransform: 'uppercase' }}>Output</div>
@@ -356,6 +373,7 @@ export const LearnScreen: React.FC = () => {
             key={lesson.id}
             id={`${lesson.id}:c`}
             data={lesson.challenge}
+            lang={track.lang === 'html' ? 'html' : 'python'}
             solved={!!stats.challenges[`${lesson.id}:c`]}
             onSolved={markChallenge}
           />
