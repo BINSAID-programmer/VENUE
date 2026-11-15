@@ -1,6 +1,26 @@
 import { PYTHON_LESSONS } from './learnPython';
+import { COMPUTER_LESSONS } from './learnComputer';
 
-export type LearnLang = 'python' | 'html' | 'js';
+export type LearnLang = 'python' | 'html' | 'js' | 'text';
+
+/** One headed part of a lesson. Text lessons (no code) use fig / table / steps / video / tip. */
+export interface LearnSection {
+  h: string;
+  p: string[];
+  code?: string;
+  note?: string;
+  explain?: string[];
+  /** Key of a drawing in learnFigures.ts. */
+  fig?: string;
+  /** A table: first row of headings, then rows. */
+  table?: { head: string[]; rows: string[][] };
+  /** Numbered hands-on steps. */
+  steps?: string[];
+  /** YouTube video (loads only when tapped). */
+  video?: { id: string; title: string; by: string };
+  /** Green tip box. */
+  tip?: string;
+}
 
 export interface LearnLesson {
   id: string;
@@ -20,7 +40,7 @@ export interface LearnLesson {
   /** Practice questions; `a` is runnable Python shown on demand. */
   exercises?: Array<{ q: string; a: string }>;
   /** Optional richer layout: headed sections, each with its own runnable example. */
-  sections?: Array<{ h: string; p: string[]; code?: string; note?: string; explain?: string[] }>;
+  sections?: LearnSection[];
   /** Editable example the learner can run. */
   code: string;
   /** Small exercise. */
@@ -40,6 +60,14 @@ const html = (inner: string, css = '') =>
   `<!DOCTYPE html>\n<html>\n<head>\n<meta name="viewport" content="width=device-width, initial-scale=1">${css ? `\n<style>\n${css}\n</style>` : ''}\n</head>\n<body>\n${inner}\n</body>\n</html>`;
 
 export const LEARN_TRACKS: LearnTrack[] = [
+  {
+    id: 'basics',
+    title: 'Computer Basics',
+    lang: 'text',
+    tagline: 'Start here: how computers work, files and folders, the internet and staying safe.',
+    color: 'text-sky-400 bg-sky-500/10 border-sky-500/20',
+    lessons: COMPUTER_LESSONS,
+  },
   {
     id: 'python',
     title: 'Python',
