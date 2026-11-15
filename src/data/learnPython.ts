@@ -83,12 +83,13 @@ import { EXTRA_SECTIONS, OWN_LESSONS } from './learnPythonExtras';
 
 import { PYTHON_FLOW } from './learnPythonFlow';
 import { PYTHON_FUNCTIONS } from './learnPythonFunctions';
+import { PYTHON_FILES } from './learnPythonFiles';
 import { PYTHON_CLASSES } from './learnPythonClasses';
 import { PYTHON_CHAPTER_EXTRAS as X } from './learnPythonChapters';
 
 const byId = (() => {
   const m: Record<string, LearnLesson> = {};
-  for (const l of [...REST, ...PYTHON_CORE, ...PYTHON_FLOW, ...PYTHON_FUNCTIONS, ...PYTHON_CLASSES, ...Object.values(X), ...Object.values(OWN_LESSONS)]) m[l.id.replace(/^py-/, '')] = l;
+  for (const l of [...REST, ...PYTHON_CORE, ...PYTHON_FLOW, ...PYTHON_FUNCTIONS, ...PYTHON_CLASSES, ...PYTHON_FILES, ...Object.values(X), ...Object.values(OWN_LESSONS)]) m[l.id.replace(/^py-/, '')] = l;
   return m;
 })();
 
@@ -103,7 +104,7 @@ const CHAPTERS: Array<{ title: string; ids: string[] }> = [
   { title: '7. User Input and while Loops', ids: ['input', 'while1', 'whilelists'] },
   { title: '8. Functions', ids: ['fdef', 'fargs', 'freturn', 'flists', 'farbitrary', 'fmodules', 'fstyle', 'scope', 'flambda'] },
   { title: '9. Classes', ids: ['cclass', 'cwork', 'cinherit', 'ccompose', 'cspecial', 'cmodules', 'cproject'] },
-  { title: '10. Files, Exceptions and JSON', ids: ['files', 'errors', 'json'] },
+  { title: '10. Files, Exceptions and JSON', ids: ['fread', 'fwrite', 'exceptions', 'fjson', 'fcsv', 'fproject'] },
   { title: '11. More Tools', ids: ['operators', 'sets', 'modules', 'regex', 'stats', 'linreg', 'pip'] },
 ];
 
