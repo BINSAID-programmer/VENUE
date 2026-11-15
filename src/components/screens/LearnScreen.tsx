@@ -5,7 +5,8 @@ import { useLearnStats, levelOf } from '../learn/learnStats';
 import { Quiz } from '../learn/Quiz';
 import { Challenge } from '../learn/Challenge';
 import { CodeBlock, CodeEditor, CodeLang } from '../learn/highlight';
-import { LEARN_TRACKS, LearnLesson, LearnTrack } from '../../data/learnLessons';
+import { LEARN_TRACKS, LearnLesson, LearnSection, LearnTrack } from '../../data/learnLessons';
+import { Figure, LearnTable, Steps, VideoCard } from '../learn/Figure';
 import LEARN_OUTPUTS from '../../data/learnOutputs.json';
 
 const STORE_KEY = 'venue_learn_done_v1';
@@ -107,7 +108,7 @@ function loadPos(): { t: string; l: number } {
 }
 
 /** A lesson is shown as sections; older lessons are turned into one section on the fly. */
-function sectionsOf(l: LearnLesson): Array<{ h: string; p: string[]; code?: string; note?: string; explain?: string[] }> {
+function sectionsOf(l: LearnLesson): LearnSection[] {
   if (l.sections && l.sections.length) return l.sections;
   return [{ h: 'Explained', p: l.body, code: l.code }];
 }
@@ -270,6 +271,13 @@ export const LearnScreen: React.FC = () => {
                 {t}
               </p>
             ))}
+            {sec.fig && <Figure name={sec.fig} />}
+            {sec.table && <LearnTable head={sec.table.head} rows={sec.table.rows} />}
+            {sec.steps && <Steps items={sec.steps} />}
+            {sec.video && <VideoCard id={sec.video.id} title={sec.video.title} by={sec.video.by} />}
+            {sec.tip && (
+              <p className="text-xs text-emerald-200 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2">💡 {sec.tip}</p>
+            )}
             {sec.code && (
               <div className="space-y-2">
                 <CodeBlock code={sec.code} lang={track.lang as CodeLang} title={`Example · ${track.lang === 'python' ? 'Python' : track.lang === 'js' ? 'JavaScript' : 'HTML'}`} />
@@ -336,13 +344,19 @@ export const LearnScreen: React.FC = () => {
                   </button>
                   {shown[key] && (
                     <>
-                      <CodeBlock code={ex.a} lang={track.lang as CodeLang} title="Answer" />
-                      <button
-                        onClick={() => openTry(ex.a)}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-[11px] font-bold cursor-pointer"
-                      >
-                        Try it Yourself »
-                      </button>
+                      {track.lang === 'text' ? (
+                        <p className="text-xs text-emerald-200 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2 leading-relaxed">{ex.a}</p>
+                      ) : (
+                        <>
+                          <CodeBlock code={ex.a} lang={track.lang as CodeLang} title="Answer" />
+                          <button
+                            onClick={() => openTry(ex.a)}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-[11px] font-bold cursor-pointer"
+                          >
+                            Try it Yourself »
+                          </button>
+                        </>
+                      )}
                     </>
                   )}
                 </div>
