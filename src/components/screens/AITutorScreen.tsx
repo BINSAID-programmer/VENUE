@@ -235,10 +235,10 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({
     text: `Hello${studentName ? ` ${studentName.split(' ')[0]}` : ''}. Ask any question about your coursework, mathematical derivations, statistical concepts, or upload a photo of a problem to work through step by step.`,
     timestamp: 'Just now',
     suggestions: [
-      'Explain key concepts from my coursework step by step',
-      'Solve a sample variance and standard deviation problem',
-      'Derive the formula for arithmetic mean using the short-cut method',
-      'Give me 3 practice questions with step-by-step solutions',
+      'Explain page 5 of my lecture notes',
+      'Summarise my lecture notes for this course',
+      'Explain chapter 2 of my notes step by step',
+      'Give me 3 practice questions from my notes',
     ],
   };
 
@@ -2427,7 +2427,7 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({
                   ? 'Upload a photo of your question or type/paste your homework problem here...'
                   : selectedCourseContext === 'All Courses'
                   ? 'Ask a question, solve an equation, or explain a concept...'
-                  : `Ask about ${selectedCourseContext}...`
+                  : `Ask about ${selectedCourseContext}, or say "explain page 40 of my notes"...`
               }
               className="flex-1 py-1.5 px-1 bg-transparent text-slate-900 placeholder-slate-400 text-sm leading-relaxed focus:outline-none resize-none max-h-36 min-w-0"
             />
