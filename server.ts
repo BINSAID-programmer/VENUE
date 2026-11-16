@@ -6,6 +6,13 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 
 import { runReconcile, getReconcileStatus } from './reconcile';
+import {
+  parsePageReference,
+  readRequestedPages,
+  findSectionStartPages,
+  buildOutline,
+  pickMaterialForRequest,
+} from './tutorMaterialPages';
 import { backupMaterialFile, restoreMaterialFile, removeMaterialBackup } from './persistence';
 import * as subs from './subscriptions';
 import * as push from './push';
@@ -4318,6 +4325,23 @@ async function extractRealMaterialText(
       materialType: mat?.materialType,
     });
     if (!index || index.extractionStatus !== 'indexed' || index.chunks.length === 0) return empty;
+    // A topic such as "page 40" or "chapter 3" reads exactly those pages of the lecturer's file.
+    const pageRef = parsePageReference(String(topic || ''));
+    let wantedPages = pageRef.pages;
+    if (wantedPages.length === 0 && pageRef.section) {
+      const starts = findSectionStartPages(index.chunks, pageRef.section);
+      if (starts.length > 0) wantedPages = [starts[0], starts[0] + 1, starts[0] + 2];
+    }
+    if (wantedPages.length > 0) {
+      const reads = readRequestedPages(index.chunks, index.totalPages, wantedPages).filter((r) => !r.empty && !r.outOfRange);
+      if (reads.length > 0) {
+        return {
+          wasDirectlyRead: true,
+          extractedText: reads.map((r) => `[Page ${r.page}]\n${r.text}`).join('\n\n'),
+          pageReferences: reads.map((r) => r.page),
+        };
+      }
+    }
     const terms = extractQuerySearchTerms(String(topic || ''));
     const chunks = retrieveRelevantChunksFromIndex(index, terms, MAX_CHUNKS_PER_MATERIAL, true);
     if (chunks.length === 0) return empty;
@@ -4684,6 +4708,129 @@ app.post('/api/tutor/chat', async (req, res) => {
       }
     }
 
+    // PAGE-AWARE READING: "explain page 40", "pages 12-14", "ukurasa wa 7", "chapter 3 of my notes", "summarise these notes".
+    // The requested pages are read directly from the lecturer's file (not guessed by keywords) so the answer follows
+    // what the lecturer actually teaches. Scanned pages with no text are handed to Gemini as the PDF itself.
+    let pdfAttachment: { mimeType: string; data: string } | null = null;
+    let pageGroundingBlock = '';
+    try {
+      const pageRef = parsePageReference(effectiveSearchQuery);
+      const wantsSection = Boolean(pageRef.section) && pageRef.pages.length === 0;
+      const readable = (indexedDocs as any[]).filter(
+        (d) => d?.index && (d.index.extractionStatus === 'indexed' || d.index.extractionStatus === 'unavailable')
+      );
+      if (
+        !userIntent.isGeneralNonAcademicConversational &&
+        readable.length > 0 &&
+        (pageRef.pages.length > 0 || wantsSection || pageRef.wholeDocument)
+      ) {
+        const pickable = readable.map((d) => ({
+          id: String(d.meta.materialId || d.meta.id || ''),
+          title: d.meta.title,
+          fileName: d.meta.fileName,
+          courseCode: d.meta.courseCode,
+          uploaderRole: d.meta.uploaderRole,
+          totalPages: d.index.totalPages,
+          indexed: true,
+        }));
+        const picked = pickMaterialForRequest(pickable, effectiveSearchQuery, pageRef.pages);
+        const doc = picked ? readable.find((d) => String(d.meta.materialId || d.meta.id || '') === picked.id) : null;
+        if (doc) {
+          const idx = doc.index as IndexedMaterialDocument;
+          const mId = String(doc.meta.materialId || doc.meta.id || '');
+          const mTitle = String(doc.meta.title || 'Course material').slice(0, 140);
+          const mCourse = String(doc.meta.courseCode || courseContext || '').slice(0, 30);
+          const mRole = doc.meta.uploaderRole === 'lecturer' ? 'Verified Lecturer' : 'University Repository / Course Resource';
+          let pages = pageRef.pages;
+          let sectionNote = '';
+          if (wantsSection) {
+            const starts = findSectionStartPages(idx.chunks, pageRef.section as string);
+            if (starts.length > 0) {
+              pages = [starts[0], starts[0] + 1, starts[0] + 2].filter((p) => !idx.totalPages || p <= idx.totalPages);
+              sectionNote = `Section/chapter ${pageRef.section} starts on PDF page ${starts[0]}; the first ${pages.length} page(s) of it are given. Tell the student they can ask for the next pages.`;
+            } else {
+              sectionNote = `Could not find a heading for section/chapter ${pageRef.section} in this file. Say so honestly and ask for a page number.`;
+            }
+          }
+
+          const lines: string[] = [];
+          lines.push(
+            `\nREQUESTED MATERIAL CONTENT (page-level reading) — [Source ID: ${mId}] "${mTitle}" | Course: ${mCourse} | Source Attribution: ${mRole}${
+              idx.totalPages ? ` | File has ${idx.totalPages} page(s)` : ''
+            }`
+          );
+          lines.push(
+            'The text below was copied from the student\'s own course file in PDF page order (the first page of the file is page 1, which may differ from the page number printed on the paper).'
+          );
+          if (sectionNote) lines.push(sectionNote);
+
+          let needsPdf = false;
+          if (pages.length > 0) {
+            const reads = readRequestedPages(idx.chunks, idx.totalPages, pages);
+            for (const r of reads) {
+              if (r.outOfRange) {
+                lines.push(`--- PDF page ${r.page} --- [This page does not exist: the file has only ${idx.totalPages} page(s). Tell the student.]`);
+              } else if (r.empty) {
+                needsPdf = true;
+                lines.push(`--- PDF page ${r.page} --- [No selectable text was extracted: this page is probably scanned, a picture, a figure or a drawing. If the PDF is attached to this message, read the page from it.]`);
+              } else {
+                lines.push(`--- PDF page ${r.page} ---\n${r.text}`);
+              }
+            }
+            const okPages = reads.filter((r) => !r.outOfRange && !r.empty).map((r) => r.page);
+            const pageSet = new Set<number>(okPages.concat(needsPdf ? reads.filter((r) => r.empty).map((r) => r.page) : []));
+            if (pageSet.size > 0) {
+              candidateReferencedMaterials.unshift({
+                materialId: mId,
+                title: mTitle,
+                materialType: String(doc.meta.materialType || 'Lecture Notes').slice(0, 60),
+                courseCode: mCourse,
+                courseTitle: doc.meta.courseName ? String(doc.meta.courseName).slice(0, 100) : undefined,
+                uploaderRole: doc.meta.uploaderRole || 'admin',
+                uploaderName: doc.meta.uploaderName || undefined,
+                pageReferences: Array.from(pageSet).sort((a, b) => a - b),
+                chunksCount: okPages.length || undefined,
+              });
+            }
+          } else if (!wantsSection) {
+            lines.push(buildOutline(idx.chunks, idx.totalPages));
+            candidateReferencedMaterials.unshift({
+              materialId: mId,
+              title: mTitle,
+              materialType: String(doc.meta.materialType || 'Lecture Notes').slice(0, 60),
+              courseCode: mCourse,
+              courseTitle: doc.meta.courseName ? String(doc.meta.courseName).slice(0, 100) : undefined,
+              uploaderRole: doc.meta.uploaderRole || 'admin',
+              uploaderName: doc.meta.uploaderName || undefined,
+            });
+          }
+
+          if (idx.extractionStatus === 'unavailable' && pages.length === 0) needsPdf = true;
+
+          // Hand the original PDF to Gemini when text is missing (scans) so it can read the page like a person would.
+          if (needsPdf && /\.pdf$/i.test(idx.storagePath || '')) {
+            try {
+              const resolved = resolveOrRestoreMaterialFileOnDisk(idx.storagePath, idx.materialId);
+              if (resolved && fs.existsSync(resolved.fullPath)) {
+                const st = fs.statSync(resolved.fullPath);
+                if (st.size > 0 && st.size <= 14 * 1024 * 1024) {
+                  pdfAttachment = { mimeType: 'application/pdf', data: fs.readFileSync(resolved.fullPath).toString('base64') };
+                  lines.push('The original PDF is attached to this message. Use it for pages that have no extracted text.');
+                }
+              }
+            } catch (attachErr) {
+              console.warn('PDF attach for page reading skipped:', attachErr);
+            }
+          }
+
+          pageGroundingBlock = lines.join('\n') + '\n';
+          materialsContextBlock = pageGroundingBlock + materialsContextBlock;
+        }
+      }
+    } catch (pageErr) {
+      console.warn('Page-aware material reading skipped:', pageErr);
+    }
+
     const syllabusBlock =
       selectedCourseSyllabus.length > 0
         ? `\nSelected Course Syllabus Topics (${courseContext}):\n` +
@@ -4905,6 +5052,14 @@ The student has explicitly selected their preferred response language as: "${lan
   * Answer directly and accurately using your general academic knowledge.
   * Set \`groundedInCourseMaterials: false\` and \`usedSourceIds: []\`.
   * NEVER invent or guess page numbers, section numbers, or citations.
+- LECTURER'S MATERIAL FIRST (PAGE-LEVEL READING):
+  * Many lecturers want students to answer the way THEY teach, not with a generic global explanation. When a "REQUESTED MATERIAL CONTENT" block appears above, the student asked about that exact page, chapter or file. Base your answer on that text.
+  * Explain what the page actually contains, in the order it appears: headings, definitions, formulas, worked examples, tables and figures (describe a figure or table from its text or from the attached PDF). Then explain it simply, and say which parts are most important to remember.
+  * Keep the lecturer's own terms, notation, symbols and method even when another textbook uses different ones. Cite pages inline like "(page 40)". Set \`groundedInCourseMaterials: true\` and put that material's Source ID in \`usedSourceIds\`.
+  * If you add anything that is NOT on those pages (extra intuition, another method, a related example), put it under a short label such as "Extra (beyond your notes)" so the student can tell the lecturer's content from your additions.
+  * If a page has no readable text and no PDF is attached, or the page is beyond the end of the file, say so plainly and ask the student for a clearer page. Never invent what a page "probably" says.
+  * Page numbers follow the PDF page order. If the page text shows a different printed number, mention both.
+  * For a whole-file question ("summarise these notes", "what is in this PDF"), use the outline: describe the structure by pages and offer to open any page or chapter next.
 
 3. CONVERSATIONAL QUALITY, FOLLOW-UP CONTEXT & NO OVER-FORMATTING (STAGE 10D):
 - Answer directly and naturally like a leading modern AI assistant.
@@ -4987,6 +5142,10 @@ When an image is provided, transcribe the question accurately, inspect any handw
     const defaultPrompt = hasImage
       ? 'Please analyze this academic image/photo thoroughly: identify the question, explain what is given and asked, solve it step-by-step with proper mathematical notation, diagnose any mistakes if student handwritten working is present, and state the final answer clearly.'
       : 'Explain clearly and solve step-by-step.';
+
+    if (pdfAttachment) {
+      currentParts.unshift({ inlineData: { mimeType: pdfAttachment.mimeType, data: pdfAttachment.data } });
+    }
 
     currentParts.push({
       text: trimmedMsg || defaultPrompt,

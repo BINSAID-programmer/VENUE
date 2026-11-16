@@ -324,6 +324,18 @@ class AITutorMaterialContextService {
       ) {
         score += 20;
       }
+      // "lecture 3", "chapter 2", "week 5": prefer the file whose title carries the same number
+      const titleCompact = `${title} ${rec.fileName || ''}`.toLowerCase().replace(/[^a-z0-9]+/g, '');
+      for (const m of qLower.matchAll(/\b(lecture|lec|chapter|week|tutorial|assignment|module|unit|part|somo|sura)\s*(\d{1,2})\b/g)) {
+        if (titleCompact.includes(`${m[1]}${m[2]}`)) score += 30;
+      }
+      // Page / chapter questions are about the lecturer's own notes, so keep teaching files at the top
+      if (
+        /\b(page|pages|ukurasa|kurasa|chapter|sura|slide|slaidi)\b/.test(qLower) &&
+        (matType === 'Lecture Notes' || matType === 'Slides' || matType === 'Handouts')
+      ) {
+        score += 20;
+      }
       if (
         (qLower.includes('note') || qLower.includes('lecture') || qLower.includes('slide')) &&
         (matType === 'Lecture Notes' || matType === 'Slides' || matType === 'Handouts')
