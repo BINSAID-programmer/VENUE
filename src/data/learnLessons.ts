@@ -1,5 +1,6 @@
 import { PYTHON_LESSONS } from './learnPython';
 import { HTML_LESSONS } from './learnHtml';
+import { CSS_LESSONS } from './learnCss';
 
 export type LearnLang = 'python' | 'html' | 'js';
 
@@ -63,40 +64,7 @@ export const LEARN_TRACKS: LearnTrack[] = [
     lang: 'html',
     tagline: 'Colours, spacing and layout — make pages look good.',
     color: 'text-sky-400 bg-sky-500/10 border-sky-500/20',
-    lessons: [
-      {
-        id: 'css-colors',
-        title: 'Colours and fonts',
-        body: ['CSS rules look like: selector { property: value; }. color is text colour, background is the fill.'],
-        sw: 'CSS inapamba: rangi, ukubwa wa herufi, mpangilio.',
-        code: html('<h1>Hello</h1>\n<p>Style me!</p>', 'body { font-family: sans-serif; padding: 16px; }\nh1 { color: #2563eb; }\np { background: #fef3c7; font-size: 18px; }'),
-        task: 'Change the heading colour and the paragraph background.',
-      },
-      {
-        id: 'css-box',
-        title: 'The box model',
-        body: ['Every element is a box: content, padding (inside), border, margin (outside).'],
-        sw: 'Kila kitu ni boksi: padding ndani, margin nje.',
-        code: html('<div class="card">A card</div>', '.card { padding: 20px; margin: 16px; border: 2px solid #2563eb; border-radius: 12px; background: #eff6ff; }'),
-        task: 'Make the corners fully round and the border thicker.',
-      },
-      {
-        id: 'css-flex',
-        title: 'Flexbox layout',
-        body: ['display: flex puts children in a row. justify-content spaces them, gap adds space between.'],
-        sw: 'flex inapanga vitu kwenye mstari kwa urahisi.',
-        code: html('<div class="row"><div>1</div><div>2</div><div>3</div></div>', '.row { display: flex; gap: 12px; justify-content: center; }\n.row div { background: #10b981; color: white; padding: 20px; border-radius: 8px; }'),
-        task: 'Use justify-content: space-between and add a 4th box.',
-      },
-      {
-        id: 'css-hover',
-        title: 'Hover and responsive',
-        body: [':hover styles an element when the mouse/finger is over it. @media changes styles on small screens.'],
-        sw: ':hover na @media vinafanya ukurasa uwe hai na ufae simu.',
-        code: html('<button class="btn">Tap me</button>', '.btn { padding: 12px 20px; border: 0; border-radius: 10px; background: #2563eb; color: white; font-size: 16px; }\n.btn:hover { background: #1d4ed8; }\n@media (max-width: 400px) { .btn { width: 100%; } }'),
-        task: 'Make the button turn green on hover.',
-      },
-    ],
+    lessons: CSS_LESSONS,
   },
   {
     id: 'js',
