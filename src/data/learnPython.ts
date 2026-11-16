@@ -79,6 +79,7 @@ const REST: LearnLesson[] = [
 
 import { PYTHON_CORE } from './learnPythonCore';
 import { PYTHON_QUIZ } from './learnPythonQuiz';
+import { PYTHON_PATCH_LESSONS, PYTHON_PATCH_EXTRA } from './learnPythonPatch';
 import { EXTRA_SECTIONS, OWN_LESSONS } from './learnPythonExtras';
 
 import { PYTHON_FLOW } from './learnPythonFlow';
@@ -91,7 +92,7 @@ import { PYTHON_CHAPTER_EXTRAS as X } from './learnPythonChapters';
 
 const byId = (() => {
   const m: Record<string, LearnLesson> = {};
-  for (const l of [...REST, ...PYTHON_CORE, ...PYTHON_FLOW, ...PYTHON_FUNCTIONS, ...PYTHON_CLASSES, ...PYTHON_FILES, ...PYTHON_TESTING, ...PYTHON_TOOLS, ...Object.values(X), ...Object.values(OWN_LESSONS)]) m[l.id.replace(/^py-/, '')] = l;
+  for (const l of [...REST, ...PYTHON_CORE, ...PYTHON_FLOW, ...PYTHON_FUNCTIONS, ...PYTHON_CLASSES, ...PYTHON_FILES, ...PYTHON_TESTING, ...PYTHON_TOOLS, ...Object.values(X), ...PYTHON_PATCH_LESSONS, ...Object.values(OWN_LESSONS)]) m[l.id.replace(/^py-/, '')] = l;
   return m;
 })();
 
@@ -111,11 +112,37 @@ const CHAPTERS: Array<{ title: string; ids: string[] }> = [
   { title: '12. Operators, Text, Dates and Statistics', ids: ['operators', 'sets', 'regex', 'dates', 'stats', 'linreg', 'montecarlo', 'pip'] },
 ];
 
+/** Spread correct answers over all positions (cyclic rotation keeps option order readable). */
+export function spreadAnswers<T extends { options: string[]; answer: number }>(quiz: T[] | undefined, seed: string): T[] | undefined {
+  if (!quiz) return quiz;
+  let h = 0;
+  for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return quiz.map((q, i) => {
+    if (q.options.some((o) => /above|both|none of|all of|neither/i.test(o))) return q;
+    const n = q.options.length;
+    const target = (h + i * 3 + (i >> 1)) % n;
+    const shift = (target - q.answer + n) % n;
+    if (!shift) return q;
+    const options = q.options.map((_, k) => q.options[(k - shift + n) % n]);
+    return { ...q, options, answer: target };
+  });
+}
+
 export const PYTHON_LESSONS: LearnLesson[] = CHAPTERS.flatMap((c) =>
   c.ids.map((id) => {
     const l = byId[id];
     if (!l) throw new Error('Missing Python lesson: ' + id);
     const extra = EXTRA_SECTIONS[id] || [];
-    return { ...l, chapter: c.title, sections: [...(l.sections || []), ...extra], ...(PYTHON_QUIZ[l.id] || {}) };
+    const patch = PYTHON_PATCH_EXTRA[id] || {};
+    const q = PYTHON_QUIZ[l.id] || {};
+    const lesson = {
+      ...l,
+      chapter: c.title,
+      sections: [...(l.sections || []), ...extra],
+      ...q,
+      ...(patch.exercises && !(l.exercises && l.exercises.length) ? { exercises: patch.exercises } : {}),
+      ...(patch.challenge && !(q.challenge || l.challenge) ? { challenge: patch.challenge } : {}),
+    };
+    return { ...lesson, quiz: spreadAnswers(lesson.quiz, l.id) };
   })
 );
