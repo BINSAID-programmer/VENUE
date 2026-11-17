@@ -4,7 +4,11 @@ export const wrapHtml = (code: string) =>
     ? code
     : `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:system-ui,sans-serif;font-size:15px;line-height:1.5;padding:10px;margin:0;color:#111}</style></head><body>${code}</body></html>`;
 
+/** JS examples that start with HTML (DOM lessons) are shown as a page; plain JS shows its console output. */
+export const isHtmlLike = (code: string) => /^\s*</.test(code);
+
 export const wrapJs = (code: string) =>
+  isHtmlLike(code) ? wrapHtml(code) :
   `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:ui-monospace,monospace;font-size:14px;padding:10px;margin:0;color:#e2e8f0;background:#020617}div{white-space:pre-wrap;margin:2px 0}.e{color:#fda4af}</style></head><body><div id="o"></div><script>
 const o=document.getElementById('o');
 const fmt=a=>a.map(x=>typeof x==='object'?JSON.stringify(x):String(x)).join(' ');

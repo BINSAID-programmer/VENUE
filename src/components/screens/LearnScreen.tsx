@@ -296,7 +296,7 @@ export const LearnScreen: React.FC = () => {
             key={lesson.id}
             id={`${lesson.id}:c`}
             data={lesson.challenge}
-            lang={track.lang === 'html' ? 'html' : 'python'}
+            lang={track.lang === 'html' ? 'html' : track.lang === 'js' ? 'js' : 'python'}
             solved={!!stats.challenges[`${lesson.id}:c`]}
             onSolved={markChallenge}
           />

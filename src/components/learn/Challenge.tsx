@@ -3,6 +3,7 @@ import { Loader2, Play, CheckCircle2, XCircle, Lightbulb, Eye } from 'lucide-rea
 import { runPython } from './pyRunner';
 import { CodeBlock, CodeEditor } from './highlight';
 import { checkWeb } from './webCheck';
+import { checkJs } from './jsCheck';
 
 export interface ChallengeData {
   prompt: string;
@@ -40,6 +41,16 @@ export const Challenge: React.FC<{
       setBusy(false);
       return;
     }
+    if (lang === 'js') {
+      const problem = await checkJs(code, data.check);
+      if (problem) setResult({ ok: false, text: problem });
+      else {
+        setResult({ ok: true, text: solved ? 'Correct again!' : 'Correct! +20 XP' });
+        onSolved(id);
+      }
+      setBusy(false);
+      return;
+    }
     try {
       const r = await runPython(`${code}\n\n# ---- checks ----\n${data.check}\n`);
       if (r.err) {
@@ -63,7 +74,7 @@ export const Challenge: React.FC<{
         Coding challenge {solved && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
       </h3>
       <p className="text-sm text-slate-300 leading-relaxed">{data.prompt}</p>
-      <CodeEditor value={code} onChange={setCode} lang={lang === "html" ? "html" : "python"} title="Your code" minLines={6} right={<span />} />
+      <CodeEditor value={code} onChange={setCode} lang={lang} title="Your code" minLines={6} right={<span />} />
       <div className="flex flex-wrap gap-2">
         <button
           onClick={run}
@@ -89,8 +100,8 @@ export const Challenge: React.FC<{
           <span>{result.text}</span>
         </div>
       )}
-      {hint && <CodeBlock code={data.hint} lang={lang === "html" ? "html" : "python"} title="Hint" />}
-      {sol && <CodeBlock code={data.solution} lang={lang === "html" ? "html" : "python"} title="Solution" />}
+      {hint && <CodeBlock code={data.hint} lang={lang} title="Hint" />}
+      {sol && <CodeBlock code={data.solution} lang={lang} title="Solution" />}
     </div>
   );
 };

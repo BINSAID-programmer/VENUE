@@ -1,6 +1,7 @@
 import { PYTHON_LESSONS } from './learnPython';
 import { HTML_LESSONS } from './learnHtml';
 import { CSS_LESSONS } from './learnCss';
+import { JS_LESSONS } from './learnJs';
 
 export type LearnLang = 'python' | 'html' | 'js';
 
@@ -38,9 +39,6 @@ export interface LearnTrack {
   lessons: LearnLesson[];
 }
 
-const html = (inner: string, css = '') =>
-  `<!DOCTYPE html>\n<html>\n<head>\n<meta name="viewport" content="width=device-width, initial-scale=1">${css ? `\n<style>\n${css}\n</style>` : ''}\n</head>\n<body>\n${inner}\n</body>\n</html>`;
-
 export const LEARN_TRACKS: LearnTrack[] = [
   {
     id: 'python',
@@ -72,39 +70,6 @@ export const LEARN_TRACKS: LearnTrack[] = [
     lang: 'js',
     tagline: 'Make web pages interactive.',
     color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
-    lessons: [
-      {
-        id: 'js-basics',
-        title: 'Variables and console',
-        body: ['let makes a variable, const makes one that never changes. console.log() prints output.'],
-        sw: 'let na const zinahifadhi thamani; console.log inaonyesha.',
-        code: `const name = "VENUE";\nlet year = 1;\nyear = year + 1;\nconsole.log("Hello " + name);\nconsole.log("Year", year);`,
-        task: 'Print the area of a circle with radius 5 (Math.PI * r * r).',
-      },
-      {
-        id: 'js-arrays',
-        title: 'Arrays and loops',
-        body: ['Arrays hold lists. Use for...of to visit each item, and .map / .filter to transform them.'],
-        sw: 'Array ni orodha; map na filter zinabadilisha au kuchuja.',
-        code: `const marks = [55, 72, 40, 88];\nconst passed = marks.filter(m => m >= 50);\nconsole.log(passed);\nconsole.log(passed.map(m => m + 5));`,
-        task: 'Compute the average of marks using reduce.',
-      },
-      {
-        id: 'js-func',
-        title: 'Functions',
-        body: ['Functions are reusable code. Arrow style: const add = (a, b) => a + b;'],
-        sw: 'Function inatumika tena na tena.',
-        code: `const grade = (m) => m >= 70 ? "A" : m >= 60 ? "B" : "C";\nconsole.log(grade(75), grade(62), grade(40));`,
-        task: 'Add grade D for 40 to 49 and F below that.',
-      },
-      {
-        id: 'js-dom',
-        title: 'Click a button',
-        body: ['JavaScript can change the page. Find an element, listen for a click, update its text.'],
-        sw: 'JavaScript inabadilisha ukurasa kwa kubonyeza.',
-        code: html('<button id="b">Count: 0</button>\n<script>\n  let n = 0;\n  const b = document.getElementById("b");\n  b.addEventListener("click", () => { n++; b.textContent = "Count: " + n; });\n</script>'),
-        task: 'Show the count in a <p> instead of the button text.',
-      },
-    ],
+    lessons: JS_LESSONS,
   },
 ];
