@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Play, CheckCircle2, ChevronRight, ChevronLeft, Loader2, GraduationCap, RotateCcw, Menu, X, Lightbulb, Flame, Star, Search, Bookmark } from 'lucide-react';
-import { runPython } from '../learn/pyRunner';
+import { CheckCircle2, ChevronRight, ChevronLeft, GraduationCap, Menu, X, Lightbulb, Flame, Star, Search, Bookmark } from 'lucide-react';
+import { wrapHtml, wrapJs } from '../learn/wrap';
+import { Ide } from '../learn/Ide';
 import { useLearnStats, levelOf } from '../learn/learnStats';
 import { Quiz } from '../learn/Quiz';
 import { Challenge } from '../learn/Challenge';
-import { CodeBlock, CodeEditor, CodeLang } from '../learn/highlight';
+import { CodeBlock, CodeLang } from '../learn/highlight';
 import { LEARN_TRACKS, LearnLesson, LearnTrack } from '../../data/learnLessons';
 import LEARN_OUTPUTS from '../../data/learnOutputs.json';
 
@@ -25,80 +26,6 @@ function saveDone(ids: string[]) {
     /* storage unavailable */
   }
 }
-
-/** Short HTML snippets get a readable base style; complete pages are left exactly as written. */
-const wrapHtml = (code: string) =>
-  /<html|<!doctype/i.test(code)
-    ? code
-    : `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:system-ui,sans-serif;font-size:15px;line-height:1.5;padding:10px;margin:0;color:#111}</style></head><body>${code}</body></html>`;
-
-const wrapJs = (code: string) =>
-  `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:ui-monospace,monospace;font-size:14px;padding:10px;margin:0;color:#e2e8f0;background:#020617}div{white-space:pre-wrap;margin:2px 0}.e{color:#fda4af}</style></head><body><div id="o"></div><script>
-const o=document.getElementById('o');
-const fmt=a=>a.map(x=>typeof x==='object'?JSON.stringify(x):String(x)).join(' ');
-console.log=(...a)=>{const d=document.createElement('div');d.textContent=fmt(a);o.appendChild(d)};
-window.onerror=m=>{const d=document.createElement('div');d.className='e';d.textContent=String(m);o.appendChild(d)};
-try{
-${code.replace(/<\/script>/gi, '<\\/script>')}
-}catch(e){window.onerror(e.message)}
-</script></body></html>`;
-
-const Runner: React.FC<{ lang: LearnTrack['lang']; code: string; runKey: number }> = ({ lang, code, runKey }) => {
-  const [out, setOut] = useState('');
-  const [err, setErr] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    if (lang !== 'python' || runKey === 0) return;
-    let cancelled = false;
-    (async () => {
-      setBusy(true);
-      setErr('');
-      setOut('');
-      try {
-        const r = await runPython(code);
-        if (!cancelled) {
-          setOut(r.out);
-          setErr(r.err);
-        }
-      } catch (e: any) {
-        if (!cancelled) setErr(e?.message || 'Could not run Python.');
-      } finally {
-        if (!cancelled) setBusy(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [runKey]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (runKey === 0) return <p className="text-[11px] text-slate-500 p-3">Press “Run” to see the result here.</p>;
-
-  if (lang === 'python') {
-    return (
-      <div className="p-3 font-mono text-xs whitespace-pre-wrap min-h-[60px]">
-        {busy && (
-          <span className="inline-flex items-center gap-2 text-slate-400">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Starting Python (first time takes a few seconds)…
-          </span>
-        )}
-        {!busy && out && <div className="text-slate-100">{out}</div>}
-        {!busy && err && <div className="text-rose-300">{err}</div>}
-        {!busy && !out && !err && <span className="text-slate-500">(no output)</span>}
-      </div>
-    );
-  }
-
-  return (
-    <iframe
-      key={runKey}
-      title="Result"
-      sandbox="allow-scripts"
-      srcDoc={lang === 'js' ? wrapJs(code) : wrapHtml(code)}
-      className="w-full h-full min-h-[200px] bg-white"
-    />
-  );
-};
 
 const POS_KEY = 'venue_learn_pos_v1';
 
@@ -126,8 +53,6 @@ export const LearnScreen: React.FC = () => {
   const lesson = track.lessons[idx];
   const [menu, setMenu] = useState(false);
   const [tryCode, setTryCode] = useState<string | null>(null);
-  const [code, setCode] = useState('');
-  const [runKey, setRunKey] = useState(0);
   const [done, setDone] = useState<string[]>(loadDone);
   const [shown, setShown] = useState<Record<string, boolean>>({});
   const { stats, liveStreak, award, markQuiz, markChallenge, toggleBookmark } = useLearnStats();
@@ -174,8 +99,6 @@ export const LearnScreen: React.FC = () => {
     return out.slice(0, 30);
   }, [q]);
   const openTry = (c: string) => {
-    setCode(c);
-    setRunKey(0);
     setTryCode(c);
   };
 
@@ -510,41 +433,14 @@ export const LearnScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Try it Yourself editor */}
+      {/* Try it Yourself: full IDE */}
       {tryCode !== null && (
-        <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
-          <div className="flex items-center justify-between px-3 py-2.5 border-b border-slate-800 bg-slate-900">
-            <span className="text-sm font-extrabold text-white">Try it Yourself</span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setCode(tryCode);
-                  setRunKey(0);
-                }}
-                className="p-2 rounded-lg bg-slate-800 text-slate-300 cursor-pointer"
-                aria-label="Reset code"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setRunKey((k) => k + 1)}
-                className="px-3.5 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center gap-1 cursor-pointer"
-              >
-                <Play className="w-3.5 h-3.5" /> Run »
-              </button>
-              <button onClick={() => setTryCode(null)} className="p-2 rounded-lg bg-slate-800 text-slate-300 cursor-pointer" aria-label="Close">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-          <div className="flex-1 min-h-[35%] overflow-auto p-2">
-            <CodeEditor value={code} onChange={setCode} lang={track.lang as CodeLang} title="Editor" minLines={8} fill />
-          </div>
-          <div className="flex-1 min-h-[35%] border-t border-slate-800 bg-slate-900/60 overflow-auto">
-            <p className="px-3 pt-2 text-[11px] font-bold text-slate-400">Result</p>
-            <Runner lang={track.lang} code={code} runKey={runKey} />
-          </div>
-        </div>
+        <Ide
+          key={tryCode}
+          initialCode={tryCode}
+          lang={track.lang as CodeLang}
+          onClose={() => setTryCode(null)}
+        />
       )}
     </div>
   );
