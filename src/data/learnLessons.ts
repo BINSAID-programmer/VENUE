@@ -1,4 +1,6 @@
 import { PYTHON_LESSONS } from './learnPython';
+import { HTML_LESSONS } from './learnHtml';
+import { CSS_LESSONS } from './learnCss';
 
 export type LearnLang = 'python' | 'html' | 'js';
 
@@ -54,40 +56,7 @@ export const LEARN_TRACKS: LearnTrack[] = [
     lang: 'html',
     tagline: 'The structure of every web page.',
     color: 'text-orange-400 bg-orange-500/10 border-orange-500/20',
-    lessons: [
-      {
-        id: 'html-basics',
-        title: 'Headings and paragraphs',
-        body: ['HTML uses tags like <h1> and <p>. Most tags open and close: <p>text</p>.'],
-        sw: 'Tag zinafungua na kufunga: <p>maandishi</p>.',
-        code: html('<h1>My page</h1>\n<p>Hello from <b>VENUE</b>!</p>'),
-        task: 'Add an <h2> and a second paragraph about your course.',
-      },
-      {
-        id: 'html-lists',
-        title: 'Lists and links',
-        body: ['<ul> makes a bullet list, <ol> a numbered one, each item is <li>. <a href="..."> makes a link.'],
-        sw: '<ul> ni orodha ya vitone, <a> ni kiungo.',
-        code: html('<ul>\n  <li>Mathematics</li>\n  <li>Statistics</li>\n</ul>\n<a href="https://www.udsm.ac.tz">UDSM</a>'),
-        task: 'Make a numbered list of your five favourite courses.',
-      },
-      {
-        id: 'html-img-table',
-        title: 'Images and tables',
-        body: ['<img src="..." alt="..."> shows a picture. A table has rows <tr> with cells <td> or headers <th>.'],
-        sw: '<table> inapanga data kwenye safu na nguzo.',
-        code: html('<table border="1" cellpadding="6">\n  <tr><th>Student</th><th>Mark</th></tr>\n  <tr><td>Asha</td><td>78</td></tr>\n  <tr><td>Juma</td><td>64</td></tr>\n</table>'),
-        task: 'Add a third student and a column for grade.',
-      },
-      {
-        id: 'html-form',
-        title: 'Forms',
-        body: ['Forms collect input: <input>, <select>, <button>. Give inputs a type such as text, number or email.'],
-        sw: 'Form inakusanya taarifa kutoka kwa mtumiaji.',
-        code: html('<form>\n  <label>Name <input type="text" placeholder="Your name"></label><br><br>\n  <label>Year <select><option>1</option><option>2</option><option>3</option></select></label><br><br>\n  <button type="button">Save</button>\n</form>'),
-        task: 'Add an email field.',
-      },
-    ],
+    lessons: HTML_LESSONS,
   },
   {
     id: 'css',
@@ -95,40 +64,7 @@ export const LEARN_TRACKS: LearnTrack[] = [
     lang: 'html',
     tagline: 'Colours, spacing and layout — make pages look good.',
     color: 'text-sky-400 bg-sky-500/10 border-sky-500/20',
-    lessons: [
-      {
-        id: 'css-colors',
-        title: 'Colours and fonts',
-        body: ['CSS rules look like: selector { property: value; }. color is text colour, background is the fill.'],
-        sw: 'CSS inapamba: rangi, ukubwa wa herufi, mpangilio.',
-        code: html('<h1>Hello</h1>\n<p>Style me!</p>', 'body { font-family: sans-serif; padding: 16px; }\nh1 { color: #2563eb; }\np { background: #fef3c7; font-size: 18px; }'),
-        task: 'Change the heading colour and the paragraph background.',
-      },
-      {
-        id: 'css-box',
-        title: 'The box model',
-        body: ['Every element is a box: content, padding (inside), border, margin (outside).'],
-        sw: 'Kila kitu ni boksi: padding ndani, margin nje.',
-        code: html('<div class="card">A card</div>', '.card { padding: 20px; margin: 16px; border: 2px solid #2563eb; border-radius: 12px; background: #eff6ff; }'),
-        task: 'Make the corners fully round and the border thicker.',
-      },
-      {
-        id: 'css-flex',
-        title: 'Flexbox layout',
-        body: ['display: flex puts children in a row. justify-content spaces them, gap adds space between.'],
-        sw: 'flex inapanga vitu kwenye mstari kwa urahisi.',
-        code: html('<div class="row"><div>1</div><div>2</div><div>3</div></div>', '.row { display: flex; gap: 12px; justify-content: center; }\n.row div { background: #10b981; color: white; padding: 20px; border-radius: 8px; }'),
-        task: 'Use justify-content: space-between and add a 4th box.',
-      },
-      {
-        id: 'css-hover',
-        title: 'Hover and responsive',
-        body: [':hover styles an element when the mouse/finger is over it. @media changes styles on small screens.'],
-        sw: ':hover na @media vinafanya ukurasa uwe hai na ufae simu.',
-        code: html('<button class="btn">Tap me</button>', '.btn { padding: 12px 20px; border: 0; border-radius: 10px; background: #2563eb; color: white; font-size: 16px; }\n.btn:hover { background: #1d4ed8; }\n@media (max-width: 400px) { .btn { width: 100%; } }'),
-        task: 'Make the button turn green on hover.',
-      },
-    ],
+    lessons: CSS_LESSONS,
   },
   {
     id: 'js',
