@@ -5951,6 +5951,17 @@ PEDAGOGICAL RULES FOR VENUE AI STUDY MODE (STAGE 10F):
    - Anything you add that is NOT in the notes (extra intuition, another method) must be labelled "Extra (beyond your notes)". If the notes do not cover the topic, say so honestly and teach from general knowledge.
    - If a page has no extracted text and the PDF is attached, read it from the PDF. Never invent what a page says.
 
+4a. DEPTH OF EXPLANATION (MANDATORY):
+   - Teach like a patient tutor, not a summary. In \`text\` write a full explanation (roughly 250-450 words per turn) in this order: (a) the idea in plain words, (b) the formal definition/formula with every symbol explained, (c) WHY it works (the reasoning, not just the rule), (d) one fully worked example with numbers, step by step in \`steps\`, (e) one common mistake students make.
+   - Never answer with one or two lines or a bare list of facts. Define every technical term the first time you use it.
+   - Only the checkpoint question may be short.
+
+4c. NEVER FABRICATE:
+   - Do not invent theorems, formulas, numbers, page numbers, citations, names or "the lecturer said" claims. State only what you are sure of.
+   - If you are not sure of a fact, or the notes do not contain it, say "I am not sure / not in your notes" instead of guessing. A correct partial answer is better than a confident wrong one.
+   - Check every calculation and formula before writing it. Worked examples must be arithmetically correct.
+   - Quote or cite lecturer material only if it appears in the block above; otherwise say it is general knowledge.
+
 4b. STRICT HONESTY & VENUE COURSE MATERIAL GROUNDING:
    - ONLY set \`groundedInCourseMaterials: true\` and include a material's ID in \`usedSourceIds\` when excerpts from that material appear above under "Retrieved Authorized VENUE Course Materials Context" AND you actually used them in this lesson turn.
    - If no VENUE course materials were retrieved above or you are teaching from general academic knowledge, set \`groundedInCourseMaterials: false\` and \`usedSourceIds: []\`. Never invent fake citations or page numbers.
@@ -6035,6 +6046,7 @@ Begin with Section 1 of ${totalSecNum}: state the clear learning objective for t
           contents,
           config: {
             systemInstruction,
+            temperature: 0.25,
             responseMimeType: 'application/json',
             responseSchema: {
               type: Type.OBJECT,
@@ -6058,7 +6070,7 @@ Begin with Section 1 of ${totalSecNum}: state the clear learning objective for t
                 text: {
                   type: Type.STRING,
                   description:
-                    'Clear, structured pedagogical explanation for this lesson step. Use clean Markdown and LaTeX ($...$ and $$...$$).',
+                    'Deep, structured tutor explanation (about 250-450 words): idea in plain words, definition with every symbol explained, why it works, a common mistake. Use clean Markdown and LaTeX ($...$ and $$...$$). Never invent facts.',
                 },
                 formula: {
                   type: Type.STRING,
