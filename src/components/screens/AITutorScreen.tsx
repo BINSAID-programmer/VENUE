@@ -1171,6 +1171,18 @@ export const AITutorScreen: React.FC<AITutorScreenProps> = ({
     }
   };
 
+  // A question sent from the Learn section ("Ask AI Tutor about this lesson") is placed in the input box.
+  useEffect(() => {
+    try {
+      const pre = sessionStorage.getItem('venue:tutor-prefill');
+      if (pre) {
+        sessionStorage.removeItem('venue:tutor-prefill');
+        setInputQuery(pre);
+        setTimeout(() => inputRef.current?.focus(), 150);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
   const handleEditQuery = (queryText: string) => {
     setInputQuery(queryText);
     if (inputRef.current) {

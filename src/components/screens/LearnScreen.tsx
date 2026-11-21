@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, ChevronRight, ChevronLeft, GraduationCap, Menu, X, Lightbulb, Flame, Star, Search, Bookmark } from 'lucide-react';
+import { CheckCircle2, ChevronRight, ChevronLeft, GraduationCap, Menu, X, Lightbulb, Flame, Star, Search, Bookmark, Bot } from 'lucide-react';
 import { wrapHtml, wrapJs } from '../learn/wrap';
 import { Ide } from '../learn/Ide';
 import { useLearnStats, levelOf } from '../learn/learnStats';
@@ -257,6 +257,18 @@ export const LearnScreen: React.FC = () => {
         <p className="text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2">
           Kwa kifupi: {lesson.sw}
         </p>
+
+        <button
+          type="button"
+          onClick={() => {
+            const text = `Explain "${lesson.title}" (${track.title}) step by step with a simple example. I am a first-year student and I want to understand it deeply.`;
+            try { sessionStorage.setItem('venue:tutor-prefill', text); } catch { /* ignore */ }
+            window.dispatchEvent(new CustomEvent('venue:open-tutor'));
+          }}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-300 text-sm font-bold cursor-pointer"
+        >
+          <Bot className="w-4 h-4" /> Ask AI Tutor about this lesson
+        </button>
 
         {lesson.exercises && lesson.exercises.length > 0 && (
           <div className="space-y-2">
