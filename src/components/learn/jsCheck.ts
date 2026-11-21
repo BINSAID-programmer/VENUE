@@ -5,6 +5,7 @@
  *   CODE           the learner's source text (for checking that a loop or template literal was used)
  *   assert(ok, msg) throws msg when ok is false
  *   plus any top-level variable or function the learner wrote.
+ * The check may use await (it runs inside an async function), so promises and timers can be tested.
  * Returns '' when everything passes, otherwise the message to show.
  */
 export function checkJs(code: string, check: string, timeoutMs = 4000): Promise<string> {
@@ -22,12 +23,11 @@ window.addEventListener('error',function(e){if(!__err)__err=(e.message||'Error')
 ${safe(code)}
 </script><script>
 setTimeout(function(){
-  var msg='';
-  if(__err){msg='Your code has an error: '+__err}
-  else{try{(function(){
+  var post=function(msg){parent.postMessage({__venueCheck:'${token}',msg:msg},'*')};
+  if(__err){post('Your code has an error: '+__err);return}
+  (async function(){
 ${safe(check)}
-  })()}catch(e){msg=e&&e.message?e.message:'Not correct yet.'}}
-  parent.postMessage({__venueCheck:'${token}',msg:msg},'*');
+  })().then(function(){post(__err?'Your code has an error: '+__err:'')},function(e){post(e&&e.message?e.message:'Not correct yet.')});
 },60);
 </script></body></html>`;
     const frame = document.createElement('iframe');
