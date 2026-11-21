@@ -6,6 +6,13 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 
 import { runReconcile, getReconcileStatus } from './reconcile';
+import {
+  parsePageReference,
+  readRequestedPages,
+  findSectionStartPages,
+  buildOutline,
+  pickMaterialForRequest,
+} from './tutorMaterialPages';
 import { backupMaterialFile, restoreMaterialFile, removeMaterialBackup } from './persistence';
 import * as subs from './subscriptions';
 import * as push from './push';
@@ -4318,6 +4325,23 @@ async function extractRealMaterialText(
       materialType: mat?.materialType,
     });
     if (!index || index.extractionStatus !== 'indexed' || index.chunks.length === 0) return empty;
+    // A topic such as "page 40" or "chapter 3" reads exactly those pages of the lecturer's file.
+    const pageRef = parsePageReference(String(topic || ''));
+    let wantedPages = pageRef.pages;
+    if (wantedPages.length === 0 && pageRef.section) {
+      const starts = findSectionStartPages(index.chunks, pageRef.section);
+      if (starts.length > 0) wantedPages = [starts[0], starts[0] + 1, starts[0] + 2];
+    }
+    if (wantedPages.length > 0) {
+      const reads = readRequestedPages(index.chunks, index.totalPages, wantedPages).filter((r) => !r.empty && !r.outOfRange);
+      if (reads.length > 0) {
+        return {
+          wasDirectlyRead: true,
+          extractedText: reads.map((r) => `[Page ${r.page}]\n${r.text}`).join('\n\n'),
+          pageReferences: reads.map((r) => r.page),
+        };
+      }
+    }
     const terms = extractQuerySearchTerms(String(topic || ''));
     const chunks = retrieveRelevantChunksFromIndex(index, terms, MAX_CHUNKS_PER_MATERIAL, true);
     if (chunks.length === 0) return empty;
@@ -4333,6 +4357,148 @@ async function extractRealMaterialText(
     console.error('extractRealMaterialText failed:', err);
     return empty;
   }
+}
+
+/**
+ * Builds a "read the lecturer's file" block for Study Mode: exact pages / chapter when the student names them,
+ * otherwise the outline plus the most relevant excerpts of the material the student picked. Scanned pages come back
+ * with the PDF itself so Gemini can read them.
+ */
+function buildFocusedMaterialBlock(p: {
+  indexedDocs: Array<{ meta: any; index: IndexedMaterialDocument | null }>;
+  query: string;
+  preferMaterialId?: string;
+  courseContext: string;
+  candidates: Array<{
+    materialId: string;
+    title: string;
+    materialType: string;
+    courseCode: string;
+    courseTitle?: string;
+    uploaderRole?: string;
+    uploaderName?: string;
+    pageReferences?: number[];
+    chunksCount?: number;
+  }>;
+}): { block: string; pdf: { mimeType: string; data: string } | null; chunks: number } {
+  const none = { block: '', pdf: null as { mimeType: string; data: string } | null, chunks: 0 };
+  const readable = p.indexedDocs.filter(
+    (d) => d?.index && (d.index.extractionStatus === 'indexed' || d.index.extractionStatus === 'unavailable')
+  );
+  if (readable.length === 0) return none;
+
+  const idOf = (d: { meta: any }) => String(d.meta?.materialId || d.meta?.id || '');
+  const ref = parsePageReference(p.query);
+  const wantsSection = Boolean(ref.section) && ref.pages.length === 0;
+  const preferred = p.preferMaterialId ? readable.find((d) => idOf(d) === p.preferMaterialId) : undefined;
+  if (!preferred && ref.pages.length === 0 && !wantsSection && !ref.wholeDocument) return none;
+
+  let doc = preferred;
+  if (!doc) {
+    const picked = pickMaterialForRequest(
+      readable.map((d) => ({
+        id: idOf(d),
+        title: d.meta.title,
+        fileName: d.meta.fileName,
+        courseCode: d.meta.courseCode,
+        uploaderRole: d.meta.uploaderRole,
+        totalPages: d.index?.totalPages,
+        indexed: true,
+      })),
+      p.query,
+      ref.pages
+    );
+    doc = picked ? readable.find((d) => idOf(d) === picked.id) : undefined;
+  }
+  if (!doc || !doc.index) return none;
+
+  const idx = doc.index;
+  const mId = idOf(doc);
+  const mTitle = String(doc.meta.title || 'Course material').slice(0, 140);
+  const mCourse = String(doc.meta.courseCode || p.courseContext || '').slice(0, 30);
+  const mRole = doc.meta.uploaderRole === 'lecturer' ? 'Verified Lecturer' : 'University Repository / Course Resource';
+  const meta = {
+    materialId: mId,
+    title: mTitle,
+    materialType: String(doc.meta.materialType || 'Lecture Notes').slice(0, 60),
+    courseCode: mCourse,
+    courseTitle: doc.meta.courseName ? String(doc.meta.courseName).slice(0, 100) : undefined,
+    uploaderRole: doc.meta.uploaderRole || 'admin',
+    uploaderName: doc.meta.uploaderName || undefined,
+  };
+
+  let pages = ref.pages;
+  const lines: string[] = [
+    `\nLECTURER MATERIAL TO TEACH FROM — [Source ID: ${mId}] "${mTitle}" | Course: ${mCourse} | Source Attribution: ${mRole}${
+      idx.totalPages ? ` | File has ${idx.totalPages} page(s)` : ''
+    }`,
+    'The text below was copied from the lecturer\'s own file in PDF page order (page 1 is the first page of the file, which may differ from the number printed on the paper). Teach THIS content, in the lecturer\'s order, terms and notation.',
+  ];
+  if (wantsSection) {
+    const starts = findSectionStartPages(idx.chunks, ref.section as string);
+    if (starts.length > 0) {
+      pages = [starts[0], starts[0] + 1, starts[0] + 2].filter((n) => !idx.totalPages || n <= idx.totalPages);
+      lines.push(`Section/chapter ${ref.section} starts on PDF page ${starts[0]}.`);
+    } else {
+      lines.push(`No heading for section/chapter ${ref.section} was found in this file; say so and teach from the excerpts below.`);
+    }
+  }
+
+  let needsPdf = idx.extractionStatus === 'unavailable';
+  let chunkCount = 0;
+  const shownPages = new Set<number>();
+  if (pages.length > 0) {
+    for (const r of readRequestedPages(idx.chunks, idx.totalPages, pages)) {
+      if (r.outOfRange) {
+        lines.push(`--- PDF page ${r.page} --- [This page does not exist: the file has only ${idx.totalPages} page(s).]`);
+      } else if (r.empty) {
+        needsPdf = true;
+        shownPages.add(r.page);
+        lines.push(`--- PDF page ${r.page} --- [No selectable text: probably scanned or a picture. Read it from the attached PDF if present.]`);
+      } else {
+        shownPages.add(r.page);
+        chunkCount++;
+        lines.push(`--- PDF page ${r.page} ---\n${r.text}`);
+      }
+    }
+  } else {
+    // Whole file or a chosen material: outline + the excerpts that best match the topic
+    if (idx.extractionStatus === 'indexed') {
+      lines.push(buildOutline(idx.chunks, idx.totalPages, 3200));
+      const terms = extractQuerySearchTerms(p.query);
+      const picks = retrieveRelevantChunksFromIndex(idx, terms, 6, true);
+      for (const c of picks) {
+        if (c.pageNumber) shownPages.add(c.pageNumber);
+        chunkCount++;
+        lines.push(`--- [${c.pageNumber ? `Page ${c.pageNumber}` : `Excerpt ${c.sectionIndex + 1}`}] ---\n${c.text}`);
+      }
+    }
+  }
+
+  let pdf: { mimeType: string; data: string } | null = null;
+  if (needsPdf && /\.pdf$/i.test(idx.storagePath || '')) {
+    try {
+      const resolved = resolveOrRestoreMaterialFileOnDisk(idx.storagePath, idx.materialId);
+      if (resolved && fs.existsSync(resolved.fullPath)) {
+        const st = fs.statSync(resolved.fullPath);
+        if (st.size > 0 && st.size <= 14 * 1024 * 1024) {
+          pdf = { mimeType: 'application/pdf', data: fs.readFileSync(resolved.fullPath).toString('base64') };
+          lines.push('The original PDF is attached to this message; use it for pages without extracted text.');
+        }
+      }
+    } catch (err) {
+      console.warn('Focused material PDF attach skipped:', err);
+    }
+  }
+
+  const dupAt = p.candidates.findIndex((c) => c.materialId === mId);
+  if (dupAt >= 0) p.candidates.splice(dupAt, 1);
+  p.candidates.unshift({
+    ...meta,
+    pageReferences: shownPages.size > 0 ? Array.from(shownPages).sort((a, b) => a - b) : undefined,
+    chunksCount: chunkCount || undefined,
+  });
+  return { block: lines.join('\n') + '\n', pdf, chunks: chunkCount };
 }
 
 // AI Tutor Chat endpoint
@@ -4684,6 +4850,131 @@ app.post('/api/tutor/chat', async (req, res) => {
       }
     }
 
+    // PAGE-AWARE READING: "explain page 40", "pages 12-14", "ukurasa wa 7", "chapter 3 of my notes", "summarise these notes".
+    // The requested pages are read directly from the lecturer's file (not guessed by keywords) so the answer follows
+    // what the lecturer actually teaches. Scanned pages with no text are handed to Gemini as the PDF itself.
+    let pdfAttachment: { mimeType: string; data: string } | null = null;
+    let pageGroundingBlock = '';
+    try {
+      const pageRef = parsePageReference(effectiveSearchQuery);
+      const wantsSection = Boolean(pageRef.section) && pageRef.pages.length === 0;
+      const readable = (indexedDocs as any[]).filter(
+        (d) => d?.index && (d.index.extractionStatus === 'indexed' || d.index.extractionStatus === 'unavailable')
+      );
+      if (
+        !userIntent.isGeneralNonAcademicConversational &&
+        readable.length > 0 &&
+        (pageRef.pages.length > 0 || wantsSection || pageRef.wholeDocument)
+      ) {
+        const pickable = readable.map((d) => ({
+          id: String(d.meta.materialId || d.meta.id || ''),
+          title: d.meta.title,
+          fileName: d.meta.fileName,
+          courseCode: d.meta.courseCode,
+          uploaderRole: d.meta.uploaderRole,
+          totalPages: d.index.totalPages,
+          indexed: true,
+        }));
+        const picked = pickMaterialForRequest(pickable, effectiveSearchQuery, pageRef.pages);
+        const doc = picked ? readable.find((d) => String(d.meta.materialId || d.meta.id || '') === picked.id) : null;
+        if (doc) {
+          const idx = doc.index as IndexedMaterialDocument;
+          const mId = String(doc.meta.materialId || doc.meta.id || '');
+          const mTitle = String(doc.meta.title || 'Course material').slice(0, 140);
+          const mCourse = String(doc.meta.courseCode || courseContext || '').slice(0, 30);
+          const mRole = doc.meta.uploaderRole === 'lecturer' ? 'Verified Lecturer' : 'University Repository / Course Resource';
+          const dupCandidateAt = candidateReferencedMaterials.findIndex((c) => c.materialId === mId);
+          if (dupCandidateAt >= 0) candidateReferencedMaterials.splice(dupCandidateAt, 1);
+          let pages = pageRef.pages;
+          let sectionNote = '';
+          if (wantsSection) {
+            const starts = findSectionStartPages(idx.chunks, pageRef.section as string);
+            if (starts.length > 0) {
+              pages = [starts[0], starts[0] + 1, starts[0] + 2].filter((p) => !idx.totalPages || p <= idx.totalPages);
+              sectionNote = `Section/chapter ${pageRef.section} starts on PDF page ${starts[0]}; the first ${pages.length} page(s) of it are given. Tell the student they can ask for the next pages.`;
+            } else {
+              sectionNote = `Could not find a heading for section/chapter ${pageRef.section} in this file. Say so honestly and ask for a page number.`;
+            }
+          }
+
+          const lines: string[] = [];
+          lines.push(
+            `\nREQUESTED MATERIAL CONTENT (page-level reading) — [Source ID: ${mId}] "${mTitle}" | Course: ${mCourse} | Source Attribution: ${mRole}${
+              idx.totalPages ? ` | File has ${idx.totalPages} page(s)` : ''
+            }`
+          );
+          lines.push(
+            'The text below was copied from the student\'s own course file in PDF page order (the first page of the file is page 1, which may differ from the page number printed on the paper).'
+          );
+          if (sectionNote) lines.push(sectionNote);
+
+          let needsPdf = false;
+          if (pages.length > 0) {
+            const reads = readRequestedPages(idx.chunks, idx.totalPages, pages);
+            for (const r of reads) {
+              if (r.outOfRange) {
+                lines.push(`--- PDF page ${r.page} --- [This page does not exist: the file has only ${idx.totalPages} page(s). Tell the student.]`);
+              } else if (r.empty) {
+                needsPdf = true;
+                lines.push(`--- PDF page ${r.page} --- [No selectable text was extracted: this page is probably scanned, a picture, a figure or a drawing. If the PDF is attached to this message, read the page from it.]`);
+              } else {
+                lines.push(`--- PDF page ${r.page} ---\n${r.text}`);
+              }
+            }
+            const okPages = reads.filter((r) => !r.outOfRange && !r.empty).map((r) => r.page);
+            const pageSet = new Set<number>(okPages.concat(needsPdf ? reads.filter((r) => r.empty).map((r) => r.page) : []));
+            if (pageSet.size > 0) {
+              candidateReferencedMaterials.unshift({
+                materialId: mId,
+                title: mTitle,
+                materialType: String(doc.meta.materialType || 'Lecture Notes').slice(0, 60),
+                courseCode: mCourse,
+                courseTitle: doc.meta.courseName ? String(doc.meta.courseName).slice(0, 100) : undefined,
+                uploaderRole: doc.meta.uploaderRole || 'admin',
+                uploaderName: doc.meta.uploaderName || undefined,
+                pageReferences: Array.from(pageSet).sort((a, b) => a - b),
+                chunksCount: okPages.length || undefined,
+              });
+            }
+          } else if (!wantsSection) {
+            lines.push(buildOutline(idx.chunks, idx.totalPages));
+            candidateReferencedMaterials.unshift({
+              materialId: mId,
+              title: mTitle,
+              materialType: String(doc.meta.materialType || 'Lecture Notes').slice(0, 60),
+              courseCode: mCourse,
+              courseTitle: doc.meta.courseName ? String(doc.meta.courseName).slice(0, 100) : undefined,
+              uploaderRole: doc.meta.uploaderRole || 'admin',
+              uploaderName: doc.meta.uploaderName || undefined,
+            });
+          }
+
+          if (idx.extractionStatus === 'unavailable' && pages.length === 0) needsPdf = true;
+
+          // Hand the original PDF to Gemini when text is missing (scans) so it can read the page like a person would.
+          if (needsPdf && /\.pdf$/i.test(idx.storagePath || '')) {
+            try {
+              const resolved = resolveOrRestoreMaterialFileOnDisk(idx.storagePath, idx.materialId);
+              if (resolved && fs.existsSync(resolved.fullPath)) {
+                const st = fs.statSync(resolved.fullPath);
+                if (st.size > 0 && st.size <= 14 * 1024 * 1024) {
+                  pdfAttachment = { mimeType: 'application/pdf', data: fs.readFileSync(resolved.fullPath).toString('base64') };
+                  lines.push('The original PDF is attached to this message. Use it for pages that have no extracted text.');
+                }
+              }
+            } catch (attachErr) {
+              console.warn('PDF attach for page reading skipped:', attachErr);
+            }
+          }
+
+          pageGroundingBlock = lines.join('\n') + '\n';
+          materialsContextBlock = pageGroundingBlock + materialsContextBlock;
+        }
+      }
+    } catch (pageErr) {
+      console.warn('Page-aware material reading skipped:', pageErr);
+    }
+
     const syllabusBlock =
       selectedCourseSyllabus.length > 0
         ? `\nSelected Course Syllabus Topics (${courseContext}):\n` +
@@ -4905,6 +5196,14 @@ The student has explicitly selected their preferred response language as: "${lan
   * Answer directly and accurately using your general academic knowledge.
   * Set \`groundedInCourseMaterials: false\` and \`usedSourceIds: []\`.
   * NEVER invent or guess page numbers, section numbers, or citations.
+- LECTURER'S MATERIAL FIRST (PAGE-LEVEL READING):
+  * Many lecturers want students to answer the way THEY teach, not with a generic global explanation. When a "REQUESTED MATERIAL CONTENT" block appears above, the student asked about that exact page, chapter or file. Base your answer on that text.
+  * Explain what the page actually contains, in the order it appears: headings, definitions, formulas, worked examples, tables and figures (describe a figure or table from its text or from the attached PDF). Then explain it simply, and say which parts are most important to remember.
+  * Keep the lecturer's own terms, notation, symbols and method even when another textbook uses different ones. Cite pages inline like "(page 40)". Set \`groundedInCourseMaterials: true\` and put that material's Source ID in \`usedSourceIds\`.
+  * If you add anything that is NOT on those pages (extra intuition, another method, a related example), put it under a short label such as "Extra (beyond your notes)" so the student can tell the lecturer's content from your additions.
+  * If a page has no readable text and no PDF is attached, or the page is beyond the end of the file, say so plainly and ask the student for a clearer page. Never invent what a page "probably" says.
+  * Page numbers follow the PDF page order. If the page text shows a different printed number, mention both.
+  * For a whole-file question ("summarise these notes", "what is in this PDF"), use the outline: describe the structure by pages and offer to open any page or chapter next.
 
 3. CONVERSATIONAL QUALITY, FOLLOW-UP CONTEXT & NO OVER-FORMATTING (STAGE 10D):
 - Answer directly and naturally like a leading modern AI assistant.
@@ -4987,6 +5286,10 @@ When an image is provided, transcribe the question accurately, inspect any handw
     const defaultPrompt = hasImage
       ? 'Please analyze this academic image/photo thoroughly: identify the question, explain what is given and asked, solve it step-by-step with proper mathematical notation, diagnose any mistakes if student handwritten working is present, and state the final answer clearly.'
       : 'Explain clearly and solve step-by-step.';
+
+    if (pdfAttachment) {
+      currentParts.unshift({ inlineData: { mimeType: pdfAttachment.mimeType, data: pdfAttachment.data } });
+    }
 
     currentParts.push({
       text: trimmedMsg || defaultPrompt,
@@ -5416,23 +5719,35 @@ app.post('/api/tutor/study', async (req, res) => {
     const retrievalQuery = `${cleanTopic} ${cleanMsg}`.trim();
     const userIntent = detectResponseFormatAndVisualIntent(cleanMsg || cleanTopic);
 
-    const indexedDocs = await Promise.all(
-      verifiedMaterials.map(async (m: any) => {
-        const index = await getOrBuildMaterialIndex({
-          materialId: String(m.materialId || m.id || ''),
-          storagePath: m.storagePath,
-          fileUrl: m.fileUrl,
-          courseId: m.courseId,
-          canonicalCourseId: m.canonicalCourseId,
-          courseCode: m.courseCode,
-          title: m.title,
-          materialType: m.materialType,
-          uploaderRole: m.uploaderRole,
-          uploaderName: m.uploaderName,
-        });
-        return { meta: m, index };
-      })
-    );
+    // Reading a big PDF on a cold server can take a while. Never let it block the lesson: wait at most 14 seconds
+    // (the file keeps indexing in the background and is cached for the next turn), and one bad file never breaks the rest.
+    const indexedDocs: Array<{ meta: any; index: IndexedMaterialDocument | null }> = await Promise.race([
+      Promise.all(
+        verifiedMaterials.map(async (m: any) => {
+          let index: IndexedMaterialDocument | null = null;
+          try {
+            index = await getOrBuildMaterialIndex({
+              materialId: String(m.materialId || m.id || ''),
+              storagePath: m.storagePath,
+              fileUrl: m.fileUrl,
+              courseId: m.courseId,
+              canonicalCourseId: m.canonicalCourseId,
+              courseCode: m.courseCode,
+              title: m.title,
+              materialType: m.materialType,
+              uploaderRole: m.uploaderRole,
+              uploaderName: m.uploaderName,
+            });
+          } catch (indexErr) {
+            console.warn('Study Mode: material indexing skipped:', indexErr);
+          }
+          return { meta: m, index };
+        })
+      ),
+      new Promise<Array<{ meta: any; index: IndexedMaterialDocument | null }>>((resolve) =>
+        setTimeout(() => resolve(verifiedMaterials.map((m: any) => ({ meta: m, index: null }))), 14000)
+      ),
+    ]);
 
     const rankedRetrievals = searchRelevantMaterialChunks(indexedDocs, retrievalQuery);
     const querySearchTerms = extractQuerySearchTerms(retrievalQuery);
@@ -5550,6 +5865,25 @@ app.post('/api/tutor/study', async (req, res) => {
       }
     }
 
+    // Teach from the lecturer's own file: the picked material, or exact pages / chapter named in the topic or message.
+    let studyPdfAttachment: { mimeType: string; data: string } | null = null;
+    try {
+      const focus = buildFocusedMaterialBlock({
+        indexedDocs,
+        query: retrievalQuery,
+        preferMaterialId: selectedMaterialId ? String(selectedMaterialId) : undefined,
+        courseContext: String(courseContext || ''),
+        candidates: candidateReferencedMaterials,
+      });
+      if (focus.block) {
+        materialsContextBlock = focus.block + materialsContextBlock;
+        totalRetrievedChunks += focus.chunks;
+        studyPdfAttachment = focus.pdf;
+      }
+    } catch (focusErr) {
+      console.warn('Study Mode focused material reading skipped:', focusErr);
+    }
+
     const syllabusBlock =
       selectedCourseSyllabus.length > 0
         ? `\nSelected Course Syllabus Topics (${courseContext}):\n` +
@@ -5611,7 +5945,24 @@ PEDAGOGICAL RULES FOR VENUE AI STUDY MODE (STAGE 10F):
    - If the student answers incorrectly or says "I don't understand" / "Explain simpler": Do NOT scold them. Diagnose the specific misconception kindly, explain the concept more simply using an everyday analogy or simpler numbers, keep \`sectionIndex\` on the current section, and ask a gentler follow-up checkpoint question. Populate \`adaptiveAdjustment\` describing how you adapted (e.g. "Simplified with a concrete 3-number example").
    - If the student requests a quick action ("Give me an example", "Show formula", "Ask me a question", "Test my understanding", "Show diagram", "Next subtopic", "Summarize what we learned"): Fulfill that exact pedagogical action immediately.
 
-4. STRICT HONESTY & VENUE COURSE MATERIAL GROUNDING:
+4. LECTURER'S MATERIAL FIRST:
+   - When a "LECTURER MATERIAL TO TEACH FROM" block appears above, build every section of the lesson on that content. Follow the lecturer's order, terms, symbols and worked examples, and cite pages inline like "(page 12)". Many lecturers mark students on how THEY teach, not on a generic global explanation.
+   - Spread the material across the sections: Section 1 the idea and objectives as the notes introduce them, Section 2 the definitions and formulas as written, Section 3 the notes' own worked example, Section 4 practice based on the notes' examples, Section 5 the key points the notes stress.
+   - Anything you add that is NOT in the notes (extra intuition, another method) must be labelled "Extra (beyond your notes)". If the notes do not cover the topic, say so honestly and teach from general knowledge.
+   - If a page has no extracted text and the PDF is attached, read it from the PDF. Never invent what a page says.
+
+4a. DEPTH OF EXPLANATION (MANDATORY):
+   - Teach like a patient tutor, not a summary. In \`text\` write a full explanation (roughly 250-450 words per turn) in this order: (a) the idea in plain words, (b) the formal definition/formula with every symbol explained, (c) WHY it works (the reasoning, not just the rule), (d) one fully worked example with numbers, step by step in \`steps\`, (e) one common mistake students make.
+   - Never answer with one or two lines or a bare list of facts. Define every technical term the first time you use it.
+   - Only the checkpoint question may be short.
+
+4c. NEVER FABRICATE:
+   - Do not invent theorems, formulas, numbers, page numbers, citations, names or "the lecturer said" claims. State only what you are sure of.
+   - If you are not sure of a fact, or the notes do not contain it, say "I am not sure / not in your notes" instead of guessing. A correct partial answer is better than a confident wrong one.
+   - Check every calculation and formula before writing it. Worked examples must be arithmetically correct.
+   - Quote or cite lecturer material only if it appears in the block above; otherwise say it is general knowledge.
+
+4b. STRICT HONESTY & VENUE COURSE MATERIAL GROUNDING:
    - ONLY set \`groundedInCourseMaterials: true\` and include a material's ID in \`usedSourceIds\` when excerpts from that material appear above under "Retrieved Authorized VENUE Course Materials Context" AND you actually used them in this lesson turn.
    - If no VENUE course materials were retrieved above or you are teaching from general academic knowledge, set \`groundedInCourseMaterials: false\` and \`usedSourceIds: []\`. Never invent fake citations or page numbers.
 
@@ -5672,7 +6023,9 @@ Begin with Section 1 of ${totalSecNum}: state the clear learning objective for t
 
     contents.push({
       role: 'user',
-      parts: [{ text: turnPrompt }],
+      parts: studyPdfAttachment
+        ? [{ inlineData: { mimeType: studyPdfAttachment.mimeType, data: studyPdfAttachment.data } }, { text: turnPrompt }]
+        : [{ text: turnPrompt }],
     });
 
     const candidateModels = [
@@ -5693,6 +6046,7 @@ Begin with Section 1 of ${totalSecNum}: state the clear learning objective for t
           contents,
           config: {
             systemInstruction,
+            temperature: 0.25,
             responseMimeType: 'application/json',
             responseSchema: {
               type: Type.OBJECT,
@@ -5716,7 +6070,7 @@ Begin with Section 1 of ${totalSecNum}: state the clear learning objective for t
                 text: {
                   type: Type.STRING,
                   description:
-                    'Clear, structured pedagogical explanation for this lesson step. Use clean Markdown and LaTeX ($...$ and $$...$$).',
+                    'Deep, structured tutor explanation (about 250-450 words): idea in plain words, definition with every symbol explained, why it works, a common mistake. Use clean Markdown and LaTeX ($...$ and $$...$$). Never invent facts.',
                 },
                 formula: {
                   type: Type.STRING,
