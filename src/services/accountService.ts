@@ -213,7 +213,7 @@ export async function deleteMyAccount(password?: string): Promise<void> {
     throw new Error(d?.message || 'This account cannot be deleted.');
   }
 
-  for (const sub of ['results', 'notifications', 'ai_learning_sessions', 'ai_learning_progress']) {
+  for (const sub of ['results', 'notifications', 'ai_learning_sessions', 'ai_learning_progress', 'learn_progress']) {
     await deleteSubcollection(['users', uid], sub);
     await deleteSubcollection(['students', uid], sub);
   }

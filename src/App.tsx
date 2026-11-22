@@ -588,6 +588,13 @@ export const App: React.FC = () => {
     }
   };
 
+  // "Ask AI Tutor about this lesson" (Learn) opens the AI Tutor; the question is prefilled there.
+  useEffect(() => {
+    const open = () => handleNavigate('ai-tutor');
+    window.addEventListener('venue:open-tutor', open);
+    return () => window.removeEventListener('venue:open-tutor', open);
+  });
+
   const handleBack = () => {
     if (currentScreen === 'lecturer' && window.location.hash === '#lecturer') {
       window.history.pushState(null, '', window.location.pathname);

@@ -51,6 +51,22 @@ import { aiTutorMaterialContextService } from '../services/aiTutorMaterialContex
 import { aiTutorFoundationService } from '../services/aiTutorFoundationService';
 import { analyticsTracker } from '../services/analyticsTrackerService';
 
+/** Waits for a promise, but gives up after `ms` and returns `fallback` (also when the promise fails). */
+function withTimeoutFallback<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise<T>((resolve) => {
+    const timer = window.setTimeout(() => resolve(fallback), ms);
+    promise
+      .then((v) => {
+        window.clearTimeout(timer);
+        resolve(v);
+      })
+      .catch(() => {
+        window.clearTimeout(timer);
+        resolve(fallback);
+      });
+  });
+}
+
 interface AIStudyModeWorkspaceProps {
   courses: Course[];
   initialCourse?: Course | null;
@@ -175,6 +191,8 @@ export const AIStudyModeWorkspace: React.FC<AIStudyModeWorkspaceProps> = ({
     initialDifficulty || 'intermediate'
   );
   const [learningGoal, setLearningGoal] = useState<AIStudyLearningGoal>('understand_concept');
+  const [isStarting, setIsStarting] = useState<boolean>(false);
+  const [startError, setStartError] = useState<string>('');
 
   useEffect(() => {
     if (initialTopic) {
@@ -502,6 +520,13 @@ export const AIStudyModeWorkspace: React.FC<AIStudyModeWorkspaceProps> = ({
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
+    // A lesson step must never spin forever: if the server is slow (cold start, big PDF) stop after 110 s and say so.
+    let timedOut = false;
+    const timeoutId = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 110000);
+
     // STAGE 10P: Track whether the AI response was already generated so post-response
     // persistence or formatting errors never discard the completed lesson step.
     let generatedAiMsg: AIMessage | null = null;
@@ -517,29 +542,70 @@ export const AIStudyModeWorkspace: React.FC<AIStudyModeWorkspaceProps> = ({
             : m.text,
         }));
 
-      const academicContext = await aiTutorFoundationService.buildSharedModeContext({
-        mode: 'STUDY',
-        profile,
-        courses,
-        selectedCourseContext: session.courseCode || studyCourseCode,
-        initialCourse: activeCourseObj || initialCourse,
-        userQuery: `${session.topic || ''} ${userDisplayMessage || ''}`.trim(),
-        selectedTopic: session.topic,
-        activeSessionId: session.sessionId,
-        difficulty: session.difficulty,
-        learningObjectives: session.learningObjectives,
-        includeTutorMemory: true,
-      });
+      // Context and memory are helpful but optional: slow or failing reads must not block the lesson.
+      const academicContext: any = await withTimeoutFallback<any>(
+        aiTutorFoundationService.buildSharedModeContext({
+          mode: 'STUDY',
+          profile,
+          courses,
+          selectedCourseContext: session.courseCode || studyCourseCode,
+          initialCourse: activeCourseObj || initialCourse,
+          userQuery: `${session.topic || ''} ${userDisplayMessage || ''}`.trim(),
+          selectedTopic: session.topic,
+          activeSessionId: session.sessionId,
+          difficulty: session.difficulty,
+          learningObjectives: session.learningObjectives,
+          includeTutorMemory: true,
+        }),
+        10000,
+        undefined
+      );
 
-      const personalizedMemoryContext = await aiTutorFoundationService.getRelevantPersonalizedMemoryContext({
-        userId,
-        courseCode: session.courseCode || studyCourseCode,
-        courseId: session.courseId || studyCourseCode,
-        topic: session.topic,
-        userMessage: userDisplayMessage || quickActionType || '',
-        mode: 'STUDY',
-        authorizedCourseCodes: courses.map((c) => c.code),
-      });
+      // The material the student picked must always reach the tutor, even if it is not among the top-ranked files.
+      const pickedMaterialId = session.materialIds?.[0] || selectedMaterialId || '';
+      if (academicContext && pickedMaterialId) {
+        const already = Array.isArray(academicContext.materials) && academicContext.materials.some((m: any) => m.materialId === pickedMaterialId);
+        if (!already) {
+          const rec: any = courseMaterials.find((m) => m.id === pickedMaterialId);
+          if (rec) {
+            const code = String(rec.courseCode || session.courseCode || studyCourseCode || '').trim().toUpperCase();
+            academicContext.materials = [
+              {
+                materialId: rec.id,
+                courseId: rec.courseId || code,
+                canonicalCourseId: rec.canonicalCourseId || aiTutorMaterialContextService.toCanonicalCourseId(code),
+                courseCode: code || 'GENERAL',
+                courseName: rec.courseTitle || '',
+                title: String(rec.title || rec.fileName || 'Course Material'),
+                materialType: rec.materialType || 'Lecture Notes',
+                description: rec.description ? String(rec.description).slice(0, 380) : undefined,
+                storagePath: rec.storagePath,
+                fileUrl: rec.fileUrl,
+                fileName: rec.fileName,
+                mimeType: rec.mimeType,
+                uploaderRole: rec.uploaderRole === 'lecturer' || rec.lecturerId ? 'lecturer' : 'admin',
+                uploaderName: typeof rec.uploadedBy === 'object' ? rec.uploadedBy?.name : undefined,
+                relevanceScore: 100,
+              },
+              ...(academicContext.materials || []),
+            ].slice(0, 6);
+          }
+        }
+      }
+
+      const personalizedMemoryContext: string = await withTimeoutFallback<string>(
+        aiTutorFoundationService.getRelevantPersonalizedMemoryContext({
+          userId,
+          courseCode: session.courseCode || studyCourseCode,
+          courseId: session.courseId || studyCourseCode,
+          topic: session.topic,
+          userMessage: userDisplayMessage || quickActionType || '',
+          mode: 'STUDY',
+          authorizedCourseCodes: courses.map((c) => c.code),
+        }) as Promise<string>,
+        6000,
+        ''
+      );
 
       if (quickActionType === 'explain_simpler' || /\b(simpler|simple|rahisi|don'?t understand)\b/i.test(userDisplayMessage || '')) {
         aiTutorFoundationService
@@ -580,6 +646,7 @@ export const AIStudyModeWorkspace: React.FC<AIStudyModeWorkspaceProps> = ({
       });
 
       const result = await response.json();
+      window.clearTimeout(timeoutId);
       if (!response.ok || !result.success) {
         throw new Error(result.message || result.error || 'Failed to generate Study Mode lesson step.');
       }
@@ -703,7 +770,7 @@ export const AIStudyModeWorkspace: React.FC<AIStudyModeWorkspaceProps> = ({
         console.warn('[Stage 10P] Study session persistence warning (response preserved):', persistErr);
       }
     } catch (err: any) {
-      if (err?.name === 'AbortError' || controller.signal.aborted) return;
+      if ((err?.name === 'AbortError' || controller.signal.aborted) && !timedOut) return;
 
       // STAGE 10P: If the AI response was already generated, keep it rather than showing an error card
       if (generatedAiMsg) {
@@ -713,7 +780,12 @@ export const AIStudyModeWorkspace: React.FC<AIStudyModeWorkspaceProps> = ({
         return;
       }
 
-      const normalized = aiTutorFoundationService.normalizeError(err, 'STUDY');
+      const normalized = timedOut
+        ? {
+            userMessage:
+              'The lesson is taking too long to load (the server may be waking up or reading a large file). Please tap Retry in a moment.',
+          }
+        : aiTutorFoundationService.normalizeError(err, 'STUDY');
       const errMsg: AIMessage = {
         id: `study-err-${Date.now()}`,
         sender: 'assistant',
@@ -730,7 +802,8 @@ export const AIStudyModeWorkspace: React.FC<AIStudyModeWorkspaceProps> = ({
       setLessonMessages(finalMessages);
       activeMessagesRef.current = finalMessages;
     } finally {
-      if (!controller.signal.aborted) {
+      window.clearTimeout(timeoutId);
+      if (!controller.signal.aborted || timedOut) {
         setIsGenerating(false);
         abortControllerRef.current = null;
       }
@@ -740,39 +813,53 @@ export const AIStudyModeWorkspace: React.FC<AIStudyModeWorkspaceProps> = ({
   // Start a brand-new Study Mode session
   const handleStartStudySession = async () => {
     const resolvedTopic = (customTopicInput.trim() || selectedTopic.trim()).slice(0, 140);
-    if (!resolvedTopic) return;
+    if (!resolvedTopic || isStarting) return;
 
-    analyticsTracker.trackEvent('ai_tutor_query', 'ai_tutor', {
-      mode: 'STUDY',
-      courseContext: studyCourseCode,
-      topic: resolvedTopic,
-      difficulty,
-      learningGoal,
-    });
+    setIsStarting(true);
+    setStartError('');
+    try {
+      try {
+        analyticsTracker.trackEvent('ai_tutor_query', 'ai_tutor', {
+          mode: 'STUDY',
+          courseContext: studyCourseCode,
+          topic: resolvedTopic,
+          difficulty,
+          learningGoal,
+        });
+      } catch {
+        // analytics must never block a lesson
+      }
 
-    const newSession = await aiTutorFoundationService.createLearningSession({
-      userId,
-      mode: 'STUDY',
-      courseId: activeCourseObj?.canonicalCourseId || activeCourseObj?.id || studyCourseCode,
-      courseCode: studyCourseCode,
-      courseTitle: activeCourseObj?.title,
-      topic: resolvedTopic,
-      learningGoal,
-      materialIds: selectedMaterialId ? [selectedMaterialId] : undefined,
-      difficulty,
-      language: languagePreference,
-      totalSteps: 5,
-    });
+      const newSession = await aiTutorFoundationService.createLearningSession({
+        userId,
+        mode: 'STUDY',
+        courseId: activeCourseObj?.canonicalCourseId || activeCourseObj?.id || studyCourseCode,
+        courseCode: studyCourseCode,
+        courseTitle: activeCourseObj?.title,
+        topic: resolvedTopic,
+        learningGoal,
+        materialIds: selectedMaterialId ? [selectedMaterialId] : undefined,
+        difficulty,
+        language: languagePreference,
+        totalSteps: 5,
+      });
 
-    setActiveSession(newSession);
-    setLessonMessages([]);
-    setViewStage('lesson');
+      setActiveSession(newSession);
+      setLessonMessages([]);
+      setViewStage('lesson');
+      setIsStarting(false);
 
-    await executeStudyTurn({
-      session: newSession,
-      action: 'start',
-      existingMessages: [],
-    });
+      await executeStudyTurn({
+        session: newSession,
+        action: 'start',
+        existingMessages: [],
+      });
+    } catch (err) {
+      console.error('Study Mode start failed:', err);
+      setStartError('Could not start the lesson. Check your connection and tap Start again.');
+    } finally {
+      setIsStarting(false);
+    }
   };
 
   // Resume an existing Study Mode session
@@ -1128,20 +1215,26 @@ export const AIStudyModeWorkspace: React.FC<AIStudyModeWorkspaceProps> = ({
           </div>
 
           {/* Start Interactive Lesson CTA */}
-          <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-100">
+          <div className="pt-2 flex flex-col items-end gap-2 border-t border-slate-100">
+            {!effectiveTopicToStart && (
+              <p className="text-[11px] text-slate-500 self-start">
+                Choose a topic above or type your own (for example “page 40 of my notes” or “chapter 3”) to enable the button.
+              </p>
+            )}
+            {startError && <p className="text-[11px] font-semibold text-red-600 self-start">{startError}</p>}
             <button
               id="btn-start-study-mode-session"
               type="button"
-              disabled={!effectiveTopicToStart}
+              disabled={!effectiveTopicToStart || isStarting}
               onClick={handleStartStudySession}
               className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
-                effectiveTopicToStart
+                effectiveTopicToStart && !isStarting
                   ? 'bg-slate-900 hover:bg-slate-800 text-white cursor-pointer shadow-xs'
                   : 'bg-slate-200 text-slate-400 cursor-not-allowed'
               }`}
             >
-              <GraduationCap className="w-4 h-4" />
-              <span>Start Interactive Study Lesson</span>
+              {isStarting ? <Loader2 className="w-4 h-4 animate-spin" /> : <GraduationCap className="w-4 h-4" />}
+              <span>{isStarting ? 'Preparing your lesson…' : 'Start Interactive Study Lesson'}</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>

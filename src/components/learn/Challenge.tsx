@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { Loader2, Play, CheckCircle2, XCircle, Lightbulb, Eye } from 'lucide-react';
 import { runPython } from './pyRunner';
 import { CodeBlock, CodeEditor } from './highlight';
+import { checkWeb } from './webCheck';
+import { checkJs } from './jsCheck';
 
 export interface ChallengeData {
   prompt: string;
   starter: string;
-  /** Python that raises AssertionError (with a message) when the learner's code is wrong. */
+  /** Python that raises AssertionError (with a message) when the learner's code is wrong (or web rules, see checkWeb). */
   check: string;
   hint: string;
   solution: string;
@@ -17,7 +19,9 @@ export const Challenge: React.FC<{
   data: ChallengeData;
   solved: boolean;
   onSolved: (id: string) => void;
-}> = ({ id, data, solved, onSolved }) => {
+  /** 'html' challenges are checked with checkWeb instead of Python. */
+  lang?: 'python' | 'html' | 'js';
+}> = ({ id, data, solved, onSolved, lang = 'python' }) => {
   const [code, setCode] = useState(data.starter);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
@@ -27,6 +31,26 @@ export const Challenge: React.FC<{
   const run = async () => {
     setBusy(true);
     setResult(null);
+    if (lang === 'html') {
+      const problem = checkWeb(code, data.check);
+      if (problem) setResult({ ok: false, text: problem });
+      else {
+        setResult({ ok: true, text: solved ? 'Correct again!' : 'Correct! +20 XP' });
+        onSolved(id);
+      }
+      setBusy(false);
+      return;
+    }
+    if (lang === 'js') {
+      const problem = await checkJs(code, data.check);
+      if (problem) setResult({ ok: false, text: problem });
+      else {
+        setResult({ ok: true, text: solved ? 'Correct again!' : 'Correct! +20 XP' });
+        onSolved(id);
+      }
+      setBusy(false);
+      return;
+    }
     try {
       const r = await runPython(`${code}\n\n# ---- checks ----\n${data.check}\n`);
       if (r.err) {
@@ -50,7 +74,7 @@ export const Challenge: React.FC<{
         Coding challenge {solved && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
       </h3>
       <p className="text-sm text-slate-300 leading-relaxed">{data.prompt}</p>
-      <CodeEditor value={code} onChange={setCode} lang="python" title="Your code" minLines={6} right={<span />} />
+      <CodeEditor value={code} onChange={setCode} lang={lang} title="Your code" minLines={6} right={<span />} />
       <div className="flex flex-wrap gap-2">
         <button
           onClick={run}
@@ -76,8 +100,8 @@ export const Challenge: React.FC<{
           <span>{result.text}</span>
         </div>
       )}
-      {hint && <CodeBlock code={data.hint} lang="python" title="Hint" />}
-      {sol && <CodeBlock code={data.solution} lang="python" title="Solution" />}
+      {hint && <CodeBlock code={data.hint} lang={lang} title="Hint" />}
+      {sol && <CodeBlock code={data.solution} lang={lang} title="Solution" />}
     </div>
   );
 };
