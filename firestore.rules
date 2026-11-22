@@ -618,6 +618,18 @@ service cloud.firestore {
         allow delete: if isOwner(studentId) && isValidId(progressId);
       }
 
+      // Learn section progress (XP, streak, finished quizzes and challenges, bookmarks): one private document.
+      match /learn_progress/{docId} {
+        allow get, list: if isOwner(studentId);
+        allow create, update: if isOwner(studentId) &&
+          isStudentAccountActive(studentId) &&
+          docId == 'stats' &&
+          request.resource.data.userId == request.auth.uid &&
+          request.resource.data.xp is number && request.resource.data.xp >= 0 && request.resource.data.xp < 10000000 &&
+          request.resource.data.keys().hasOnly(['userId', 'updatedAt', 'xp', 'streak', 'lastDay', 'quiz', 'challenges', 'bookmarks']);
+        allow delete: if isOwner(studentId);
+      }
+
       match /ai_tutor_memory/{memoryId} {
         allow get, list: if isOwner(studentId);
         allow create, update: if isOwner(studentId) &&
