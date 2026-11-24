@@ -15,6 +15,7 @@ import {
 } from './tutorMaterialPages';
 import { backupMaterialFile, restoreMaterialFile, removeMaterialBackup } from './persistence';
 import * as subs from './subscriptions';
+import * as payments from './payments';
 import * as push from './push';
 import * as lecApps from './lecturerApplications';
 import * as sponsors from './sponsors';
@@ -59,6 +60,7 @@ const ANALYTICS_EVENTS_FILE = path.join(PROFILES_DIR, 'analytics_events.json');
 const AUDIT_LOGS_FILE = path.join(PROFILES_DIR, 'audit_logs.json');
 initPersistence(PROFILES_DIR);
 subs.initSubscriptions(PROFILES_DIR);
+payments.initPayments(PROFILES_DIR);
 lecApps.initLecturerApplications(PROFILES_DIR);
 sponsors.initSponsors(PROFILES_DIR);
 daily.initDaily(PROFILES_DIR);
@@ -747,6 +749,33 @@ app.post('/api/subscription/request', requireAuth, (req, res) => {
   );
   if (!result.ok) return res.status(400).json({ success: false, error: 'INVALID_REQUEST', message: result.error });
   return res.json({ success: true, request: result.request });
+});
+
+// ---- In-app mobile-money payment (PIN prompt on the customer's phone) ----
+app.get('/api/pay/config', requireAuth, (_req, res) => {
+  return res.json({ success: true, enabled: Boolean(payments.activeProvider()), operators: payments.OPERATORS });
+});
+
+app.post('/api/pay/initiate', requireAuth, async (req, res) => {
+  const result = await payments.startPayment({ uid: req.user!.uid, email: req.user!.email, name: req.user!.name }, req.body || {});
+  if (!result.ok) return res.status(result.status || 400).json({ success: false, error: 'PAY_FAILED', message: result.error });
+  return res.json({ success: true, orderId: result.orderId });
+});
+
+app.get('/api/pay/status/:orderId', requireAuth, async (req, res) => {
+  const st = await payments.orderStatus(req.user!.uid, String(req.params.orderId));
+  if (!st) return res.status(404).json({ success: false, error: 'NOT_FOUND' });
+  return res.json({ success: true, ...st });
+});
+
+// Called by the payment provider. Only a confirmed, matching payment activates a plan.
+app.post('/api/pay/webhook', async (req, res) => {
+  const given = String(req.headers['x-venue-pay-secret'] || '');
+  if (!payments.webhookAuthorised(given)) return res.status(401).json({ success: false });
+  const { orderId, status, amountTzs } = req.body || {};
+  const result = status === 'paid' ? 'paid' : 'failed';
+  const o = await payments.markResult(String(orderId || ''), result, undefined, amountTzs === undefined ? undefined : Number(amountTzs));
+  return res.json({ success: Boolean(o) });
 });
 
 app.get('/api/subscription/admin/requests', requireAuth, (req, res) => {

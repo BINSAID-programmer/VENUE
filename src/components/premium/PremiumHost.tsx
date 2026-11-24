@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Crown, X, Check, Copy, Sparkles, Download, Bot, Compass, Clock, ShieldCheck, MessageCircle, Infinity as InfinityIcon, Minus } from 'lucide-react';
+import { Crown, X, Check, Copy, Sparkles, Loader2, Smartphone, Download, Bot, Compass, Clock, ShieldCheck, MessageCircle, Infinity as InfinityIcon, Minus } from 'lucide-react';
 import { premiumService, PremiumStatus, PlanInfo, PlanId } from '../../services/premiumService';
 
 /** Defined at module level so inputs inside a step keep focus while typing. */
@@ -29,6 +29,12 @@ export default function PremiumHost() {
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
   const [copied, setCopied] = useState(false);
+  const [pay, setPay] = useState<{ enabled: boolean; operators: Array<{ id: string; label: string }> }>({ enabled: false, operators: [] });
+  const [operator, setOperator] = useState('mpesa');
+  const [payPhone, setPayPhone] = useState('');
+  const [orderId, setOrderId] = useState('');
+  const [payState, setPayState] = useState<'idle' | 'waiting' | 'paid' | 'failed'>('idle');
+  const [manual, setManual] = useState(false);
 
   const load = useCallback(async (force = false) => {
     setStatus(await premiumService.getStatus(force));
@@ -41,6 +47,9 @@ export default function PremiumHost() {
       setError('');
       setOpen(true);
       void load(true);
+      void premiumService.payConfig().then(setPay);
+      setPayState('idle');
+      setOrderId('');
     };
     const onRequired = (e: Event) => {
       setNotice((e as CustomEvent).detail?.message || 'This feature needs VENUE Premium.');
@@ -48,6 +57,9 @@ export default function PremiumHost() {
       setError('');
       setOpen(true);
       void load(true);
+      void premiumService.payConfig().then(setPay);
+      setPayState('idle');
+      setOrderId('');
     };
     window.addEventListener(premiumService.openEventName, onOpen);
     window.addEventListener('venue:premium-required', onRequired);
@@ -56,6 +68,42 @@ export default function PremiumHost() {
       window.removeEventListener('venue:premium-required', onRequired);
     };
   }, [load]);
+
+  useEffect(() => {
+    if (payState !== 'waiting' || !orderId) return;
+    let stop = false;
+    const started = Date.now();
+    const tick = async () => {
+      if (stop) return;
+      try {
+        const st = await premiumService.payStatus(orderId);
+        if (stop) return;
+        if (st === 'paid') {
+          setPayState('paid');
+          await load(true);
+          return;
+        }
+        if (st === 'failed' || st === 'expired') {
+          setPayState('failed');
+          setError(st === 'expired' ? 'No PIN was entered in time. You were not charged. Try again.' : 'The payment was not completed. You were not charged.');
+          return;
+        }
+      } catch {
+        /* network blip: keep waiting */
+      }
+      if (Date.now() - started > 190000) {
+        setPayState('failed');
+        setError('We did not get a confirmation. If money left your account, chat with support and send the SMS.');
+        return;
+      }
+      setTimeout(tick, 3000);
+    };
+    const t = setTimeout(tick, 3000);
+    return () => {
+      stop = true;
+      clearTimeout(t);
+    };
+  }, [payState, orderId, load]);
 
   if (!open) return null;
 
@@ -83,6 +131,20 @@ export default function PremiumHost() {
       setDone('Request sent. We will confirm your payment and activate it shortly.');
       setReference('');
       await load(true);
+    } catch (e: any) {
+      setError(e?.message || 'Something went wrong.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const payNow = async () => {
+    setError('');
+    setBusy(true);
+    try {
+      const id = await premiumService.payStart(kind, kind === 'premium' ? plan : undefined, operator, payPhone);
+      setOrderId(id);
+      setPayState('waiting');
     } catch (e: any) {
       setError(e?.message || 'Something went wrong.');
     } finally {
@@ -229,6 +291,62 @@ export default function PremiumHost() {
                 ))}
               </div>
             )}
+            {pay.enabled && (
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-300">Order summary</span>
+                  <span className="text-[11px] text-slate-500">{kind === 'premium' ? selectedPlan.label : `+${status?.downloadPackSize ?? 5} downloads`}</span>
+                </div>
+                <div className="px-4 py-4 text-center">
+                  <span className="inline-block px-5 py-2 rounded-xl bg-sky-500 text-white text-xl font-extrabold">TZS {amount.toLocaleString()}</span>
+                </div>
+                {payState === 'paid' ? (
+                  <div className="px-4 pb-5 text-center space-y-2">
+                    <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center"><Check className="w-6 h-6" /></div>
+                    <p className="text-sm font-bold text-emerald-300">Payment received</p>
+                    <p className="text-xs text-slate-400">Your plan is active. Enjoy studying!</p>
+                    <button type="button" onClick={() => setOpen(false)} className="w-full py-3 rounded-xl bg-emerald-500 text-slate-950 font-extrabold text-sm cursor-pointer">Done</button>
+                  </div>
+                ) : (
+                  <div className="px-4 pb-4 space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Select mobile operator</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {pay.operators.map((o) => (
+                        <button
+                          key={o.id}
+                          type="button"
+                          disabled={payState === 'waiting'}
+                          onClick={() => setOperator(o.id)}
+                          className={`py-3 rounded-xl text-xs font-bold border cursor-pointer disabled:opacity-60 ${operator === o.id ? 'bg-sky-500/15 border-sky-400 text-sky-200' : 'bg-slate-950 border-slate-800 text-slate-300'}`}
+                        >
+                          {o.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Mobile number</p>
+                    <input value={payPhone} onChange={(e) => setPayPhone(e.target.value)} disabled={payState === 'waiting'} placeholder="e.g. 0763143290" inputMode="tel" className={inputCls} />
+                    {error && <p className="text-xs text-rose-300">{error}</p>}
+                    <button
+                      type="button"
+                      disabled={busy || payState === 'waiting' || payPhone.replace(/\D/g, '').length < 9}
+                      onClick={payNow}
+                      className="w-full py-3.5 rounded-xl bg-sky-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
+                    >
+                      {payState === 'waiting' ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Waiting for PIN...</>
+                      ) : (
+                        <><Smartphone className="w-4 h-4" /> {busy ? 'Starting...' : `Pay Now - TZS ${amount.toLocaleString()}`}</>
+                      )}
+                    </button>
+                    {payState === 'waiting' && <p className="text-[11px] text-slate-400 text-center">Check your phone and enter your mobile-money PIN to confirm.</p>}
+                  </div>
+                )}
+              </div>
+            )}
+            {pay.enabled && !manual && payState !== 'paid' && (
+              <button type="button" onClick={() => setManual(true)} className="w-full text-center text-[11px] text-slate-500 underline cursor-pointer">Prefer to pay by hand and send the transaction ID?</button>
+            )}
+            {(!pay.enabled || manual) && payState !== 'paid' && (<>
             <Step n={1} title={`Send TZS ${amount.toLocaleString()}`}>
               <p className="text-xs text-slate-400">Use M-Pesa, Tigo Pesa or Airtel Money.</p>
               <button type="button" onClick={copyNumber} className="w-full flex items-center justify-between px-3.5 py-3 rounded-xl bg-slate-950 border border-slate-700 cursor-pointer">
@@ -257,6 +375,7 @@ export default function PremiumHost() {
                 {busy ? 'Sending...' : pendingKinds.includes(kind) ? 'Waiting for approval' : `I have paid TZS ${amount.toLocaleString()}`}
               </button>
             </Step>
+            </>)}
           </div>
 
           {[...(status?.pending || []), ...(status?.recent || [])].length > 0 && (
