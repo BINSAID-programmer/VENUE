@@ -9,9 +9,10 @@ export interface LearnStats {
   quiz: Record<string, boolean>; // `${lessonId}:${i}` answered correctly
   challenges: Record<string, boolean>;
   bookmarks: string[]; // `${trackId}:${lessonId}`
+  done: string[]; // lesson ids marked as done (used for certificates)
 }
 
-const EMPTY: LearnStats = { xp: 0, streak: 0, lastDay: '', quiz: {}, challenges: {}, bookmarks: [] };
+const EMPTY: LearnStats = { xp: 0, streak: 0, lastDay: '', quiz: {}, challenges: {}, bookmarks: [], done: [] };
 
 function today(): string {
   const d = new Date();
@@ -23,14 +24,26 @@ function yesterday(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function load(): LearnStats {
+/** Lessons marked done before this was synced were kept in a separate key on this phone: bring them in. */
+function legacyDone(current: unknown): string[] {
+  const out = new Set<string>(Array.isArray(current) ? current.filter((x) => typeof x === 'string') : []);
   try {
-    const v = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (v && typeof v === 'object') return { ...EMPTY, ...v };
+    const old = JSON.parse(localStorage.getItem('venue_learn_done_v1') || '[]');
+    if (Array.isArray(old)) for (const id of old) if (typeof id === 'string') out.add(id);
   } catch {
     /* ignore */
   }
-  return { ...EMPTY };
+  return Array.from(out).slice(0, 600);
+}
+
+function load(): LearnStats {
+  try {
+    const v = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (v && typeof v === 'object') return { ...EMPTY, ...v, done: legacyDone(v.done) };
+  } catch {
+    /* ignore */
+  }
+  return { ...EMPTY, done: legacyDone([]) };
 }
 function save(s: LearnStats) {
   try {
@@ -53,6 +66,7 @@ export function mergeStats(a: LearnStats, b: LearnStats): LearnStats {
     quiz: { ...b.quiz, ...a.quiz },
     challenges: { ...b.challenges, ...a.challenges },
     bookmarks: Array.from(new Set([...a.bookmarks, ...b.bookmarks])),
+    done: Array.from(new Set([...(a.done || []), ...(b.done || [])])).slice(0, 600),
   };
 }
 
@@ -104,6 +118,7 @@ export function useLearnStats() {
           try {
             const snap = await getDoc(doc(db, 'students', user.uid, 'learn_progress', 'stats'));
             const remote = snap.exists() ? ({ ...EMPTY, ...(snap.data() as Partial<LearnStats>) } as LearnStats) : null;
+            if (remote && !Array.isArray(remote.done)) remote.done = [];
             const merged = remote ? mergeStats(latest.current, remote) : latest.current;
             if (!sameStats(merged, latest.current)) {
               save(merged);
@@ -170,6 +185,12 @@ export function useLearnStats() {
     [update]
   );
 
+  const markDoneLesson = useCallback(
+    (id: string) =>
+      update((s) => (s.done.includes(id) ? s : { ...s, done: [...s.done, id].slice(0, 600) })),
+    [update]
+  );
+
   const toggleBookmark = useCallback(
     (key: string) =>
       update((s) => ({
@@ -182,5 +203,5 @@ export function useLearnStats() {
   // A streak that was not continued yesterday or today is shown as 0.
   const liveStreak = stats.lastDay === today() || stats.lastDay === yesterday() ? stats.streak : 0;
 
-  return { stats, liveStreak, award, markQuiz, markChallenge, toggleBookmark };
+  return { stats, liveStreak, award, markQuiz, markChallenge, toggleBookmark, markDoneLesson };
 }

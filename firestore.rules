@@ -626,7 +626,8 @@ service cloud.firestore {
           docId == 'stats' &&
           request.resource.data.userId == request.auth.uid &&
           request.resource.data.xp is number && request.resource.data.xp >= 0 && request.resource.data.xp < 10000000 &&
-          request.resource.data.keys().hasOnly(['userId', 'updatedAt', 'xp', 'streak', 'lastDay', 'quiz', 'challenges', 'bookmarks']);
+          request.resource.data.keys().hasOnly(['userId', 'updatedAt', 'xp', 'streak', 'lastDay', 'quiz', 'challenges', 'bookmarks', 'done']) &&
+          (!('done' in request.resource.data) || (request.resource.data.done is list && request.resource.data.done.size() <= 600));
         allow delete: if isOwner(studentId);
       }
 
