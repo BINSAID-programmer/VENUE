@@ -75,6 +75,35 @@ export const premiumService = {
     return data.request as PaymentRequestItem;
   },
 
+  async payConfig(): Promise<{ enabled: boolean; operators: Array<{ id: string; label: string }> }> {
+    try {
+      const res = await authenticatedFetch('/api/pay/config', { cache: 'no-store' });
+      const d = await res.json().catch(() => ({}));
+      return res.ok ? { enabled: Boolean(d.enabled), operators: d.operators || [] } : { enabled: false, operators: [] };
+    } catch {
+      return { enabled: false, operators: [] };
+    }
+  },
+
+  async payStart(kind: 'premium' | 'download_pack', plan: PlanId | undefined, operator: string, phone: string): Promise<string> {
+    const res = await authenticatedFetch('/api/pay/initiate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind, plan, operator, phone }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.message || 'Could not start the payment. Please try again.');
+    return data.orderId as string;
+  },
+
+  async payStatus(orderId: string): Promise<'waiting' | 'paid' | 'failed' | 'expired'> {
+    const res = await authenticatedFetch(`/api/pay/status/${encodeURIComponent(orderId)}`, { cache: 'no-store' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error('status');
+    cache = null;
+    return data.status;
+  },
+
   async adminListRequests(status?: string): Promise<PaymentRequestItem[]> {
     const res = await authenticatedFetch(`/api/subscription/admin/requests${status ? `?status=${status}` : ''}`, {
       cache: 'no-store',

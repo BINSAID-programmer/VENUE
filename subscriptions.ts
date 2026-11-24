@@ -195,7 +195,8 @@ export function createRequest(
   kind: RequestKind,
   reference: string,
   senderPhone: string,
-  planId?: string
+  planId?: string,
+  opts: { skipPending?: boolean } = {}
 ): { ok: true; request: PaymentRequest } | { ok: false; error: string } {
   const ref = String(reference || '').trim().toUpperCase();
   const phone = String(senderPhone || '').replace(/[^0-9+]/g, '');
@@ -212,7 +213,7 @@ export function createRequest(
   if (list.some((r) => r.reference === ref)) {
     return { ok: false, error: 'This transaction ID was already submitted.' };
   }
-  if (list.some((r) => r.uid === user.uid && r.kind === kind && r.status === 'pending')) {
+  if (!opts.skipPending && list.some((r) => r.uid === user.uid && r.kind === kind && r.status === 'pending')) {
     return { ok: false, error: 'You already have a pending request. Please wait for approval.' };
   }
   if (kind === 'download_pack' && !isPremiumActive(getRecord(user.uid))) {
@@ -284,4 +285,17 @@ export function decideRequest(
   all[id] = r;
   saveStoreFile(reqFile(), all);
   return { ok: true, request: r };
+}
+
+/** Activates a plan for a payment that the payment provider has confirmed (no manual approval needed). */
+export function settlePaidOrder(
+  user: { uid: string; email: string; name?: string },
+  kind: RequestKind,
+  plan: string | undefined,
+  orderRef: string,
+  phone: string
+): { ok: true; request: PaymentRequest } | { ok: false; error: string } {
+  const made = createRequest(user, kind, orderRef, phone, plan, { skipPending: true });
+  if (!made.ok) return made;
+  return decideRequest(made.request.id, true, 'auto:provider', 'Paid by mobile money (confirmed by provider)');
 }
