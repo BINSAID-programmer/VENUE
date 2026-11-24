@@ -11,24 +11,6 @@ import { LEARN_TRACKS, LearnLesson, LearnSection, LearnTrack } from '../../data/
 import { Figure, LearnTable, Steps, VideoCard } from '../learn/Figure';
 import LEARN_OUTPUTS from '../../data/learnOutputs.json';
 
-const STORE_KEY = 'venue_learn_done_v1';
-
-function loadDone(): string[] {
-  try {
-    const v = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
-    return Array.isArray(v) ? v : [];
-  } catch {
-    return [];
-  }
-}
-function saveDone(ids: string[]) {
-  try {
-    localStorage.setItem(STORE_KEY, JSON.stringify(ids));
-  } catch {
-    /* storage unavailable */
-  }
-}
-
 const POS_KEY = 'venue_learn_pos_v1';
 
 function loadPos(): { t: string; l: number } {
@@ -56,9 +38,9 @@ export const LearnScreen: React.FC = () => {
   const [menu, setMenu] = useState(false);
   const [cert, setCert] = useState(false);
   const [tryCode, setTryCode] = useState<string | null>(null);
-  const [done, setDone] = useState<string[]>(loadDone);
   const [shown, setShown] = useState<Record<string, boolean>>({});
-  const { stats, liveStreak, award, markQuiz, markChallenge, toggleBookmark } = useLearnStats();
+  const { stats, liveStreak, award, markQuiz, markChallenge, toggleBookmark, markDoneLesson } = useLearnStats();
+  const done = stats.done;
   const [searching, setSearching] = useState(false);
   const [q, setQ] = useState('');
 
@@ -83,9 +65,7 @@ export const LearnScreen: React.FC = () => {
   };
   const markDone = () => {
     if (done.includes(lesson.id)) return;
-    const next = [...done, lesson.id];
-    setDone(next);
-    saveDone(next);
+    markDoneLesson(lesson.id);
     award(10);
   };
   const bmKey = `${trackId}:${lesson.id}`;
