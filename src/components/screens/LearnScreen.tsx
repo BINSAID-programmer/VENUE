@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, ChevronRight, ChevronLeft, GraduationCap, Menu, X, Lightbulb, Flame, Star, Search, Bookmark, Bot } from 'lucide-react';
+import { CheckCircle2, ChevronRight, ChevronLeft, GraduationCap, Menu, X, Lightbulb, Flame, Star, Search, Bookmark, Bot, Award } from 'lucide-react';
 import { wrapHtml, wrapJs } from '../learn/wrap';
 import { Ide } from '../learn/Ide';
 import { useLearnStats, levelOf } from '../learn/learnStats';
 import { Quiz } from '../learn/Quiz';
 import { Challenge } from '../learn/Challenge';
+import { CertificateModal } from '../learn/Certificate';
 import { CodeBlock, CodeLang } from '../learn/highlight';
 import { LEARN_TRACKS, LearnLesson, LearnSection, LearnTrack } from '../../data/learnLessons';
 import { Figure, LearnTable, Steps, VideoCard } from '../learn/Figure';
@@ -53,6 +54,7 @@ export const LearnScreen: React.FC = () => {
   const [idx, setIdx] = useState(Math.min(initial.l, track.lessons.length - 1));
   const lesson = track.lessons[idx];
   const [menu, setMenu] = useState(false);
+  const [cert, setCert] = useState(false);
   const [tryCode, setTryCode] = useState<string | null>(null);
   const [done, setDone] = useState<string[]>(loadDone);
   const [shown, setShown] = useState<Record<string, boolean>>({});
@@ -432,6 +434,30 @@ export const LearnScreen: React.FC = () => {
                 <X className="w-4 h-4" />
               </button>
             </div>
+            {(() => {
+              const n = track.lessons.filter((l) => done.includes(l.id)).length;
+              const all = n === track.lessons.length;
+              return (
+                <div className="mx-2 mt-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                  <p className="text-[11px] font-bold text-amber-200 flex items-center gap-1.5">
+                    <Award className="w-3.5 h-3.5" /> Certificate: {n} / {track.lessons.length} lessons done
+                  </p>
+                  <div className="mt-1.5 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                    <div className="h-full bg-amber-400" style={{ width: `${(n / track.lessons.length) * 100}%` }} />
+                  </div>
+                  <button
+                    onClick={() => {
+                      setMenu(false);
+                      setCert(true);
+                    }}
+                    disabled={!all}
+                    className="mt-2 w-full py-2 rounded-lg bg-amber-400 text-slate-900 text-xs font-extrabold cursor-pointer disabled:opacity-40"
+                  >
+                    {all ? 'Get my certificate' : 'Finish every lesson to unlock'}
+                  </button>
+                </div>
+              );
+            })()}
             <div className="p-2 space-y-1">
               {track.lessons.map((l, i) => (
                 <React.Fragment key={l.id}>
@@ -458,6 +484,8 @@ export const LearnScreen: React.FC = () => {
           <div className="flex-1 bg-black/60" onClick={() => setMenu(false)} />
         </div>
       )}
+
+      {cert && <CertificateModal track={track.title} lessons={track.lessons.length} onClose={() => setCert(false)} />}
 
       {/* Try it Yourself: full IDE */}
       {tryCode !== null && (
