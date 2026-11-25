@@ -4000,6 +4000,22 @@ function restoreLatexControlCharsInObject(val: any): any {
  * The student asked for a picture but the main answer came back without one. Ask the model once, with a tiny schema that
  * only contains the picture, so the student gets a real, topic-specific drawing instead of words or a generic placeholder.
  */
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('timeout')), ms);
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      }
+    );
+  });
+}
+
 async function repairMissingVisual(
   ai: GoogleGenAI,
   models: string[],
@@ -4025,9 +4041,9 @@ async function repairMissingVisual(
     'If it is a function, curve, distribution, data set or a comparison of curves, return `chart` with 20-40 accurately computed points (use `series` with y and y2 for two curves). ' +
     'Otherwise return `diagramSvg`: ONE valid self-contained <svg viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg"> for a white background (text #0f172a size 12-14, shapes #f8fafc with #2563eb or #475569 strokes, arrows, every important part labelled, nothing overlapping, at most about 15 shapes). ' +
     'Return only the picture fields.';
-  for (const model of models.slice(0, 2)) {
+  for (const model of models.slice(0, 1)) {
     try {
-      const r = await ai.models.generateContent({
+      const r: any = await withTimeout(ai.models.generateContent({
         model,
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         config: {
@@ -4067,7 +4083,7 @@ async function repairMissingVisual(
             },
           },
         },
-      });
+      }), 12000);
       const out = safeParseAiJsonWithLatexRecovery<{ chart?: any; diagramSvg?: string }>(r?.text || '', {});
       if (out.chart && Array.isArray(out.chart.data) && out.chart.data.length > 1) parsedData.chart = out.chart;
       if (out.diagramSvg && out.diagramSvg.includes('<svg')) parsedData.diagramSvg = out.diagramSvg;
@@ -4695,6 +4711,7 @@ app.post('/api/tutor/chat', async (req, res) => {
       }
     }
 
+    const chatStartedAt = Date.now();
     const ai = getGeminiClient();
 
     // Stage 10A: Build structured Student Academic Profile & VENUE Course Materials Context
@@ -5454,7 +5471,8 @@ When an image is provided, transcribe the question accurately, inspect any handw
 
     for (const modelName of candidateModels) {
       try {
-        const response = await ai.models.generateContent(slimChatParams({
+        // A model that is too slow is skipped (the next, faster model answers) instead of letting the whole request hit the proxy timeout.
+        const response = await withTimeout(ai.models.generateContent(slimChatParams({
           model: modelName,
           contents,
           config: {
@@ -5543,7 +5561,7 @@ When an image is provided, transcribe the question accurately, inspect any handw
               required: ['text'],
             },
           },
-        }, userIntent));
+        }, userIntent)), modelName === candidateModels[candidateModels.length - 1] ? 40000 : 24000);
 
         if (response && response.text) {
           responseText = response.text;
@@ -5606,7 +5624,10 @@ When an image is provided, transcribe the question accurately, inspect any handw
 
     // STAGE 10D: Ensure explicit visual requests ("Plot...", "Draw a graph", "Show by diagram", "Flowchart")
     // always produce a supported chart or SVG diagram
-    await repairMissingVisual(ai, candidateModels, parsedData, userIntent, trimmedMsg, Array.isArray(history) ? history : []);
+    // Only repair while there is still time: the hosting proxy gives up on long requests, and a slow answer is worse than a late picture.
+    if (Date.now() - chatStartedAt < 18000) {
+      await repairMissingVisual(ai, candidateModels, parsedData, userIntent, trimmedMsg, Array.isArray(history) ? history : []);
+    }
     ensureVisualOutputForIntent(parsedData, trimmedMsg, userIntent);
 
     // STAGE 10D: Enforce "Show the formula only" / "Short answer" restraint so unnecessary boxes aren't added
