@@ -41,7 +41,8 @@ import {
 import { ScholarshipsScreen } from './ScholarshipsScreen';
 import { MathRenderer } from '../MathRenderer';
 import { premiumService } from '../../services/premiumService';
-import { Crown } from 'lucide-react';
+import { Crown, FileText } from 'lucide-react';
+import { CvBuilder } from '../career/CvBuilder';
 
 interface CareerHubScreenProps {
   careerPaths?: CareerPath[];
@@ -65,7 +66,7 @@ export const CareerHubScreen: React.FC<CareerHubScreenProps> = ({
   courses = [],
 }) => {
   const [activeSection, setActiveSection] = useState<
-    'paths' | 'roadmap' | 'advisor' | 'opportunities'
+    'paths' | 'roadmap' | 'advisor' | 'opportunities' | 'cv'
   >('paths');
   const [loading, setLoading] = useState<boolean>(true);
   const [exploreAllMode, setExploreAllMode] = useState<boolean>(false);
@@ -521,7 +522,7 @@ export const CareerHubScreen: React.FC<CareerHubScreenProps> = ({
       )}
 
       {/* 4. Navigation Tabs inside Career Hub */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 rounded-2xl bg-slate-900 border border-slate-800 text-xs font-semibold">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 rounded-2xl bg-slate-900 border border-slate-800 text-xs font-semibold">
         <button
           type="button"
           onClick={() => setActiveSection('paths')}
@@ -573,7 +574,20 @@ export const CareerHubScreen: React.FC<CareerHubScreenProps> = ({
           <Award className="w-3.5 h-3.5" />
           <span>Opportunities</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSection('cv')}
+          className={`py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            activeSection === 'cv' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>CV Builder</span>
+        </button>
       </div>
+
+      {activeSection === 'cv' && <CvBuilder profile={profile} />}
 
       {/* ====================================================================
           TAB 1: CAREER PATHS & DETAILED COURSE-AWARE CARDS (Sections 5–18, 32)
