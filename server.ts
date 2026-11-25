@@ -3766,6 +3766,7 @@ function detectResponseFormatAndVisualIntent(query: string): DetectedUserIntent 
   const wantsDiagram =
     wantsFlowchart ||
     bareVisualAsk ||
+    /\b(draw|sketch|chora|nichorie|nichorea|chorea)\b.{0,50}\b(diagram|mchoro|michoro|picture|picha|figure|sketch|illustration|shape|triangle|circle)\b/i.test(q) ||
     /\b(show\s+(this\s+|me\s+)?(by|using|with)\s+(a\s+)?diagram|draw\s+(a\s+|the\s+)?diagram|illustrate|conceptual\s+diagram|geometric\s+diagram|tree\s+diagram|venn\s+diagram|vector\s+diagram|free\s+body\s+diagram|by\s+diagram|using\s+a\s+diagram|can\s+you\s+draw\s+it)\b/i.test(
       q
     );
@@ -3773,7 +3774,10 @@ function detectResponseFormatAndVisualIntent(query: string): DetectedUserIntent 
   const wantsGraphOrChart =
     /\b(draw\s+(a\s+|the\s+)?graph|plot\s+(the\s+|this\s+|a\s+|it\b|function|curve|y\s*=|f\(x\))|show\s+graphically|use\s+a\s+chart|graph\s+this|visualize\s+this|visualize\s+the|sketch\s+the\s+graph|bar\s+chart|line\s+graph|scatter\s+plot|histogram|normal\s+curve|distribution\s+graph)\b/i.test(
       q
-    ) || /^plot\b/i.test(q);
+    ) ||
+    /^plot\b/i.test(q) ||
+    /\b(draw|sketch|plot|chora|nichorie|nichorea|chorea)\b.{0,50}\b(graph|grafu|graf|curve|mkunjo|chart|chati|function|distribution|waveform|histogram)\b/i.test(q) ||
+    /\b(graph|grafu|graf)\b.{0,30}\b(of|ya|for|wa)\b/i.test(q);
 
   const wantsComparison =
     /\b(compare\s+these|compare\s+|comparison\s+between|difference\s+between|differences\s+between|distinguish\s+between|versus|\bvs\.?\b)\b/i.test(
@@ -3992,6 +3996,88 @@ function restoreLatexControlCharsInObject(val: any): any {
  * Generates a deterministic, mathematically accurate chart or clean academic SVG diagram
  * as a fallback if the user explicitly requested a graph/diagram and the LLM omitted it.
  */
+/**
+ * The student asked for a picture but the main answer came back without one. Ask the model once, with a tiny schema that
+ * only contains the picture, so the student gets a real, topic-specific drawing instead of words or a generic placeholder.
+ */
+async function repairMissingVisual(
+  ai: GoogleGenAI,
+  models: string[],
+  parsedData: { text: string; chart?: any; diagramSvg?: string },
+  intent: DetectedUserIntent,
+  userQuery: string,
+  history: any[]
+): Promise<void> {
+  const hasChart = Boolean(parsedData.chart && Array.isArray(parsedData.chart.data) && parsedData.chart.data.length > 1);
+  const hasSvg = Boolean(parsedData.diagramSvg && parsedData.diagramSvg.includes('<svg'));
+  const wantsChart = intent.wantsGraphOrChart || intent.bareVisualAsk;
+  const wantsSvg = intent.wantsDiagram || intent.wantsFlowchart;
+  if (!(wantsChart || wantsSvg) || hasChart || hasSvg) return;
+
+  const prior = (Array.isArray(history) ? history : [])
+    .filter((h: any) => typeof h?.text === 'string' && h.text.trim())
+    .slice(-4)
+    .map((h: any) => `${h.role === 'model' || h.sender === 'assistant' ? 'Tutor' : 'Student'}: ${String(h.text).slice(0, 900)}`)
+    .join('\n');
+  const prompt =
+    `A student asked: "${userQuery.slice(0, 400)}"\n\nRecent conversation:\n${prior || '(none)'}\n\nCurrent tutor answer (text only):\n${String(parsedData.text || '').slice(0, 1200)}\n\n` +
+    'Produce the PICTURE for this request now, about the topic being discussed. ' +
+    'If it is a function, curve, distribution, data set or a comparison of curves, return `chart` with 20-40 accurately computed points (use `series` with y and y2 for two curves). ' +
+    'Otherwise return `diagramSvg`: ONE valid self-contained <svg viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg"> for a white background (text #0f172a size 12-14, shapes #f8fafc with #2563eb or #475569 strokes, arrows, every important part labelled, nothing overlapping, at most about 15 shapes). ' +
+    'Return only the picture fields.';
+  for (const model of models.slice(0, 2)) {
+    try {
+      const r = await ai.models.generateContent({
+        model,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        config: {
+          temperature: 0.2,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              chart: {
+                type: Type.OBJECT,
+                properties: {
+                  type: { type: Type.STRING, description: 'line, bar, scatter, area or pie' },
+                  title: { type: Type.STRING },
+                  description: { type: Type.STRING },
+                  xAxisLabel: { type: Type.STRING },
+                  yAxisLabel: { type: Type.STRING },
+                  data: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: { x: { type: Type.STRING }, y: { type: Type.NUMBER }, y2: { type: Type.NUMBER } },
+                      required: ['x', 'y'],
+                    },
+                  },
+                  series: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: { dataKey: { type: Type.STRING }, name: { type: Type.STRING }, color: { type: Type.STRING } },
+                      required: ['dataKey', 'name'],
+                    },
+                  },
+                },
+                required: ['type', 'title', 'data'],
+              },
+              diagramSvg: { type: Type.STRING },
+            },
+          },
+        },
+      });
+      const out = safeParseAiJsonWithLatexRecovery<{ chart?: any; diagramSvg?: string }>(r?.text || '', {});
+      if (out.chart && Array.isArray(out.chart.data) && out.chart.data.length > 1) parsedData.chart = out.chart;
+      if (out.diagramSvg && out.diagramSvg.includes('<svg')) parsedData.diagramSvg = out.diagramSvg;
+      if (parsedData.chart || parsedData.diagramSvg) return;
+    } catch (e: any) {
+      console.warn('repairMissingVisual failed:', e?.message || e);
+    }
+  }
+}
+
 function ensureVisualOutputForIntent(
   parsedData: {
     text: string;
@@ -4069,8 +4155,9 @@ function ensureVisualOutputForIntent(
         data,
         series: [{ dataKey: 'y', name: 'ln(x)', color: '#2563eb' }],
       };
-    } else {
-      // Default mathematical function plot (parabola y = x^2 or linear/quadratic from query)
+    } else if (/x\^2|x²|parabola|quadratic|y\s*=\s*x\b/i.test(qLower)) {
+      // Default mathematical function plot, only when the student really asked about a parabola
+      // (never draw a parabola for an unrelated topic)
       const data = [];
       for (let x = -5; x <= 5; x += 0.5) {
         data.push({ x: String(x), y: Number((x * x).toFixed(2)) });
@@ -5519,6 +5606,7 @@ When an image is provided, transcribe the question accurately, inspect any handw
 
     // STAGE 10D: Ensure explicit visual requests ("Plot...", "Draw a graph", "Show by diagram", "Flowchart")
     // always produce a supported chart or SVG diagram
+    await repairMissingVisual(ai, candidateModels, parsedData, userIntent, trimmedMsg, Array.isArray(history) ? history : []);
     ensureVisualOutputForIntent(parsedData, trimmedMsg, userIntent);
 
     // STAGE 10D: Enforce "Show the formula only" / "Short answer" restraint so unnecessary boxes aren't added
