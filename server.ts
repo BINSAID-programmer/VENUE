@@ -613,8 +613,8 @@ function writeAllResults(results: Record<string, any[]>) {
 
 // Speed: the chart/diagram parts of the tutor schema make every answer slower.
 // Only include them when the student's message actually asks for a visual.
-function slimChatParams(params: any, intent: { wantsDiagram?: boolean; wantsFlowchart?: boolean; wantsGraphOrChart?: boolean }): any {
-  if (intent?.wantsDiagram || intent?.wantsFlowchart || intent?.wantsGraphOrChart) return params;
+function slimChatParams(params: any, intent: { wantsDiagram?: boolean; wantsFlowchart?: boolean; wantsGraphOrChart?: boolean; autoVisual?: boolean }): any {
+  if (intent?.wantsDiagram || intent?.wantsFlowchart || intent?.wantsGraphOrChart || intent?.autoVisual) return params;
   const props = params?.config?.responseSchema?.properties;
   if (!props) return params;
   const { chart: _c, diagramSvg: _d, ...rest } = props;
@@ -3745,6 +3745,10 @@ interface DetectedUserIntent {
   wantsBeginnerFriendly: boolean;
   isGeneralNonAcademicConversational: boolean;
   isContextualFollowUp: boolean;
+  /** True for any real study question: the answer should carry an example and, when it helps, a picture, without being asked. */
+  autoVisual: boolean;
+  /** The message is only a request to draw ("draw", "chora", "sketch it"): draw the topic of the previous answer. */
+  bareVisualAsk: boolean;
 }
 
 function detectResponseFormatAndVisualIntent(query: string): DetectedUserIntent {
@@ -3753,8 +3757,15 @@ function detectResponseFormatAndVisualIntent(query: string): DetectedUserIntent 
   const wantsFlowchart =
     /\b(flowchart|flow\s+chart|process\s+diagram|step\s+diagram|workflow\s+diagram)\b/i.test(q);
 
+  // A short message that only asks for a picture ("draw", "draw it", "chora", "sketch", "nichorie mchoro", "picture"):
+  // the topic is whatever was discussed just before, so a visual MUST be produced.
+  const bareVisualAsk =
+    q.length <= 45 &&
+    /\b(draw|sketch|chora|nichorie|nichorea|mchoro|michoro|picha|picture|visuali[sz]e|illustrate|diagram|graph|plot|onyesha\s+kwa\s+picha)\b/i.test(q);
+
   const wantsDiagram =
     wantsFlowchart ||
+    bareVisualAsk ||
     /\b(show\s+(this\s+|me\s+)?(by|using|with)\s+(a\s+)?diagram|draw\s+(a\s+|the\s+)?diagram|illustrate|conceptual\s+diagram|geometric\s+diagram|tree\s+diagram|venn\s+diagram|vector\s+diagram|free\s+body\s+diagram|by\s+diagram|using\s+a\s+diagram|can\s+you\s+draw\s+it)\b/i.test(
       q
     );
@@ -3810,7 +3821,7 @@ function detectResponseFormatAndVisualIntent(query: string): DetectedUserIntent 
 
   const isContextualFollowUp =
     q.length <= 48 &&
-    /\b(why\??|how\??|show\s+another\s+example|now\s+calculate\s+it|draw\s+the\s+graph|plot\s+it|can\s+you\s+draw\s+it|explain\s+step\s+\d+|put\s+it\s+in\s+a\s+table|use\s+a\s+table|show\s+this\s+by\s+diagram|summarize\s+this|what\s+about|and\s+for)\b/i.test(
+    /\b(why\??|how\??|draw|sketch|chora|show\s+another\s+example|now\s+calculate\s+it|draw\s+the\s+graph|plot\s+it|can\s+you\s+draw\s+it|explain\s+step\s+\d+|put\s+it\s+in\s+a\s+table|use\s+a\s+table|show\s+this\s+by\s+diagram|summarize\s+this|what\s+about|and\s+for)\b/i.test(
       q
     );
 
@@ -3837,6 +3848,8 @@ function detectResponseFormatAndVisualIntent(query: string): DetectedUserIntent 
     wantsBeginnerFriendly,
     isGeneralNonAcademicConversational,
     isContextualFollowUp,
+    bareVisualAsk,
+    autoVisual: !isGeneralNonAcademicConversational && !wantsShortAnswer && !wantsFormulaOnly && (q.length >= 12 || bareVisualAsk),
   };
 }
 
@@ -4075,7 +4088,8 @@ function ensureVisualOutputForIntent(
   }
 
   // 2. If user explicitly asked for a diagram or flowchart and diagramSvg is missing
-  if ((intent.wantsDiagram || intent.wantsFlowchart) && (!parsedData.diagramSvg || !parsedData.diagramSvg.includes('<svg'))) {
+  const bareAskAlreadyDrawn = Boolean(intent.bareVisualAsk && parsedData.chart && Array.isArray(parsedData.chart.data) && parsedData.chart.data.length > 1);
+  if (!bareAskAlreadyDrawn && (intent.wantsDiagram || intent.wantsFlowchart) && (!parsedData.diagramSvg || !parsedData.diagramSvg.includes('<svg'))) {
     // Extract up to 4 key stages from steps or headings or sentences
     const rawStages =
       Array.isArray(parsedData.steps) && parsedData.steps.length >= 2
@@ -5061,6 +5075,15 @@ app.post('/api/tutor/chat', async (req, res) => {
         '- USER VISUAL DIRECTIVE ("Draw a graph / Plot / Chart"): You MUST populate the `chart` object in your JSON response with 15–30 accurately calculated data points (`type`, `title`, `xAxisLabel`, `yAxisLabel`, `data`, `series`) representing the function, distribution, or dataset.'
       );
     }
+    if (userIntent.bareVisualAsk) {
+      activeFormatDirectives.push(
+        '- USER ASKED YOU TO DRAW (their message is only "draw" or similar): look at the PREVIOUS messages, take the topic that was just discussed, and DRAW IT NOW. Do not explain in words how one could draw it and do not say you cannot draw. If the topic is a function, curve, distribution, data set or comparison of curves, fill `chart` (use `series` for several curves, e.g. two solutions at different times). If it is a concept, process, geometry, structure or physical setup, fill `diagramSvg` with a clear labelled SVG. Use both when both help. Keep `text` to 2-4 short sentences that tell the student what to look at in the picture, then one tiny example.'
+      );
+    } else if (userIntent.autoVisual) {
+      activeFormatDirectives.push(
+        '- ALWAYS-ON TEACHING STYLE (no need for the student to ask): give at least one short worked or real-life EXAMPLE with concrete numbers in every explanation. When a picture would make the idea clearer (shapes, graphs of functions, distributions, processes, comparisons, geometry, structures, flows), also fill `diagramSvg` or `chart` yourself. Skip the picture only when the question is purely definitional or a one-line fact. Never mention that you added a picture "because it helps"; just give it.'
+      );
+    }
     if (userIntent.wantsDiagram || userIntent.wantsFlowchart) {
       activeFormatDirectives.push(
         '- USER VISUAL DIRECTIVE ("Show by diagram / Flowchart / Illustrate"): You MUST populate `diagramSvg` with a clean, self-contained, valid `<svg viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">...</svg>` diagram (using crisp dark slate `#0f172a` text, `#2563eb` accents, `#f8fafc` node fills, and `#94a3b8` strokes for white-background legibility) that visually illustrates the concept, geometry, tree, Venn diagram, or process.'
@@ -5254,6 +5277,8 @@ The student has explicitly selected their preferred response language as: "${lan
   * Populate \`chart\` with 15–30 accurate numeric points (\`type\`: 'line' | 'area' | 'bar' | 'scatter' | 'pie', \`title\`, \`xAxisLabel\`, \`yAxisLabel\`, \`data\`, \`series\`).
 - When the student asks for a diagram, flowchart, geometric figure, tree diagram, or conceptual illustration ("Show this by diagram", "Draw a diagram", "Create a flowchart", "Illustrate"):
   * Populate \`diagramSvg\` with a valid, responsive \`<svg viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">...</svg>\` designed for a white canvas (dark text \`#0f172a\`, clean boxes/shapes \`#f8fafc\` with \`#2563eb\` or \`#475569\` strokes, clear labels and arrows).
+- If the student's whole message is just "draw", "sketch it", "chora" or similar, it refers to the topic of your previous answer: produce the \`chart\` or \`diagramSvg\` right away. NEVER answer a request to draw with only a text description, and never say you are unable to draw.
+- Examples and pictures are part of every good explanation: include a concrete example with numbers, and include a \`chart\`/\`diagramSvg\` yourself whenever a picture makes the idea clearer, even if the student did not ask. Make every SVG simple: at most about 15 shapes, text size 12-14, nothing overlapping, labels on all key parts.
 
 6. MULTIMODAL ACADEMIC RECOGNITION:
 When an image is provided, transcribe the question accurately, inspect any handwritten working step-by-step, and provide a clear solution.${homeworkModeBlock}`;
