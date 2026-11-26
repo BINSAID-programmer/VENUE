@@ -91,10 +91,11 @@ import { PYTHON_CLASSES } from './learnPythonClasses';
 import { PYTHON_CHAPTER_EXTRAS as X } from './learnPythonChapters';
 import { PYTHON_PROJECTS } from './learnPythonProjects';
 import { PYTHON_AUTOMATE } from './learnPythonAuto';
+import { PYTHON_STATS } from './learnPythonStats';
 
 const byId = (() => {
   const m: Record<string, LearnLesson> = {};
-  for (const l of [...REST, ...PYTHON_CORE, ...PYTHON_FLOW, ...PYTHON_FUNCTIONS, ...PYTHON_CLASSES, ...PYTHON_FILES, ...PYTHON_TESTING, ...PYTHON_TOOLS, ...PYTHON_PROJECTS, ...PYTHON_AUTOMATE, ...Object.values(X), ...PYTHON_PATCH_LESSONS, ...Object.values(OWN_LESSONS)]) m[l.id.replace(/^py-/, '')] = l;
+  for (const l of [...REST, ...PYTHON_CORE, ...PYTHON_FLOW, ...PYTHON_FUNCTIONS, ...PYTHON_CLASSES, ...PYTHON_FILES, ...PYTHON_TESTING, ...PYTHON_TOOLS, ...PYTHON_PROJECTS, ...PYTHON_AUTOMATE, ...PYTHON_STATS, ...Object.values(X), ...PYTHON_PATCH_LESSONS, ...Object.values(OWN_LESSONS)]) m[l.id.replace(/^py-/, '')] = l;
   return m;
 })();
 
@@ -115,6 +116,7 @@ const CHAPTERS: Array<{ title: string; ids: string[] }> = [
   { title: '13. Projects: Simulations and Games', ids: ['p2walk', 'p2dice', 'p2game'] },
   { title: '14. Projects: Working with Real Data', ids: ['p2csv', 'p2json', 'p2report'] },
   { title: '15. Automate the Boring Stuff', ids: ['abstext', 'absregex', 'abspaths', 'absorganize', 'absdates', 'abslog', 'absscript'] },
+  { title: '16. Python for Statistics', ids: ['psdescribe', 'psprob', 'psnormal', 'psinference', 'psregression'] },
 ];
 
 /** Spread correct answers over all positions (cyclic rotation keeps option order readable). */
