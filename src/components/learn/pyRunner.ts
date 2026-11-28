@@ -58,6 +58,12 @@ export async function runPython(code: string, stdinLines: string[] = []): Promis
   let errType: string | undefined;
   let trace: string | undefined;
   try {
+    // Modules such as sqlite3 (and numpy, pandas...) are separate Pyodide packages: load what the code imports first.
+    try {
+      await py.loadPackagesFromImports(code);
+    } catch {
+      /* offline or unknown import: let Python report the real error */
+    }
     const ns = py.globals.get('dict')();
     await py.runPythonAsync(code, { globals: ns });
     ns.destroy?.();
